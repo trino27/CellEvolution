@@ -8,25 +8,25 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int startLiveVal = 128;
-        public const int poisonedDecLive = 20;
+        public const int startLiveVal = 64;
+        public const int poisonedDecLive = 5;
 
-        public const int actionLiveCost = 2;
-        public const int slipLiveCost = 2;
+        public const int actionLiveCost = 1;
+        public const int slipLiveCost = 1;
 
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
 
         public const int areaEnergyStartVal = 50;
         public const int minEnergyFromDeadCell = 5;
-        public const int energyAreaPoisonedCorner = 1500000000; //!!!!!!!!!!!!!!!!!!!!!!!
+        public const int energyAreaPoisonedCorner = 200;
 
         public const int destroyWallAtNightEnergyPlus = 30;
 
         public const int numOfDaysInYear = 30;
         public const int eachYearEnergyCostGain = 0;
         public const int actionEnergyCost = 5;
-        public const int slipEnergyCost = 1;
+        public const int slipEnergyCost = 2;
         public const int maxPhotosynthesis = 35; //+ min 
         public const int maxNightPhotosynthesisFine = 100; //+ min
         public const int minPhotosynthesis = 10; 
@@ -46,7 +46,8 @@ namespace CellEvolution
         public const int visionDistance = 3;
         public const int energyAreaVisionDistance = 1;
 
-        public const int availableCellNumAround = 3;
+        public const int availableCellNumAroundMax = 3;
+        public const int availableCellNumAroundMin = 2;
 
         public const int numOfTurnsInDayTime = 9;
         public const int numOfTurnsInNightTime = 7;

@@ -98,12 +98,14 @@ namespace CellEvolution
             double proc = (double)world.Cells.Count * 100 / (double)((Constants.areaSizeX - 2) * (Constants.areaSizeY - 2));
             int Energy = (int)(Constants.minPhotosynthesis + Constants.maxPhotosynthesis / 100.0 * (100 - proc));
 
-            int Energy8Cell = (int)(Energy / ((8 - 3) * (8 + 1 - 3)));
-            int Energy4Cell = (int)(Energy / ((4 - 3) * (4 + 1 - 3)));
-           
+            int Energy8Cell = (int)(Energy / ((8 - Constants.availableCellNumAroundMax) * (8 + 1 - Constants.availableCellNumAroundMax)));
+            int Energy4Cell = (int)(Energy / ((4 - Constants.availableCellNumAroundMax) * (4 + 1 - Constants.availableCellNumAroundMax)));
+            int Energy1Cell = (int)(Energy / ((1 - Constants.availableCellNumAroundMin) * (1 - 1 - Constants.availableCellNumAroundMin)));
+            int Energy0Cell = (int)(Energy / ((0 - Constants.availableCellNumAroundMax) * (0 - 1 - Constants.availableCellNumAroundMin)));
+
             int EnergyNight = (int)(Constants.minNightPhotosynthesisFine + Constants.maxNightPhotosynthesisFine / 100.0 * proc);
 
-            Console.Write($"Turn: {CurrentTurn}  Years: {CurrentYear} Days: {CurrentDay}/{Constants.numOfDaysInYear} DayTime: {CurrentDayTime} Hours: {hours+1}/{Constants.numOfTurnsInDayTime}/{Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime}                        PhotosintMax: {Energy} Photosint4Around: {Energy4Cell} Photosint8Around: {Energy8Cell}    LoseEnergyAtNight:{EnergyNight}                            ");
+            Console.Write($"Turn: {CurrentTurn}  Years: {CurrentYear} Days: {CurrentDay}/{Constants.numOfDaysInYear} DayTime: {CurrentDayTime} Hours: {hours+1}/{Constants.numOfTurnsInDayTime}/{Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime} PhotosintMax: {Energy} Photosint4Around: {Energy4Cell} Photosint8Around: {Energy8Cell}  Photosint1Around: {Energy1Cell} Photosint0Around: {Energy0Cell}  LoseEnergyAtNight:{EnergyNight}                        ");
             Console.SetCursorPosition(20, Constants.areaSizeY + 1);
         }
         private void ShowCellsNumInfo()

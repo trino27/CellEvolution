@@ -15,7 +15,7 @@ namespace CellEvolution.Cell.NN
         private readonly World world;
 
         public int MaxClone = 2;
-        public int AlreadyClone = 0;
+        public int AlreadyUseClone = 0;
 
         public int PositionX;
         public int PositionY;
@@ -162,7 +162,7 @@ namespace CellEvolution.Cell.NN
             IsSlip = false;
             IsCreatingClone = false;
             IsReproducting = false;
-            AlreadyClone = 0;
+            AlreadyUseClone = 0;
 
             int decidedAction = ChooseAction();
 
@@ -171,10 +171,10 @@ namespace CellEvolution.Cell.NN
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost /*+ world.GetCurrentYear() * Constants.eachYearEnergyCostGain*/;
 
-            //if (world.IsAreaPoisoned(PositionX, PositionY))
-            //{
-            //    LiveTime -= Constants.poisonedDecLive;
-            //}
+            if (world.IsAreaPoisoned(PositionX, PositionY))
+            {
+                LiveTime -= Constants.poisonedDecLive;
+            }
             if (CurrentAge >= LiveTime)
             {
                 IsDead = true;
@@ -605,13 +605,13 @@ namespace CellEvolution.Cell.NN
                 double addEnergy = Constants.minPhotosynthesis + Constants.maxPhotosynthesis / 100.0 * (100 - proc);
 
                 int numOfCellsAround = world.GetNumOfLiveCellsAround(PositionX, PositionY);
-                if (numOfCellsAround > Constants.availableCellNumAround)
+                if (numOfCellsAround > Constants.availableCellNumAroundMax)
                 {
-                    addEnergy = addEnergy / ((numOfCellsAround - Constants.availableCellNumAround) * (numOfCellsAround + 1 - Constants.availableCellNumAround));
+                    addEnergy = addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMax) * (numOfCellsAround + 1 - Constants.availableCellNumAroundMax));
                 }
-                else
+                else if(numOfCellsAround < Constants.availableCellNumAroundMin)
                 {
-                    addEnergy += Constants.availableCellNumAround - numOfCellsAround;
+                    addEnergy += addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMin) * (numOfCellsAround - 1 - Constants.availableCellNumAroundMin));
                 }
                 Energy += (int)addEnergy;
                 CellColor = Constants.photoCellColor;
