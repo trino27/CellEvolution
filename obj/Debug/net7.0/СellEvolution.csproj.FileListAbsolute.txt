@@ -1,0 +1,14 @@
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\bin\Debug\net7.0\СellEvolution.exe
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\bin\Debug\net7.0\СellEvolution.deps.json
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\bin\Debug\net7.0\СellEvolution.runtimeconfig.json
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\bin\Debug\net7.0\СellEvolution.dll
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\bin\Debug\net7.0\СellEvolution.pdb
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.GeneratedMSBuildEditorConfig.editorconfig
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.AssemblyInfoInputs.cache
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.AssemblyInfo.cs
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.csproj.CoreCompileInputs.cache
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.dll
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\refint\СellEvolution.dll
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.pdb
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\СellEvolution.genruntimeconfig.cache
+E:\Programming\Fun_Project\СellEvolution\СellEvolution\obj\Debug\net7.0\ref\СellEvolution.dll
