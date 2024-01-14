@@ -66,31 +66,5 @@
                 GenActionsCycle[i] = (GenActions)random.Next(0, 9);
             }
         }
-
-        private void HardCodeGens()
-        {
-
-            int i = 0;
-            while(i < GenActionsCycle.Length)
-            {
-                GenActionsCycle[i] = (GenActions)2; i++;//0
-                GenActionsCycle[i] = (GenActions)2; i++;//1
-                GenActionsCycle[i] = (GenActions)2; i++;//2
-                GenActionsCycle[i] = (GenActions)2; i++;//3
-                GenActionsCycle[i] = (GenActions)2; i++;//4
-                GenActionsCycle[i] = (GenActions)2; i++;//5
-                GenActionsCycle[i] = (GenActions)2; i++;//6
-                GenActionsCycle[i] = (GenActions)2; i++;//7
-                GenActionsCycle[i] = (GenActions)2; i++;//8
-                GenActionsCycle[i] = (GenActions)7; i++;//9
-                GenActionsCycle[i] = (GenActions)7; i++;//10
-                GenActionsCycle[i] = (GenActions)7; i++;//11
-                GenActionsCycle[i] = (GenActions)7; i++;//12
-                GenActionsCycle[i] = (GenActions)7; i++;//13
-                GenActionsCycle[i] = (GenActions)7; i++;//14
-                GenActionsCycle[i] = (GenActions)4; i++;//15
-            }
-        }
-
     }
 }

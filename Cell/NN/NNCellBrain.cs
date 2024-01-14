@@ -86,69 +86,46 @@
             layers = layersTemp;
         }
 
-        public void Clone(NNCellBrain original)
+        public void Clone(NNCellBrain original, double[]? randomInputToClone)
         {
-            int key = random.Next(0, 10);
+            double key = random.NextDouble();
 
-            switch (key)
+            CopyNNLayers(original);
+
+            if(key < 0.04)
             {
-                case 0:
-                    {
-                        CopyNNLayers(original);
-                    }
-                    break;
-                case 1:
-                    {
-                        CopyNNLayers(original);
-                    }
-                    break;
-                case 2:
-                    {
-                        CopyNNLayers(original);
-                    }
-                    break;
-                case 3:
-                    {
-                        CopyNNLayers(original);
-                    }
-                    break;
-                case 4:
-                    {
-                        CopyNNLayers(original);
-                    }
-                    break;
-                case 5:
-                    {
-                        CopyNNLayers(original);
-                    }
-                    break;
-                case 6:
-                    {
-                        CopyNNLayers(original);
-                        RandomChangingWeights();
-                        BackPropagation();
-                    }
-                    break;
-                case 7:
-                    {
-                        CopyNNLayers(original);
-                        BackPropagation();
-                    }
-                    break;
-                case 8:
-                    {
-                        CopyNNLayers(original);
-                        RandomChangingWeights();
-                        BackPropagation();
-                    }
-                    break;
-                case 9:
-                    {
-                        CopyNNLayers(original);
-                        RandomChangingWeights();
-                    }
-                    break;
-
+                RandomChangingWeights();
+            }
+            else if(key > 0.04 && key < 0.07)
+            {
+                BackPropagationRandomTarget();
+            }
+            else if (key > 0.07 && key < 0.1)
+            {
+                RandomChangingWeights();
+                BackPropagationRandomTarget();
+            }
+            else if (key > 0.1 && key < 0.13 && randomInputToClone != null)
+            {
+                FeedForward(randomInputToClone);
+                BackPropagation(randomInputToClone);
+            }
+            else if (key > 0.13 && key < 0.16 && randomInputToClone != null)
+            {
+                FeedForward(randomInputToClone);
+                RandomChangingWeights();
+                BackPropagation(randomInputToClone);
+            }
+            else if (key > 0.16 && key < 0.19 && randomInputToClone != null)
+            {
+                FeedForward(randomInputToClone);
+                BackPropagationRandomTarget();
+            }
+            else if (key > 0.19 && key < 0.22 && randomInputToClone != null)
+            {
+                FeedForward(randomInputToClone);
+                RandomChangingWeights();
+                BackPropagationRandomTarget();
             }
         }
 
@@ -165,7 +142,7 @@
             }
         }
 
-        private void BackPropagation()
+        private void BackPropagationRandomTarget()
         {
             double learningRate = Constants.learningRateConst;
 
@@ -322,29 +299,19 @@
                 taskUpdate.Wait();
             }
         }
+        public void LearnFromExp(double[] inputs, int correctTarget)
+        {
+            double[] targets = new double[layers[^1].size];
+            targets[correctTarget] = 1;
+
+            FeedForward(inputs);
+            BackPropagation(targets);
+
+        }
 
         private double SigmoidFunc(double x) => 1.0 / (1.0 + Math.Exp(-x));
         private double DsigmoidFunc(double x) => x * (1.0 - x);
-
-        private int DifferenceMetr(NNCellBrain original)
-        {
-            int dif = 0;
-            for (int k = layers.Length - 1; k >= 0; k--)
-            {
-                for (int i = 0; i < layers[k].weights.GetLength(0); i++)
-                {
-                    for (int j = 0; j < layers[k].weights.GetLength(1); j++)
-                    {
-                        if (layers[k].weights[i, j] != original.layers[k].weights[i, j])
-                        {
-                            dif++;
-                        }
-                    }
-                }
-            }
-            return dif;
-        }
-
+        
         private void RandomChangingWeights()
         {
             long NumOfAllWeights = 0;

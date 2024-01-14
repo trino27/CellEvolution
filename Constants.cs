@@ -8,7 +8,7 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int LiveTime = 64;
+        public const int liveTime = 64;
         public const int poisonedDecLive = 5;
 
         public const int actionLiveCost = 1;
