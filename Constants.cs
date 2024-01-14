@@ -8,7 +8,7 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int startLiveVal = 64;
+        public const int LiveTime = 64;
         public const int poisonedDecLive = 5;
 
         public const int actionLiveCost = 1;
@@ -19,9 +19,9 @@ namespace CellEvolution
 
         public const int areaEnergyStartVal = 50;
         public const int minEnergyFromDeadCell = 5;
-        public const int energyAreaPoisonedCorner = 200;
+        public const int energyAreaPoisonedCorner = 150;
 
-        public const int destroyWallAtNightEnergyPlus = 30;
+        public const int destroyWallAtNightEnergyPlus = 25;
 
         public const int numOfDaysInYear = 30;
         public const int eachYearEnergyCostGain = 0;
@@ -38,12 +38,13 @@ namespace CellEvolution
         public const int jumpRange = 3;
         public const int energyBankChangeNum = 5;
 
-        public const int numOfMemoryLastMoves = 16;
+        public const int numOfMemoryLastMoves = 10;
         public const int genCycleSize = 64;
         public const double learningRateConst = 0.01;
 
         public const int cellCreationDistance = 2;
         public const int visionDistance = 3;
+        public const int voiceDistance = 5;
         public const int energyAreaVisionDistance = 1;
 
         public const int availableCellNumAroundMax = 3;

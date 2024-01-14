@@ -32,6 +32,7 @@ namespace CellEvolution
 
                 ShowWorldInfo(hours);
                 ShowCellsTypeInfo();
+                ShowCellsNumInfo();
 
                 stopwatchCells.Restart();
 
@@ -52,17 +53,18 @@ namespace CellEvolution
                 }
 
                 Task.WaitAll(tasks.ToArray());
-                ShowCellsNumInfo();
 
                 stopwatchCells.Stop();
 
                 CurrentTurn++;
                 hours++;
 
-                world.CleanDeadCells();
+                world.ClearDeadCells();
 
                 world.StartReproduction();
                 world.StartCreatingClones();
+
+                world.ClearAreaVoiceParallel();
 
                 UpdateTimeAndSeason(ref hours);
 
@@ -105,7 +107,7 @@ namespace CellEvolution
 
             int EnergyNight = (int)(Constants.minNightPhotosynthesisFine + Constants.maxNightPhotosynthesisFine / 100.0 * proc);
 
-            Console.Write($"Turn: {CurrentTurn}  Years: {CurrentYear} Days: {CurrentDay}/{Constants.numOfDaysInYear} DayTime: {CurrentDayTime} Hours: {hours+1}/{Constants.numOfTurnsInDayTime}/{Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime} PhotosintMax: {Energy} Photosint4Around: {Energy4Cell} Photosint8Around: {Energy8Cell}  Photosint1Around: {Energy1Cell} Photosint0Around: {Energy0Cell}  LoseEnergyAtNight:{EnergyNight}                        ");
+            Console.Write($"Turn: {CurrentTurn}  Years: {CurrentYear} Days: {CurrentDay}/{Constants.numOfDaysInYear} DayTime: {CurrentDayTime} Hours: {hours+1}/{Constants.numOfTurnsInDayTime}/{Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime}    PhotosintMax: {Energy} Photosint4Around: {Energy4Cell} Photosint8Around: {Energy8Cell}  Photosint1Around: {Energy1Cell} Photosint0Around: {Energy0Cell}  LoseEnergyAtNight:{EnergyNight}                        ");
             Console.SetCursorPosition(20, Constants.areaSizeY + 1);
         }
         private void ShowCellsNumInfo()

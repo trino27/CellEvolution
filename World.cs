@@ -1,4 +1,5 @@
 ﻿using CellEvolution.Cell.NN;
+using System.Collections.Generic;
 
 namespace CellEvolution
 {
@@ -8,7 +9,8 @@ namespace CellEvolution
 
         public char[,] AreaChar;
         public ConsoleColor[,] AreaColor;
-        public int[,] EnergyArea;
+        public int[,] AreaVoice;
+        public int[,] AreaEnergy;
 
         public List<CellModel> Cells = new List<CellModel>();
         public Logic Logic;
@@ -17,7 +19,8 @@ namespace CellEvolution
         {
             AreaChar = new char[Constants.areaSizeX, Constants.areaSizeY];
             AreaColor = new ConsoleColor[Constants.areaSizeX, Constants.areaSizeY];
-            EnergyArea = new int[Constants.areaSizeX, Constants.areaSizeY];
+            AreaEnergy = new int[Constants.areaSizeX, Constants.areaSizeY];
+            AreaVoice = new int[Constants.areaSizeX, Constants.areaSizeY];
 
             Console.WriteLine("Creating World!");
             CreateArea();
@@ -146,9 +149,9 @@ namespace CellEvolution
                     lock (lockObject)
                     {
 
-                        if (EnergyArea[x, y] < Constants.areaEnergyStartVal)
+                        if (AreaEnergy[x, y] < Constants.areaEnergyStartVal)
                         {
-                            EnergyArea[x, y] = Constants.areaEnergyStartVal;
+                            AreaEnergy[x, y] = Constants.areaEnergyStartVal;
                         }
                         if (IsAreaPoisoned(x, y))
                         {
@@ -263,7 +266,7 @@ namespace CellEvolution
         {
             lock (lockObject)
             {
-                List<int> area = GetAreaAroundCellInt(positionX, positionY, 1);
+                List<int> area = GetAreaCharAroundCellInt(positionX, positionY, 1);
                 int res = 0;
 
                 for (int i = 0; i < area.Count; i++)
@@ -276,9 +279,9 @@ namespace CellEvolution
             }
         }
 
-        public int GetCurrentAreaEnergy(int positionX, int positionY) => EnergyArea[positionX, positionY];
+        public int GetCurrentAreaEnergy(int positionX, int positionY) => AreaEnergy[positionX, positionY];
 
-        public List<int> GetAreaAroundCellInt(int positionX, int positionY, int dist)
+        public List<int> GetAreaCharAroundCellInt(int positionX, int positionY, int dist)
         {
             lock (lockObject)
             {
@@ -329,7 +332,7 @@ namespace CellEvolution
                 return area;
             }
         }
-        public List<int> GetAreaAroundCellInt(int positionX, int positionY)
+        public List<int> GetAreaCharAroundCellInt(int positionX, int positionY)
         {
             lock (lockObject)
             {
@@ -396,7 +399,7 @@ namespace CellEvolution
                             if (y >= positionY - Constants.energyAreaVisionDistance && y <= positionY + Constants.energyAreaVisionDistance &&
                             x >= positionX - Constants.energyAreaVisionDistance && x <= positionX + Constants.energyAreaVisionDistance)
                             {
-                                energyAreaInfo.Add(EnergyArea[x, y]);
+                                energyAreaInfo.Add(AreaEnergy[x, y]);
                             }
 
                             if (!(x == positionX && y == positionY))
@@ -423,7 +426,7 @@ namespace CellEvolution
                                                 case Constants.deadCellColor: k = 11; break; // dead
                                             }
 
-                                            cellGenArea.Add(GenomeSimilarityParallel(GetCell(x, y), GetCell(positionX, positionY)) + 1);
+                                            cellGenArea.Add(GenomeSimilarity(GetCell(x, y), GetCell(positionX, positionY)) + 1);
                                             isGenWrited = true;
                                         }
                                         break;
@@ -445,12 +448,40 @@ namespace CellEvolution
 
                 area.AddRange(cellGenArea);
                 area.AddRange(energyAreaInfo);
+                area.AddRange(GetAreaVoiceInfo(positionX, positionY));
 
                 return area;
             }
         }
+        public List<int> GetAreaVoiceInfo(int positionX, int positionY)
+        {
+            lock (lockObject)
+            {
+                List<int> res = new List<int>(7);
 
-        private int GenomeSimilarityParallel(CellModel cellA, CellModel cellB)
+                if (AreaVoice[positionX, positionY] != 0)
+                {
+                    res.Add(positionX - Cells[AreaVoice[positionX, positionY] - 1].PositionX);
+                    res.Add(positionY - Cells[AreaVoice[positionX, positionY] - 1].PositionY);
+
+                    res.Add(GenomeSimilarity(GetCell(positionX, positionY), Cells[AreaVoice[positionX, positionY] - 1]));
+                    res.Add(Cells[AreaVoice[positionX, positionY] - 1].Energy);
+                    res.Add(Cells[AreaVoice[positionX, positionY] - 1].EnergyBank);
+                    res.Add(Cells[AreaVoice[positionX, positionY] - 1].MaxClone);
+                    res.Add(Cells[AreaVoice[positionX, positionY] - 1].Initiation);
+                }
+                else
+                {
+                    for(int i = 0; i < 7; i++)
+                    {
+                        res.Add(0);
+                    }
+                }
+
+                return res;
+            }
+        }
+        private int GenomeSimilarity(CellModel cellA, CellModel cellB)
         {
             double simK = 0;
 
@@ -647,11 +678,11 @@ namespace CellEvolution
             int y = Cells[i].PositionY;
             if (Cells[i].Energy / 4 > Constants.minEnergyFromDeadCell)
             {
-                EnergyArea[x, y] += Cells[i].Energy / 4;
+                AreaEnergy[x, y] += Cells[i].Energy / 4;
             }
             else
             {
-                EnergyArea[x, y] += Constants.minEnergyFromDeadCell;
+                AreaEnergy[x, y] += Constants.minEnergyFromDeadCell;
             }
 
             if (IsAreaPoisoned(x, y) && AreaChar[x, y] == Constants.emptyChar)
@@ -745,7 +776,7 @@ namespace CellEvolution
             }
         }
 
-        public void CleanDeadCells()
+        public void ClearDeadCells()
         {
             lock (lockObject)
             {
@@ -826,12 +857,51 @@ namespace CellEvolution
                 return Cells.Any(cell => cell.PositionX == positionX && cell.PositionY == positionY);
             }
         }
-        public bool IsAreaPoisoned(int x, int y) => EnergyArea[x, y] > Constants.energyAreaPoisonedCorner;
+        public bool IsAreaPoisoned(int x, int y) => AreaEnergy[x, y] > Constants.energyAreaPoisonedCorner;
         public bool IsDay() => Logic.CurrentDayTime == Logic.DayTime.Day;
 
         public bool IsMoveAvailable(int positionX, int positionY) => positionX > 0 && positionY > 0 &&
                                                                      positionX < Constants.areaSizeX && positionY < Constants.areaSizeY &&
                                                                      (AreaChar[positionX, positionY] == Constants.emptyChar ||
                                                                       AreaChar[positionX, positionY] == Constants.poisonChar);
+
+        public void CellShout(CellModel cell)
+        {
+            int index = -1;
+            for(int i = 0;  i < Cells.Count; i++)
+            {
+                if (Cells[i] == cell)
+                {
+                    index = i; break;
+                }
+            }
+
+            if (index != -1)
+            {
+                for (int x = cell.PositionX - Constants.voiceDistance; x < cell.PositionX + Constants.voiceDistance + 1; x++)
+                {
+                    for (int y = cell.PositionY - Constants.voiceDistance; y < cell.PositionY + Constants.voiceDistance + 1; y++)
+                    {
+                        if ((y >= 0 && y < Constants.areaSizeY) &&
+                            (x >= 0 && x < Constants.areaSizeX) &&
+                             AreaVoice[x, y] != 0 && 
+                             Cells[index].Initiation >= Cells[AreaVoice[x, y] - 1].Initiation)
+                        {
+                                    AreaVoice[x, y] = index + 1;
+                        }
+                    }
+                }
+            }
+        }
+        public void ClearAreaVoiceParallel()
+        {
+            Parallel.For(0,Constants.areaSizeX, x =>
+            {
+                for (int y = 0; y < Constants.areaSizeY; y++)
+                {
+                    AreaVoice[x, y] = 0;
+                }
+            });
+        }
     }
 }

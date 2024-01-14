@@ -170,7 +170,7 @@
             double learningRate = Constants.learningRateConst;
 
             double[] targets = new double[layers[^1].size];
-            targets[random.Next(0, layers[^1].size)] = 100;
+            targets[random.Next(0, layers[^1].size)] = 1;
 
             int outputErrorSize = layers[layers.Length - 1].size;
 

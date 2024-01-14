@@ -27,8 +27,6 @@ namespace CellEvolution.Cell.NN
 
         public int CurrentGenIndex = 0;
 
-        public int addLiveCount = 0;
-        public int LiveTime = Constants.startLiveVal;
         public int CurrentAge = 0;
 
         public ConsoleColor CellColor = Constants.newCellColor;
@@ -173,9 +171,9 @@ namespace CellEvolution.Cell.NN
 
             if (world.IsAreaPoisoned(PositionX, PositionY))
             {
-                LiveTime -= Constants.poisonedDecLive;
+                CurrentAge += Constants.poisonedDecLive;
             }
-            if (CurrentAge >= LiveTime)
+            if (CurrentAge >= Constants.LiveTime)
             {
                 IsDead = true;
             }
@@ -240,25 +238,29 @@ namespace CellEvolution.Cell.NN
                         availableActions.Add(23);  
                     }
                     break;
-                case CellGen.GenActions.Build:
+
+                case CellGen.GenActions.Actions:
                     {
+                        availableActions.Add(24);
                         availableActions.Add(25);
-                        availableActions.Add(26);
                     }
                     break;
+                case CellGen.GenActions.Build:
+                    {
+                        availableActions.Add(26);
+                        availableActions.Add(27);
+                    }
+                    break;
+
                 case CellGen.GenActions.Evolving:
                     {
-                        for (int i = 27; i < 32; i++)
+                        for (int i = 28; i < 32; i++)
                         {
                             availableActions.Add(i);
                         }
                     }
                     break;
-                case CellGen.GenActions.Actions:
-                    {
-                        availableActions.Add(24);
-                    }
-                    break;
+               
                 case CellGen.GenActions.All:
                     {
                         for (int i = 0; i < 32; i++)
@@ -318,14 +320,14 @@ namespace CellEvolution.Cell.NN
 
                 // Slip
                 case 24: Slip(); break;
+                case 25: Shout(); break;
 
                 //Build
-                case 25: BuildWalls(); break;
-                case 26: DestroyWalls(); break;
+                case 26: BuildWalls(); break;
+                case 27: DestroyWalls(); break;
 
                 //Evolving
-                case 27: GainInitiation(); break;
-                case 28: GainLiveTime(); break;
+                case 28: GainInitiation(); break;
                 case 29: GainMaxClone(); break;
                 case 30: GainEnergyBank(); break;
                 case 31: DecEnergyBank(); break;
@@ -354,25 +356,23 @@ namespace CellEvolution.Cell.NN
             List<int> area = world.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
 
             int j = 0;
-            for (int i = 0; i < area.Count; i++) //48+48+9 = 105
+            for (int i = 0; i < area.Count; i++) //48+48+9+7 = 112
             {
                 inputsBrain[j] = area[i];
                 j++;
             }
 
-            inputsBrain[j] = (Convert.ToInt16(world.IsDay())); //106
+            inputsBrain[j] = (Convert.ToInt16(world.IsDay())); //113
             j++;
-            inputsBrain[j] = (Initiation); //107
+            inputsBrain[j] = (Initiation); //114
             j++;
-            inputsBrain[j] = (Energy); //108
+            inputsBrain[j] = (Energy); //115
             j++;
-            inputsBrain[j] = (MaxClone); //109
+            inputsBrain[j] = (MaxClone); //116
             j++;
-            inputsBrain[j] = (LiveTime);  //110
+            inputsBrain[j] = (CurrentAge);  //117
             j++;
-            inputsBrain[j] = (CurrentAge);  //111
-            j++;
-            inputsBrain[j] = (EnergyBank);  //112
+            inputsBrain[j] = (EnergyBank);  //118
             j++;
             for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //128
             {
@@ -398,11 +398,6 @@ namespace CellEvolution.Cell.NN
             LastMoves[0] = decidedAction;
 
         }
-        private int Fact(int i)
-        {
-            if (i == 0) return 1;
-            else return i * Fact(i - 1);
-        }
 
         //Evolving
         private void GainInitiation()
@@ -410,17 +405,6 @@ namespace CellEvolution.Cell.NN
             Initiation++;
             CellColor = Constants.evolvingCellColor;
 
-        }
-        private void GainLiveTime()
-        {
-            int temp = Fact(addLiveCount + 1);
-            if (Energy > temp + Constants.slipEnergyCost)
-            {
-                addLiveCount++;
-                LiveTime += addLiveCount;
-                Energy -= temp;
-            }
-            CellColor = Constants.evolvingCellColor;
         }
         private void GainMaxClone()
         {
@@ -633,7 +617,7 @@ namespace CellEvolution.Cell.NN
             {
                 CellColor = Constants.absorbCellColor;
                 Energy += addEnergy;
-                world.EnergyArea[PositionX, PositionY] = 0;
+                world.AreaEnergy[PositionX, PositionY] = 0;
             }
         }
         private void Slip()
@@ -641,11 +625,15 @@ namespace CellEvolution.Cell.NN
             IsSlip = true;
             CellColor = Constants.slipCellColor;
         }
+        private void Shout()
+        {
+            world.CellShout(this);
+        }
 
         //Build
         private void BuildWalls()
         {
-            if (world.GetAreaAroundCellInt(PositionX, PositionY, 1).Contains(1) && Energy > 24 + Constants.slipEnergyCost)
+            if (world.GetAreaCharAroundCellInt(PositionX, PositionY, 1).Contains(1) && Energy > 24 + Constants.slipEnergyCost)
             {
                 world.CreateWallsAroundParallel(this);
                 Energy -= 24;
