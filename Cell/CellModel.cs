@@ -79,7 +79,12 @@ namespace CellEvolution.Cell.NN
             brain = new NNCellBrain();
             brain.Clone(original.brain, RandomInputToClone);
 
-            gen = new CellGen(original.gen);
+            bool flag = false;
+            if(world.Logic.CurrentTurn > 1000)
+            {
+                flag = true;
+            }
+            gen = new CellGen(original.gen, flag);
 
             Energy += original.EnergyBank;
 
@@ -126,11 +131,17 @@ namespace CellEvolution.Cell.NN
             PositionY = positionY;
 
             world = map;
-
+           
             brain = new NNCellBrain();
             brain.Clone(mainParent.brain, RandomInputToClone);
 
-            gen = new CellGen(mother.gen, father.gen);
+            bool flag = false;
+            if (world.Logic.CurrentTurn > 1000)
+            {
+                flag = true;
+            }
+
+            gen = new CellGen(mother.gen, father.gen, flag);
 
             Energy = mother.EnergyBank + father.EnergyBank + Constants.startCellEnergy * 2;
 
@@ -248,13 +259,6 @@ namespace CellEvolution.Cell.NN
                         availableActions.Add(25);
                     }
                     break;
-                case CellGen.GenActions.Build:
-                    {
-                        availableActions.Add(26);
-                        availableActions.Add(27);
-                    }
-                    break;
-
                 case CellGen.GenActions.Evolving:
                     {
                         for (int i = 28; i < 32; i++)
@@ -333,9 +337,8 @@ namespace CellEvolution.Cell.NN
                 case 24: Slip(); break;
                 case 25: Shout(); break;
 
-                //Build
-                case 26: BuildWalls(); break;
-                case 27: DestroyWalls(); break;
+                case 26: break;
+                case 27: break;
 
                 //Evolving
                 case 28: GainInitiation(); break;
@@ -530,34 +533,34 @@ namespace CellEvolution.Cell.NN
         //Jump
         private void JumpUp()
         {
-            if (world.IsMoveAvailable(PositionX, PositionY - Constants.jumpRange))
+            if (world.IsMoveAvailable(PositionX, PositionY - Constants.jumpDistance))
             {
-                PositionY -= Constants.jumpRange;
+                PositionY -= Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
             }
         }
         private void JumpRight()
         {
-            if (world.IsMoveAvailable(PositionX + Constants.jumpRange, PositionY))
+            if (world.IsMoveAvailable(PositionX + Constants.jumpDistance, PositionY))
             {
-                PositionX += Constants.jumpRange;
+                PositionX += Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
             }
         }
         private void JumpDown()
         {
-            if (world.IsMoveAvailable(PositionX, PositionY + Constants.jumpRange))
+            if (world.IsMoveAvailable(PositionX, PositionY + Constants.jumpDistance))
             {
-                PositionY += Constants.jumpRange;
+                PositionY += Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
 
             }
         }
         private void JumpLeft()
         {
-            if (world.IsMoveAvailable(PositionX - Constants.jumpRange, PositionY))
+            if (world.IsMoveAvailable(PositionX - Constants.jumpDistance, PositionY))
             {
-                PositionX -= Constants.jumpRange;
+                PositionX -= Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
             }
         }
@@ -676,22 +679,6 @@ namespace CellEvolution.Cell.NN
         private void Shout()
         {
             world.CellShout(this);
-        }
-
-        //Build
-        private void BuildWalls()
-        {
-            if (world.GetAreaCharAroundCellInt(PositionX, PositionY, 1).Contains(1) && Energy > 24 + Constants.slipEnergyCost)
-            {
-                world.CreateWallsAroundParallel(this);
-                Energy -= 24;
-            }
-
-        }
-        private void DestroyWalls()
-        {
-            world.DestroyWallsAroundParallel(this);
-            CellColor = Constants.wallDestroyerCellColor;
         }
 
         //Reproduction

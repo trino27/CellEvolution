@@ -111,9 +111,9 @@ namespace CellEvolution
             Task taskCell = new Task(() =>
             {
                 int i = 1;
-                for (int y = 1; y < Constants.areaSizeY - 1; y += Constants.cellCreationDistance)
+                for (int y = 1; y < Constants.areaSizeY - 1; y += Constants.startCellCreationDistance)
                 {
-                    for (int x = 1; x < Constants.areaSizeX - 1; x += Constants.cellCreationDistance)
+                    for (int x = 1; x < Constants.areaSizeX - 1; x += Constants.startCellCreationDistance)
                     {
                         AreaChar[x, y] = Constants.cellChar;
                         Cells.Add(new CellModel(x, y, this));
@@ -702,77 +702,6 @@ namespace CellEvolution
                 Console.ForegroundColor = Constants.poisonColor;
                 Console.Write(Constants.poisonChar);
                 Console.ResetColor();
-            }
-        }
-
-        public void CreateWallsAroundParallel(CellModel cell)
-        {
-            lock (lockObject)
-            {
-                Parallel.For(cell.PositionX - 1, cell.PositionX + 2, x =>
-                  {
-                      for (int y = cell.PositionY - 1; y <= cell.PositionY + 1; y++)
-                      {
-                          CreateWall(x, y);
-                      }
-                  });
-            }
-        }
-        private void CreateWall(int x, int y)
-        {
-            if (AreaChar[x, y] == Constants.emptyChar || AreaChar[x, y] == Constants.poisonChar)
-            {
-                AreaChar[x, y] = Constants.wallChar;
-                AreaColor[x, y] = Constants.wallColor;
-
-                lock (Console.Out)
-                {
-                    Console.CursorVisible = false;
-                    Console.SetCursorPosition(x * 2, y);
-                    Console.ForegroundColor = Constants.wallColor;
-                    Console.Write(Constants.wallChar);
-                    Console.ResetColor();
-                }
-            }
-        }
-
-        public void DestroyWallsAroundParallel(CellModel cell)
-        {
-            lock (lockObject)
-            {
-                Parallel.For(cell.PositionX - 1, cell.PositionX + 2, x =>
-                 {
-                     for (int y = cell.PositionY - 1; y <= cell.PositionY + 1; y++)
-                     {
-                         DestroyWall(x, y, cell);
-                     }
-                 });
-            }
-        }
-        private void DestroyWall(int x, int y, CellModel cell)
-        {
-            if (AreaChar[x, y] == Constants.wallChar)
-            {
-                AreaChar[x, y] = Constants.emptyChar;
-                AreaColor[x, y] = Constants.emptyColor;
-
-                if (!IsDay())
-                {
-                    cell.Energy += Constants.destroyWallAtNightEnergyPlus;
-                }
-                lock (Console.Out)
-                {
-                    Console.CursorVisible = false;
-                    Console.SetCursorPosition(x * 2, y);
-                    Console.ForegroundColor = Constants.emptyColor;
-                    Console.Write(Constants.emptyChar);
-                    Console.ResetColor();
-
-                    if (IsAreaPoisoned(x, y))
-                    {
-                        CreatePoisonArea(x, y);
-                    }
-                }
             }
         }
 

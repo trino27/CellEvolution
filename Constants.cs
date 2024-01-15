@@ -17,41 +17,39 @@ namespace CellEvolution
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
 
-        public const int areaEnergyStartVal = 50;
-        public const int minEnergyFromDeadCell = 5;
-        public const int energyAreaPoisonedCorner = 150;
+        public const int areaEnergyStartVal = 30;
+        public const int minEnergyFromDeadCell = cloneEnergyCost - startCellEnergy;
+        public const int energyAreaPoisonedCorner = 100;
 
         public const int destroyWallAtNightEnergyPlus = 25;
 
         public const int numOfDaysInYear = 30;
         public const int eachYearEnergyCostGain = 0;
+        public const int numOfTurnsInDayTime = 9;
+        public const int numOfTurnsInNightTime = 7;
+
         public const int actionEnergyCost = 5;
         public const int slipEnergyCost = 2;
+
         public const int maxPhotosynthesis = 35; //+ min 
         public const int maxNightPhotosynthesisFine = 100; //+ min
         public const int minPhotosynthesis = 10; 
         public const int minNightPhotosynthesisFine = 20;
-        public const int maxNumOfCellsAroundForPhotosynthesis = 3;
-
-        
-        public const int jumpEnergyCost = 3;
-        public const int jumpRange = 3;
-        public const int energyBankChangeNum = 5;
-
-        public const int numOfMemoryLastMoves = 10;
-        public const int genCycleSize = 64;
-        public const double learningRateConst = 0.01;
-
-        public const int cellCreationDistance = 2;
-        public const int visionDistance = 3;
-        public const int voiceDistance = 5;
-        public const int energyAreaVisionDistance = 1;
-
         public const int availableCellNumAroundMax = 3;
         public const int availableCellNumAroundMin = 2;
 
-        public const int numOfTurnsInDayTime = 9;
-        public const int numOfTurnsInNightTime = 7;
+        public const int jumpEnergyCost = 3;
+        public const int jumpDistance = 3;
+        public const int energyBankChangeNum = 5;
+
+        public const int numOfMemoryLastMoves = 10;
+        public const int genCycleSize = liveTime;
+        public const double learningRateConst = 0.01;
+
+        public const int visionDistance = 3;
+        public const int voiceDistance = 5;
+        public const int energyAreaVisionDistance = 1;
+        public const int startCellCreationDistance = 2;
 
         public const int areaSizeX = 105; //118 //105
         public const int areaSizeY = 47; //60 // 47
