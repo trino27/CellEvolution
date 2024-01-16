@@ -4,6 +4,8 @@
     {
         public readonly Random random = new Random();
 
+        
+
         private int[] layersSizes =
             {
                 128,
@@ -39,7 +41,6 @@
             }
         }
 
-
         public double[] FeedForward(double[] input)
         {
             layers[0].neurons = input;
@@ -62,6 +63,49 @@
             }
             return layers[layers.Length - 1].neurons;
         }
+        public double[] FeedForwardWithNoise(double[] input)
+        {
+            layers[0].neurons = input;
+
+            for (int i = 1; i < layers.Length; i++)
+            {
+                NNLayers l = layers[i - 1];
+                NNLayers l1 = layers[i];
+
+                for (int j = 0; j < l1.size; j++)
+                {
+                    l1.neurons[j] = 0;
+                    for (int k = 0; k < l.size; k++)
+                    {
+                        l1.neurons[j] += l.neurons[k] * l.weights[k, j];
+                    }
+                    l1.neurons[j] += l1.biases[j];
+
+                    // Добавление шума
+                    l1.neurons[j] += GenerateRandomNoise() * Constants.noiseIntensity;
+
+                    // Применение дропаута
+                    if (random.NextDouble() < Constants.dropoutProbability)
+                    {
+                        l1.neurons[j] = 0;
+                    }
+                    else
+                    {
+                        l1.neurons[j] = SigmoidFunc(l1.neurons[j]);
+                    }
+                }
+            }
+            return layers[layers.Length - 1].neurons;
+        }
+
+        private double GenerateRandomNoise()
+        {
+            double u1 = 1.0 - random.NextDouble();
+            double u2 = 1.0 - random.NextDouble();
+            return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+        }
+
+        
         public void RandomFillWeights()
         {
             NNLayers[] layersTemp = layers;
@@ -108,20 +152,9 @@
             else if (key > 0.1 && key < 0.13 && randomInputToClone != null)
             {
                 FeedForward(randomInputToClone);
-                BackPropagation(randomInputToClone);
-            }
-            else if (key > 0.13 && key < 0.16 && randomInputToClone != null)
-            {
-                FeedForward(randomInputToClone);
-                RandomChangingWeights();
-                BackPropagation(randomInputToClone);
-            }
-            else if (key > 0.16 && key < 0.19 && randomInputToClone != null)
-            {
-                FeedForward(randomInputToClone);
                 BackPropagationRandomTarget();
             }
-            else if (key > 0.19 && key < 0.22 && randomInputToClone != null)
+            else if (key > 0.13 && key < 0.16 && randomInputToClone != null)
             {
                 FeedForward(randomInputToClone);
                 RandomChangingWeights();
@@ -144,7 +177,7 @@
 
         private void BackPropagationRandomTarget()
         {
-            double learningRate = Constants.learningRateConst;
+            double learningRate = Constants.learningRate;
 
             double[] targets = new double[layers[^1].size];
             targets[random.Next(0, layers[^1].size)] = 1;
@@ -224,7 +257,7 @@
         }
         public void BackPropagation(double[] targets)
         {
-            double learningRate = Constants.learningRateConst;
+            double learningRate = Constants.learningRate;
 
             int outputErrorSize = layers[layers.Length - 1].size;
 

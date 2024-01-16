@@ -43,11 +43,15 @@ namespace CellEvolution
 
         public const int numOfMemoryLastMoves = 10;
         public const int genCycleSize = liveTime;
-        public const double learningRateConst = 0.01;
+
+        public const double learningRate = 0.001;
+        public const double noiseIntensity = 0.2;
+        public const double dropoutProbability = 0.1;
 
         public const int visionDistance = 3;
         public const int voiceDistance = 5;
         public const int energyAreaVisionDistance = 1;
+        public const int energyAreaAbsorbDistance = 1;
         public const int startCellCreationDistance = 2;
 
         public const int areaSizeX = 105; //118 //105

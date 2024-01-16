@@ -6,7 +6,7 @@ namespace CellEvolution.Cell.NN
     {
         private Random random = new Random();
         private readonly object lockObject = new object();
-       
+
 
         public readonly CellGen gen;
         private readonly NNCellBrain brain;
@@ -86,7 +86,7 @@ namespace CellEvolution.Cell.NN
             brain.Clone(original.brain, RandomInputToClone);
 
             bool flag = false;
-            if(world.Logic.CurrentTurn > 0)
+            if (world.Logic.CurrentTurn > 0)
             {
                 flag = true;
             }
@@ -167,7 +167,7 @@ namespace CellEvolution.Cell.NN
             PositionY = positionY;
 
             world = map;
-           
+
             brain = new NNCellBrain();
             brain.Clone(mainParent.brain, RandomInputToClone);
 
@@ -209,11 +209,11 @@ namespace CellEvolution.Cell.NN
             IsSlip = false;
             IsCreatingClone = false;
 
-            if(IsReproducting == false)
+            if (IsReproducting == false)
             {
                 AlreadyUseClone = 0;
             }
-            else if(AlreadyUseClone == MaxClone)
+            else if (AlreadyUseClone == MaxClone)
             {
                 IsReproducting = false;
                 AlreadyUseClone = 0;
@@ -329,12 +329,12 @@ namespace CellEvolution.Cell.NN
             RegisterInput(inputs);
 
             double rand = random.NextDouble();
-            if(rand < 0.1)
+            if (rand < 0.1)
             {
                 RandomInputToClone = inputs;
             }
 
-            double[] outputs = brain.FeedForward(inputs);
+            double[] outputs = brain.FeedForwardWithNoise(inputs);
             int decidedAction = FindMaxIndexForFindAction(outputs, availableActions);
 
             return decidedAction;
@@ -376,7 +376,7 @@ namespace CellEvolution.Cell.NN
                 case 21: Absorption(); break;
 
                 //Preproduction
-                case 22: Clone(); break; 
+                case 22: Clone(); break;
                 case 23: Reproduction(); break;
 
                 // Slip
@@ -469,31 +469,32 @@ namespace CellEvolution.Cell.NN
 
         private void UseExpToLearn() //!!!!!!!!!!!!!!!
         {
-            //if (CurrentGenIndex > Constants.numOfMemoryLastMoves)
-            //{
-            //    double rand = random.NextDouble();
-            //    if (rand < 0.01)
-            //    {
-            //        brain.LearnFromExp(LastMovesInputs[^5], LastMovesDecidedActionsNum[^5]);
-        
-            //    }
-            //    else if (rand > 0.01 && rand < 0.02)
-            //    {
-            //        brain.LearnFromExp(LastMovesInputs[^4], LastMovesDecidedActionsNum[^4]);
-            //    }
-            //    else if (rand > 0.02 && rand < 0.05)
-            //    {
-            //        brain.LearnFromExp(LastMovesInputs[^3], LastMovesDecidedActionsNum[^3]);
-            //    }
-            //    else if (rand > 0.05 && rand < 0.1)
-            //    {
-            //        brain.LearnFromExp(LastMovesInputs[^2], LastMovesDecidedActionsNum[^2]);
-            //    }
-            //    else if (rand > 0.1 && rand < 0.2)
-            //    {
-            //        brain.LearnFromExp(LastMovesInputs[^1], LastMovesDecidedActionsNum[^1]);
-            //    }
-            //}
+            if (CurrentGenIndex > Constants.numOfMemoryLastMoves)
+            {
+                double rand = random.NextDouble();
+                if (rand < 0.2)
+                {
+                    brain.LearnFromExp(LastMovesInputs[^1], LastMovesDecidedActionsNum[^1]);
+                    if (rand < 0.1)
+                    {
+                        brain.LearnFromExp(LastMovesInputs[^2], LastMovesDecidedActionsNum[^2]);
+                        if (rand < 0.05)
+                        {
+                            brain.LearnFromExp(LastMovesInputs[^3], LastMovesDecidedActionsNum[^3]);
+                            if (rand < 0.02)
+                            {
+                                brain.LearnFromExp(LastMovesInputs[^4], LastMovesDecidedActionsNum[^4]);
+                                if (rand < 0.01)
+                                {
+                                    brain.LearnFromExp(LastMovesInputs[^5], LastMovesDecidedActionsNum[^5]);
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+            }
         }
 
         //Evolving
@@ -708,14 +709,8 @@ namespace CellEvolution.Cell.NN
         }
         private void Absorption()
         {
-            int addEnergy = world.GetCurrentAreaEnergy(PositionX, PositionY);
-
-            if (addEnergy > 0)
-            {
-                CellColor = Constants.absorbCellColor;
-                Energy += addEnergy;
-                world.AreaEnergy[PositionX, PositionY] = 0;
-            }
+            CellColor = Constants.absorbCellColor;
+            world.Absorb(this);
         }
         private void Slip()
         {

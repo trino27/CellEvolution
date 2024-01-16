@@ -1,5 +1,4 @@
 ﻿using CellEvolution.Cell.NN;
-using System.Collections.Generic;
 
 namespace CellEvolution
 {
@@ -472,7 +471,7 @@ namespace CellEvolution
                 }
                 else
                 {
-                    for(int i = 0; i < 7; i++)
+                    for (int i = 0; i < 7; i++)
                     {
                         res.Add(0);
                     }
@@ -704,7 +703,23 @@ namespace CellEvolution
                 Console.ResetColor();
             }
         }
+        public void HillAreaFromPoison(int x, int y)
+        {
+            lock (Console.Out)
+            {
+                if (AreaChar[x,y] == Constants.poisonChar)
+                {
+                    AreaChar[x, y] = Constants.emptyChar;
+                    AreaColor[x, y] = Constants.emptyColor;
 
+                    Console.CursorVisible = false;
+                    Console.SetCursorPosition(x * 2, y);
+                    Console.ForegroundColor = Constants.emptyColor;
+                    Console.Write(Constants.emptyChar);
+                    Console.ResetColor();
+                }
+            }
+        }
         public void ClearDeadCells()
         {
             lock (lockObject)
@@ -777,6 +792,18 @@ namespace CellEvolution
             }
 
         }
+        public void Absorb (CellModel absorber)
+        {
+            for (int x = absorber.PositionX - Constants.energyAreaAbsorbDistance; x <= absorber.PositionX + Constants.energyAreaAbsorbDistance; x++)
+            {
+                for (int y = absorber.PositionY - Constants.energyAreaAbsorbDistance; y <= absorber.PositionY + Constants.energyAreaAbsorbDistance; y++)
+                {
+                    absorber.Energy += AreaEnergy[x, y];
+                    AreaEnergy[x, y] = 0;
+                    HillAreaFromPoison(x, y);
+                }
+            }
+        }
 
         public int GetCurrentYear() => Logic.CurrentYear;
         public bool IsVictimExists(int positionX, int positionY)
@@ -797,7 +824,7 @@ namespace CellEvolution
         public void CellShout(CellModel cell)
         {
             int index = -1;
-            for(int i = 0;  i < Cells.Count; i++)
+            for (int i = 0; i < Cells.Count; i++)
             {
                 if (Cells[i] == cell)
                 {
@@ -813,10 +840,10 @@ namespace CellEvolution
                     {
                         if ((y >= 0 && y < Constants.areaSizeY) &&
                             (x >= 0 && x < Constants.areaSizeX) &&
-                             AreaVoice[x, y] != 0 && 
+                             AreaVoice[x, y] != 0 &&
                              Cells[index].Initiation >= Cells[AreaVoice[x, y] - 1].Initiation)
                         {
-                                    AreaVoice[x, y] = index + 1;
+                            AreaVoice[x, y] = index + 1;
                         }
                     }
                 }
@@ -824,7 +851,7 @@ namespace CellEvolution
         }
         public void ClearAreaVoiceParallel()
         {
-            Parallel.For(0,Constants.areaSizeX, x =>
+            Parallel.For(0, Constants.areaSizeX, x =>
             {
                 for (int y = 0; y < Constants.areaSizeY; y++)
                 {
