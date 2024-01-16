@@ -53,12 +53,27 @@
                 }
             }
         }
-        private void RandomMutation()
+        public void RandomMutation()
         {
             bool stopMutation = true;
             do
             {
                 if (random.Next(0, 7) == 0)
+                {
+                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
+                }
+                else
+                {
+                    stopMutation = false;
+                }
+            } while (stopMutation);
+        }
+        public void RandomMutationDuringLive()
+        {
+            bool stopMutation = true;
+            do
+            {
+                if (random.Next(0, 300) == 0)
                 {
                     GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
                 }

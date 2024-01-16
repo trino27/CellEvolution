@@ -180,6 +180,8 @@ namespace CellEvolution.Cell.NN
             PerformAction(decidedAction);
             RegisterDecidedAction(decidedAction);
             UseExpToLearn();
+            gen.RandomMutationDuringLive();
+           
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost /*+ world.GetCurrentYear() * Constants.eachYearEnergyCostGain*/;
 
@@ -330,7 +332,7 @@ namespace CellEvolution.Cell.NN
                 case 21: Absorption(); break;
 
                 //Preproduction
-                case 22: Clone(); break;
+                case 22: Clone(); break; 
                 case 23: Reproduction(); break;
 
                 // Slip
@@ -421,33 +423,33 @@ namespace CellEvolution.Cell.NN
             LastMovesInputs[0] = input;
         }
 
-        private void UseExpToLearn()
+        private void UseExpToLearn() //!!!!!!!!!!!!!!!
         {
-            if (CurrentGenIndex > Constants.numOfMemoryLastMoves)
-            {
-                double rand = random.NextDouble();
-                if (rand < 0.01)
-                {
-                    brain.LearnFromExp(LastMovesInputs[^5], LastMovesDecidedActionsNum[^5]);
+            //if (CurrentGenIndex > Constants.numOfMemoryLastMoves)
+            //{
+            //    double rand = random.NextDouble();
+            //    if (rand < 0.01)
+            //    {
+            //        brain.LearnFromExp(LastMovesInputs[^5], LastMovesDecidedActionsNum[^5]);
         
-                }
-                else if (rand > 0.01 && rand < 0.02)
-                {
-                    brain.LearnFromExp(LastMovesInputs[^4], LastMovesDecidedActionsNum[^4]);
-                }
-                else if (rand > 0.02 && rand < 0.05)
-                {
-                    brain.LearnFromExp(LastMovesInputs[^3], LastMovesDecidedActionsNum[^3]);
-                }
-                else if (rand > 0.05 && rand < 0.1)
-                {
-                    brain.LearnFromExp(LastMovesInputs[^2], LastMovesDecidedActionsNum[^2]);
-                }
-                else if (rand > 0.1 && rand < 0.2)
-                {
-                    brain.LearnFromExp(LastMovesInputs[^1], LastMovesDecidedActionsNum[^1]);
-                }
-            }
+            //    }
+            //    else if (rand > 0.01 && rand < 0.02)
+            //    {
+            //        brain.LearnFromExp(LastMovesInputs[^4], LastMovesDecidedActionsNum[^4]);
+            //    }
+            //    else if (rand > 0.02 && rand < 0.05)
+            //    {
+            //        brain.LearnFromExp(LastMovesInputs[^3], LastMovesDecidedActionsNum[^3]);
+            //    }
+            //    else if (rand > 0.05 && rand < 0.1)
+            //    {
+            //        brain.LearnFromExp(LastMovesInputs[^2], LastMovesDecidedActionsNum[^2]);
+            //    }
+            //    else if (rand > 0.1 && rand < 0.2)
+            //    {
+            //        brain.LearnFromExp(LastMovesInputs[^1], LastMovesDecidedActionsNum[^1]);
+            //    }
+            //}
         }
 
         //Evolving

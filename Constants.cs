@@ -10,6 +10,7 @@ namespace CellEvolution
     {
         public const int liveTime = 64;
         public const int poisonedDecLive = 5;
+        public const int energyAreaPoisonedCorner = 50;
 
         public const int actionLiveCost = 1;
         public const int slipLiveCost = 1;
@@ -19,9 +20,7 @@ namespace CellEvolution
 
         public const int areaEnergyStartVal = 30;
         public const int minEnergyFromDeadCell = cloneEnergyCost - startCellEnergy;
-        public const int energyAreaPoisonedCorner = 100;
-
-        public const int destroyWallAtNightEnergyPlus = 25;
+        
 
         public const int numOfDaysInYear = 30;
         public const int eachYearEnergyCostGain = 0;
