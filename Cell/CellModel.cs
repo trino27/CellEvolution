@@ -6,6 +6,7 @@ namespace CellEvolution.Cell.NN
     {
         private Random random = new Random();
         private readonly object lockObject = new object();
+       
 
         public readonly CellGen gen;
         private readonly NNCellBrain brain;
@@ -13,6 +14,7 @@ namespace CellEvolution.Cell.NN
 
         private readonly Guid id;
         private readonly int generationNum = 0;
+        private readonly int[] spiecie;
 
         public int MaxClone = 2;
         public int AlreadyUseClone = 0;
@@ -45,9 +47,11 @@ namespace CellEvolution.Cell.NN
 
         private double[] inputs;
 
-        public CellModel(int positionX, int positionY, World map)
+        public CellModel(int positionX, int positionY, World map, int creationNum)
         {
             id = Guid.NewGuid();
+            spiecie = new int[1];
+            spiecie[0] = creationNum;
 
             PositionX = positionX;
             PositionY = positionY;
@@ -69,6 +73,8 @@ namespace CellEvolution.Cell.NN
         {
             id = Guid.NewGuid();
 
+            spiecie = original.spiecie;
+
             generationNum = original.generationNum + 1;
 
             PositionX = positionX;
@@ -80,7 +86,7 @@ namespace CellEvolution.Cell.NN
             brain.Clone(original.brain, RandomInputToClone);
 
             bool flag = false;
-            if(world.Logic.CurrentTurn > 1000)
+            if(world.Logic.CurrentTurn > 0)
             {
                 flag = true;
             }
@@ -114,6 +120,36 @@ namespace CellEvolution.Cell.NN
         {
             id = Guid.NewGuid();
 
+            int numSameSpiecies = 0;
+            for (int i = 0; i < mother.spiecie.Length; i++)
+            {
+                for (int j = 0; j < father.spiecie.Length; j++)
+                {
+                    if (mother.spiecie[i] == father.spiecie[j]) numSameSpiecies++;
+                }
+            }
+
+            spiecie = new int[father.spiecie.Length + mother.spiecie.Length - numSameSpiecies];
+            {
+                int i = 0;
+                for (int j = 0; j < father.spiecie.Length; j++)
+                {
+                    if (!spiecie.Contains(father.spiecie[j]))
+                    {
+                        spiecie[i] = father.spiecie[j];
+                        i++;
+                    }
+                }
+                for (int j = 0; j < mother.spiecie.Length; j++)
+                {
+                    if (!spiecie.Contains(mother.spiecie[j]))
+                    {
+                        spiecie[i] = mother.spiecie[j];
+                        i++;
+                    }
+                }
+            }
+
             CellModel mainParent;
 
             if (random.Next(0, 2) == 0)
@@ -136,7 +172,7 @@ namespace CellEvolution.Cell.NN
             brain.Clone(mainParent.brain, RandomInputToClone);
 
             bool flag = false;
-            if (world.Logic.CurrentTurn > 1000)
+            if (world.Logic.CurrentTurn > 0)
             {
                 flag = true;
             }
@@ -172,16 +208,24 @@ namespace CellEvolution.Cell.NN
         {
             IsSlip = false;
             IsCreatingClone = false;
-            IsReproducting = false;
-            AlreadyUseClone = 0;
+
+            if(IsReproducting == false)
+            {
+                AlreadyUseClone = 0;
+            }
+            else if(AlreadyUseClone == MaxClone)
+            {
+                IsReproducting = false;
+                AlreadyUseClone = 0;
+            }
 
             int decidedAction = ChooseAction();
 
             PerformAction(decidedAction);
             RegisterDecidedAction(decidedAction);
+
             UseExpToLearn();
             gen.RandomMutationDuringLive();
-           
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost /*+ world.GetCurrentYear() * Constants.eachYearEnergyCostGain*/;
 
@@ -690,7 +734,7 @@ namespace CellEvolution.Cell.NN
         }
         private void Reproduction()
         {
-            IsReproducting = true;
+            IsReproducting = !IsReproducting;
         }
     }
 }

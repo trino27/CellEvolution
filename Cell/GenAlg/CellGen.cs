@@ -5,7 +5,7 @@
         private Random random = new Random();
         public GenActions[] GenActionsCycle;
 
-        public bool flag = false;
+        public bool flag = true;
 
         public CellGen()
         {
@@ -42,16 +42,19 @@
 
         private void ConnectGens(CellGen mother, CellGen father)
         {
-            Array.Copy(mother.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
+            Array.Copy(father.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
 
-            for (int i = 0; i < father.GenActionsCycle.Length; i++)
+            do
             {
-                if (random.Next(0, 2) == 0)
+                int startGen = random.Next(0, GenActionsCycle.Length);
+                int endGen = random.Next(startGen, GenActionsCycle.Length);
+
+                for(int i = startGen; i < endGen+1; i++)
                 {
-                    GenActions gen = father.GetCurrentGenAction(i);
-                    GenActionsCycle[i] = gen;
+                    GenActionsCycle[i] = mother.GenActionsCycle[i];
                 }
-            }
+
+            }while(random.Next(0, 3) != 0);
         }
         public void RandomMutation()
         {
@@ -73,7 +76,7 @@
             bool stopMutation = true;
             do
             {
-                if (random.Next(0, 300) == 0)
+                if (random.Next(0, 512) == 0)
                 {
                     GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
                 }
@@ -93,17 +96,17 @@
 
         private void HardCodeGens() //!!!!!!!!!!!!!
         {
-            //if (flag)
-            //{
-            //    for (int i = 0; i < GenActionsCycle.Length; i++)
-            //    {
-            //        GenActionsCycle[i] = GenActions.All;
-            //        if (i == GenActionsCycle.Length-1)
-            //        {
-            //            GenActionsCycle[i] = GenActions.Reproduction;
-            //        }
-            //    }
-            //}
+            if (flag)
+            {
+                for (int i = 0; i < GenActionsCycle.Length; i++)
+                {
+                    GenActionsCycle[i] = GenActions.All;
+                    if (i == GenActionsCycle.Length - 1)
+                    {
+                        GenActionsCycle[i] = GenActions.Reproduction;
+                    }
+                }
+            }
         }
     }
 }

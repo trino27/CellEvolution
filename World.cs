@@ -116,7 +116,7 @@ namespace CellEvolution
                     for (int x = 1; x < Constants.areaSizeX - 1; x += Constants.startCellCreationDistance)
                     {
                         AreaChar[x, y] = Constants.cellChar;
-                        Cells.Add(new CellModel(x, y, this));
+                        Cells.Add(new CellModel(x, y, this, i));
                         Console.SetCursorPosition(0, 5);
                         Console.WriteLine($"Cells: {i}");
                         Console.WriteLine($"X: {x}");
