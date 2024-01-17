@@ -7,6 +7,7 @@ namespace CellEvolution.Cell.NN
         private Random random = new Random();
         private readonly object lockObject = new object();
 
+        const int turnBeforeFlag = 0; 
 
         public readonly CellGen gen;
         private readonly NNCellBrain brain;
@@ -91,7 +92,7 @@ namespace CellEvolution.Cell.NN
             brain.Clone(original.brain, RandomInputToClone);
 
             bool flag = false;
-            if (world.Logic.CurrentTurn > 00)
+            if (world.Logic.CurrentTurn > turnBeforeFlag)
             {
                 flag = true;
             }
@@ -160,7 +161,7 @@ namespace CellEvolution.Cell.NN
             brain.Clone(mainParent.brain, RandomInputToClone);
 
             bool flag = false;
-            if (world.Logic.CurrentTurn > 00)
+            if (world.Logic.CurrentTurn > turnBeforeFlag)
             {
                 flag = true;
             }
@@ -230,6 +231,28 @@ namespace CellEvolution.Cell.NN
                 }
             }
         }
+        
+        private void UseExpToLearn()
+        {
+            if (IsErrorMove)
+            {
+                List<int> AllErrorMoves = LookingForErrorMovesAtTurn(0);
+                brain.LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray());
+            }
+
+            if (numOfMoves % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0)
+            {
+                for (int i = 0; i < LastMovesInputs.Length; i++)
+                {
+                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i])
+                    {
+                        brain.LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
+                    }
+
+                }
+            }
+        }
+
         private void NextGenIndex()
         {
             CurrentGenIndex++;
@@ -565,26 +588,7 @@ namespace CellEvolution.Cell.NN
             return AllErrorMoves;
         }
 
-        private void UseExpToLearn()
-        {
-            if (IsErrorMove)
-            {
-                List<int> AllErrorMoves = LookingForErrorMovesAtTurn(0);
-                brain.LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray());
-            }
-
-            if (numOfMoves % Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime == 0)
-            {
-                for(int i = 0; i < LastMovesInputs.Length; i++)
-                {
-                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i])
-                    {
-                        brain.LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
-                    }
-
-                }
-            }
-        }
+       
 
         //Evolving
         private void GainInitiation()

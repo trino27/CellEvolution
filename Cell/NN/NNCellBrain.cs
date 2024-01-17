@@ -4,8 +4,6 @@
     {
         public readonly Random random = new Random();
 
-
-
         private int[] layersSizes =
             {
                 128,
@@ -155,86 +153,6 @@
             }
         }
 
-        private void BackPropagationRandomTarget()
-        {
-            double learningRate = Constants.learningRate;
-
-            double[] targets = new double[layers[^1].size];
-            targets[random.Next(0, layers[^1].size)] = 1;
-
-            int outputErrorSize = layers[layers.Length - 1].size;
-
-            double[] outputErrors = new double[outputErrorSize];
-
-            for (int i = 0; i < outputErrorSize; i++)
-            {
-                outputErrors[i] = targets[i] - layers[layers.Length - 1].neurons[i];
-            }
-
-            for (int k = layers.Length - 2; k >= 0; k--)
-            {
-                NNLayers l = layers[k];
-                NNLayers l1 = layers[k + 1];
-
-                double[] errorsNext = new double[l.size];
-                Task taskError = Task.Run(() =>
-                { // Обновим веса текущего слоя
-                    Parallel.For(0, l.size, i =>
-                    {
-                        double errorSum = 0;
-                        for (int j = 0; j < l1.size; j++)
-                        {
-                            errorSum += l.weights[i, j] * outputErrors[j];
-                        }
-                        errorsNext[i] = errorSum;
-                    });
-                });
-
-                double[] gradients = new double[l1.size];
-                for (int i = 0; i < l1.size; i++)
-                {
-                    gradients[i] = outputErrors[i] * DsigmoidFunc(layers[k + 1].neurons[i]);
-                    gradients[i] *= learningRate;
-                }
-
-                double[,] deltas = new double[l1.size, l.size];
-                Task taskDeltas = Task.Run(() =>
-                { // Обновим веса текущего слоя
-                    Parallel.For(0, l1.size, i =>
-                    {
-                        for (int j = 0; j < l.size; j++)
-                        {
-                            deltas[i, j] = gradients[i] * l.neurons[j];
-                        }
-                    });
-                });
-
-                // Обновим смещения (biases) следующего слоя
-                for (int i = 0; i < l1.size; i++)
-                {
-                    l1.biases[i] += gradients[i];
-                }
-
-
-                taskError.Wait();
-                // Обновим ошибку для следующей итерации
-                outputErrors = errorsNext;
-
-                taskDeltas.Wait();
-                Task taskUpdate = Task.Run(() =>
-                { // Обновим веса текущего слоя
-                    Parallel.For(0, l1.size, i =>
-                    {
-                        for (int j = 0; j < l.size; j++)
-                        {
-                            l.weights[j, i] += deltas[i, j];
-                        }
-                    });
-                });
-
-                taskUpdate.Wait();
-            }
-        }
         public void BackPropagation(double[] targets)
         {
             double learningRate = Constants.learningRate;
