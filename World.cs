@@ -51,11 +51,6 @@ namespace CellEvolution
                                 Console.ForegroundColor = GetCell(x / 2, y).CellColor;
                                 AreaColor[x / 2, y] = Console.ForegroundColor;
                             }
-                            else if (Constants.wallChar == AreaChar[x / 2, y])
-                            {
-                                Console.ForegroundColor = Constants.wallColor;
-                                AreaColor[x / 2, y] = Console.ForegroundColor;
-                            }
                             else if (Constants.emptyChar == AreaChar[x / 2, y])
                             {
                                 Console.ForegroundColor = Constants.emptyColor;
@@ -130,7 +125,7 @@ namespace CellEvolution
 
             Task taskEmpty = new Task(() =>
             {
-                FillArea();
+                FillAreaParallel();
             });
             taskEmpty.Start();
 
@@ -139,7 +134,7 @@ namespace CellEvolution
             taskCell.Wait();
             taskEmpty.Wait();
         }
-        public void FillArea()
+        public void FillAreaParallel()
         {
             Parallel.For(1, Constants.areaSizeY - 1, y =>
             {
@@ -241,26 +236,7 @@ namespace CellEvolution
                 return Cells.FirstOrDefault(c => c.PositionX == x && c.PositionY == y);
             }
         }
-        public void CheckArea()
-        {
-            for (int x = 0; x < Constants.areaSizeX; x++)
-            {
-                for (int y = 0; y < Constants.areaSizeY; y++)
-                {
-                    if (AreaChar[x, y] != Constants.cellChar && AreaChar[x, y] != Constants.wallChar)
-                    {
-                        Console.CursorVisible = false;
-                        Console.SetCursorPosition(x * 2, y);
-                        Console.ForegroundColor = ConsoleColor.Magenta;
-                        Console.Write(AreaChar[x, y]);
-                        Console.ResetColor();
-                    }
-
-                }
-
-            }
-
-        }
+      
         public int GetNumOfLiveCellsAround(int positionX, int positionY)
         {
             lock (lockObject)
@@ -270,17 +246,17 @@ namespace CellEvolution
 
                 for (int i = 0; i < area.Count; i++)
                 {
-                    if (area[i] >= 4 && area[i] != 11) res++;
+                    if (area[i] >= 3 && area[i] != 9) res++;
                 }
 
 
                 return res;
             }
-        }
+        } //k
 
         public int GetCurrentAreaEnergy(int positionX, int positionY) => AreaEnergy[positionX, positionY];
 
-        public List<int> GetAreaCharAroundCellInt(int positionX, int positionY, int dist)
+        public List<int> GetAreaCharAroundCellInt(int positionX, int positionY, int dist) //k
         {
             lock (lockObject)
             {
@@ -299,20 +275,18 @@ namespace CellEvolution
                                 {
                                     case Constants.borderChar: break;
                                     case Constants.emptyChar: k = 1; break;
-                                    case Constants.wallChar: k = 2; break;
-                                    case Constants.poisonChar: k = 3; break;
+                                    case Constants.poisonChar: k = 2; break;
                                     case Constants.cellChar:
                                         {
                                             switch (AreaColor[x, y])
                                             {
-                                                case Constants.newCellColor: k = 4; break; // new
-                                                case Constants.biteCellColor: k = 5; break; // hunter
-                                                case Constants.photoCellColor: k = 6; break; // plant
-                                                case Constants.absorbCellColor: k = 7; break; // mushroom
-                                                case Constants.wallDestroyerCellColor: k = 8; break; // bird
-                                                case Constants.slipCellColor: k = 9; break; // slip
-                                                case Constants.evolvingCellColor: k = 10; break; // evolving
-                                                case Constants.deadCellColor: k = 11; break; // dead
+                                                case Constants.newCellColor: k = 3; break; // new
+                                                case Constants.biteCellColor: k = 4; break; // hunter
+                                                case Constants.photoCellColor: k = 5; break; // plant
+                                                case Constants.absorbCellColor: k = 6; break; // mushroom
+                                                case Constants.slipCellColor: k = 7; break; // slip
+                                                case Constants.evolvingCellColor: k = 8; break; // evolving
+                                                case Constants.deadCellColor: k = 9; break; // dead
                                             }
 
                                         }
@@ -349,20 +323,18 @@ namespace CellEvolution
                                 {
                                     case Constants.borderChar: break;
                                     case Constants.emptyChar: k = 1; break;
-                                    case Constants.wallChar: k = 2; break;
-                                    case Constants.poisonChar: k = 3; break;
+                                    case Constants.poisonChar: k = 2; break;
                                     case Constants.cellChar:
                                         {
                                             switch (AreaColor[x, y])
                                             {
-                                                case Constants.newCellColor: k = 4; break; // new
-                                                case Constants.biteCellColor: k = 5; break; // hunter
-                                                case Constants.photoCellColor: k = 6; break; // plant
-                                                case Constants.absorbCellColor: k = 7; break; // mushroom
-                                                case Constants.wallDestroyerCellColor: k = 8; break; // bird
-                                                case Constants.slipCellColor: k = 9; break; // slip
-                                                case Constants.evolvingCellColor: k = 10; break; // evolving
-                                                case Constants.deadCellColor: k = 11; break; // dead
+                                                case Constants.newCellColor: k = 3; break; // new
+                                                case Constants.biteCellColor: k = 4; break; // hunter
+                                                case Constants.photoCellColor: k = 5; break; // plant
+                                                case Constants.absorbCellColor: k = 6; break; // mushroom
+                                                case Constants.slipCellColor: k = 7; break; // slip
+                                                case Constants.evolvingCellColor: k = 8; break; // evolving
+                                                case Constants.deadCellColor: k = 9; break; // dead
                                             }
 
                                         }
@@ -380,7 +352,7 @@ namespace CellEvolution
 
                 return area;
             }
-        }
+        } //k
         public List<int> GetInfoFromAreaToCellBrainInput(int positionX, int positionY)
         {
             lock (lockObject)
@@ -409,20 +381,18 @@ namespace CellEvolution
                                 {
                                     case Constants.borderChar: break;
                                     case Constants.emptyChar: k = 1; break;
-                                    case Constants.wallChar: k = 2; break;
-                                    case Constants.poisonChar: k = 3; break;
+                                    case Constants.poisonChar: k = 2; break;
                                     case Constants.cellChar:
                                         {
                                             switch (AreaColor[x, y])
                                             {
-                                                case Constants.newCellColor: k = 4; break; // new
-                                                case Constants.biteCellColor: k = 5; break; // hunter
-                                                case Constants.photoCellColor: k = 6; break; // plant
-                                                case Constants.absorbCellColor: k = 7; break; // mushroom
-                                                case Constants.wallDestroyerCellColor: k = 8; break; // bird
-                                                case Constants.slipCellColor: k = 9; break; // slip
-                                                case Constants.evolvingCellColor: k = 10; break; // evolving
-                                                case Constants.deadCellColor: k = 11; break; // dead
+                                                case Constants.newCellColor: k = 3; break; // new
+                                                case Constants.biteCellColor: k = 4; break; // hunter
+                                                case Constants.photoCellColor: k = 5; break; // plant
+                                                case Constants.absorbCellColor: k = 6; break; // mushroom
+                                                case Constants.slipCellColor: k = 7; break; // slip
+                                                case Constants.evolvingCellColor: k = 8; break; // evolving
+                                                case Constants.deadCellColor: k = 9; break; // dead
                                             }
 
                                             cellGenArea.Add(GenomeSimilarity(GetCell(x, y), GetCell(positionX, positionY)) + 1);
@@ -451,7 +421,7 @@ namespace CellEvolution
 
                 return area;
             }
-        }
+        } //k
         public List<int> GetAreaVoiceInfo(int positionX, int positionY)
         {
             lock (lockObject)
@@ -705,8 +675,6 @@ namespace CellEvolution
         }
         public void HillAreaFromPoison(int x, int y)
         {
-            lock (Console.Out)
-            {
                 if (AreaChar[x,y] == Constants.poisonChar)
                 {
                     AreaChar[x, y] = Constants.emptyChar;
@@ -718,7 +686,7 @@ namespace CellEvolution
                     Console.Write(Constants.emptyChar);
                     Console.ResetColor();
                 }
-            }
+            
         }
         public void ClearDeadCells()
         {
@@ -794,13 +762,29 @@ namespace CellEvolution
         }
         public void Absorb (CellModel absorber)
         {
-            for (int x = absorber.PositionX - Constants.energyAreaAbsorbDistance; x <= absorber.PositionX + Constants.energyAreaAbsorbDistance; x++)
+            lock (lockObject)
             {
-                for (int y = absorber.PositionY - Constants.energyAreaAbsorbDistance; y <= absorber.PositionY + Constants.energyAreaAbsorbDistance; y++)
+                for (int x = absorber.PositionX - Constants.energyAreaAbsorbDistance; x <= absorber.PositionX + Constants.energyAreaAbsorbDistance; x++)
                 {
-                    absorber.Energy += AreaEnergy[x, y];
-                    AreaEnergy[x, y] = 0;
-                    HillAreaFromPoison(x, y);
+                    for (int y = absorber.PositionY - Constants.energyAreaAbsorbDistance; y <= absorber.PositionY + Constants.energyAreaAbsorbDistance; y++)
+                    {
+                        if (absorber.PositionX == x && absorber.PositionY == y)
+                        {
+                            absorber.Energy += AreaEnergy[x, y];
+                            AreaEnergy[x, y] = 0;
+                            HillAreaFromPoison(x, y);
+                        }
+                        else
+                        {
+                            absorber.Energy += AreaEnergy[x, y] / 4;
+                            AreaEnergy[x, y] = AreaEnergy[x, y] / 4;
+
+                            if (AreaEnergy[x,y] < Constants.energyAreaPoisonedCorner)
+                            {
+                                HillAreaFromPoison(x, y);
+                            }
+                        }
+                    }
                 }
             }
         }

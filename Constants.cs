@@ -18,10 +18,9 @@ namespace CellEvolution
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
 
-        public const int areaEnergyStartVal = 30;
+        public const int areaEnergyStartVal = 15;
         public const int minEnergyFromDeadCell = cloneEnergyCost - startCellEnergy;
         
-
         public const int numOfDaysInYear = 30;
         public const int eachYearEnergyCostGain = 0;
         public const int numOfTurnsInDayTime = 9;
@@ -45,8 +44,10 @@ namespace CellEvolution
         public const int genCycleSize = liveTime;
 
         public const double learningRate = 0.001;
-        public const double noiseIntensity = 0.2;
+        public const double noiseIntensity = 0.05;
         public const double dropoutProbability = 0.1;
+        public const double learnFromExpProbability = 0.3;
+        public const double cloneNoiseProbability = 0.1;
 
         public const int visionDistance = 3;
         public const int voiceDistance = 5;
@@ -61,7 +62,6 @@ namespace CellEvolution
         public const char emptyChar = ' ';
         public const char borderChar = '#';
         public const char cellChar = '@';
-        public const char wallChar = '%';
         public const char poisonChar = '!';
 
 
@@ -73,12 +73,13 @@ namespace CellEvolution
         public const ConsoleColor biteCellColor = ConsoleColor.DarkRed;
         public const ConsoleColor photoCellColor = ConsoleColor.Green;
         public const ConsoleColor absorbCellColor = ConsoleColor.Blue;
-        public const ConsoleColor wallDestroyerCellColor = ConsoleColor.Cyan;
         public const ConsoleColor slipCellColor = ConsoleColor.DarkMagenta;
         public const ConsoleColor evolvingCellColor = ConsoleColor.DarkYellow;
         public const ConsoleColor deadCellColor = ConsoleColor.Gray;
-        
 
-        //Free color - DarkCyan, Red, Magenta
+        public const ConsoleColor errorColor = ConsoleColor.Red;
+
+
+        //Free color -  Magenta, DarkCyan
     }
 }

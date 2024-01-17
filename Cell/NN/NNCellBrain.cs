@@ -4,14 +4,15 @@
     {
         public readonly Random random = new Random();
 
-        
+
 
         private int[] layersSizes =
             {
                 128,
 
-                256,
                 128,
+                128,
+                96,
                 64,
 
                 32
@@ -105,8 +106,7 @@
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 
-        
-        public void RandomFillWeights()
+        public void RandomFillWeightsParallel()
         {
             NNLayers[] layersTemp = layers;
             Parallel.For(0, layers.Length, i =>
@@ -136,29 +136,9 @@
 
             CopyNNLayers(original);
 
-            if(key < 0.04)
+            if (key < Constants.cloneNoiseProbability)
             {
-                RandomChangingWeights();
-            }
-            else if(key > 0.04 && key < 0.07)
-            {
-                BackPropagationRandomTarget();
-            }
-            else if (key > 0.07 && key < 0.1)
-            {
-                RandomChangingWeights();
-                BackPropagationRandomTarget();
-            }
-            else if (key > 0.1 && key < 0.13 && randomInputToClone != null)
-            {
-                FeedForward(randomInputToClone);
-                BackPropagationRandomTarget();
-            }
-            else if (key > 0.13 && key < 0.16 && randomInputToClone != null)
-            {
-                FeedForward(randomInputToClone);
-                RandomChangingWeights();
-                BackPropagationRandomTarget();
+                RandomCloneNoise();
             }
         }
 
@@ -341,11 +321,33 @@
             BackPropagation(targets);
 
         }
+        public void LearnErrorFromExp(double[] inputs, int[] errorTarget)
+        {
+            double[] targets = new double[layers[^1].size];
+            for (int i = 0; i < targets.Length; i++)
+            {
+                targets[i] = 1;
+            }
+            for (int i = 0; i < targets.Length; i++)
+            {
+                for (int j = 0; j < errorTarget.Length; j++)
+                {
+                    if (errorTarget[j] == i)
+                    {
+                        targets[i] = 0;
+                    }
+                }
+            }
+
+            FeedForward(inputs);
+            BackPropagation(targets);
+
+        }
 
         private double SigmoidFunc(double x) => 1.0 / (1.0 + Math.Exp(-x));
         private double DsigmoidFunc(double x) => x * (1.0 - x);
-        
-        private void RandomChangingWeights()
+
+        private void RandomCloneNoise()
         {
             long NumOfAllWeights = 0;
             foreach (var l in layers)
@@ -355,14 +357,14 @@
 
             int NumOfChanging = random.Next(0, Convert.ToInt32(NumOfAllWeights / 10));
 
-            for(int i = 0; i < NumOfChanging; i++)
+            for (int i = 0; i < NumOfChanging; i++)
             {
                 int randLayer = random.Next(0, layers.Length - 1);
                 int randWeightD1 = random.Next(0, layers[randLayer].size);
                 int randWeightD2 = random.Next(0, layers[randLayer].nextSize);
 
-                    layers[randLayer].weights[randWeightD1, randWeightD2] = random.NextDouble();
-                
+                layers[randLayer].weights[randWeightD1, randWeightD2] = random.NextDouble();
+
             }
         }
     }

@@ -127,7 +127,6 @@ namespace CellEvolution
             int PhotoCells = 0;
             int BiteCells = 0;
             int AbsorbCells = 0;
-            int FarmCells = 0;
             int EvolveCells = 0;
             int SlipCells = 0;
             foreach (var j in world.Cells)
@@ -137,7 +136,6 @@ namespace CellEvolution
                     case Constants.photoCellColor: PhotoCells++; break;
                     case Constants.biteCellColor: BiteCells++; break;
                     case Constants.absorbCellColor: AbsorbCells++; break;
-                    case Constants.wallDestroyerCellColor: FarmCells++; break;
                     case Constants.evolvingCellColor: EvolveCells++; break;
                     case Constants.slipCellColor: SlipCells++; break;
                     default: break;
@@ -145,7 +143,7 @@ namespace CellEvolution
             }
             Console.CursorVisible = false;
             Console.SetCursorPosition(94, Constants.areaSizeY + 1);
-            Console.Write($"Plants: {PhotoCells} Hunters: {BiteCells} Mushrooms: {AbsorbCells} Farmer: {FarmCells} Students: {EvolveCells} Slip: {SlipCells}            ");
+            Console.Write($"Plants: {PhotoCells} Hunters: {BiteCells} Mushrooms: {AbsorbCells} Students: {EvolveCells} Slip: {SlipCells}            ");
         }
         private void ShowTimeInfo(Stopwatch stopwatchAll, Stopwatch stopwatchCells)
         {

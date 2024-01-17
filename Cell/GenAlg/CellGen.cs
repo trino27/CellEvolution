@@ -76,7 +76,7 @@
             bool stopMutation = true;
             do
             {
-                if (random.Next(0, 512) == 0)
+                if (random.Next(0, 256) == 0)
                 {
                     GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
                 }
@@ -101,11 +101,9 @@
                 for (int i = 0; i < GenActionsCycle.Length; i++)
                 {
                     GenActionsCycle[i] = GenActions.All;
-                    if (i == GenActionsCycle.Length - 1)
-                    {
-                        GenActionsCycle[i] = GenActions.Reproduction;
-                    }
                 }
+
+                GenActionsCycle[^1] = GenActions.Reproduction;
             }
         }
     }
