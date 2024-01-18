@@ -230,7 +230,7 @@ namespace CellEvolution.Cell.NN
 
                 taskUpdate.Wait();
 
-                RAdamOptimizerWithThreshold(l.weights, deltas, layers.Length - 2 - k);
+                //RAdamOptimizerWithThreshold(l.weights, deltas, layers.Length - 2 - k);
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using СellEvolution;
 
 namespace CellEvolution
 {
@@ -8,9 +9,17 @@ namespace CellEvolution
         Random random = new Random();
 
         private World world;
+        private Stat statSQl;
 
         public int CurrentYear = 0;
         public int CurrentDay = 0;
+        public int CurrentHours = 0;
+        public double CurrentErrorProc = 0;
+
+        public int TotallDays = 0;
+        public double TotallDayError = 0;
+        
+
         public DayTime CurrentDayTime = DayTime.Day;
 
         public long CurrentTurn = 0;
@@ -18,21 +27,23 @@ namespace CellEvolution
         public Logic()
         {
             world = new World(this);
+            statSQl = new Stat();
         }
 
         public void StartSimulation()
         {
             world.CreateVisual();
-            int hours = 0;
+            
             Stopwatch stopwatchAll = new Stopwatch();
             Stopwatch stopwatchCells = new Stopwatch();
             do
             {
                 stopwatchAll.Restart();
 
-                ShowWorldInfo(hours);
+                ShowWorldInfo(CurrentHours);
                 ShowCellsTypeInfo();
                 ShowCellsNumInfo();
+                UpdateStat();
 
                 stopwatchCells.Restart();
 
@@ -57,7 +68,7 @@ namespace CellEvolution
                 stopwatchCells.Stop();
 
                 CurrentTurn++;
-                hours++;
+                CurrentHours++;
 
                 world.ClearDeadCells();
 
@@ -66,32 +77,43 @@ namespace CellEvolution
 
                 world.ClearAreaVoiceParallel();
 
-                UpdateTimeAndSeason(ref hours);
+                UpdateTimeAndSeason();
 
                 stopwatchAll.Stop();
                 ShowTimeInfo(stopwatchAll, stopwatchCells);
 
             } while (world.Cells.Count > 0);
         }
-
-        private void UpdateTimeAndSeason(ref int hours)
+        private void UpdateStat()
+        {
+            TotallDayError += CurrentErrorProc;
+            if (CurrentHours == 0)
+            {
+                statSQl.InsertData(TotallDays, TotallDayError);
+                TotallDayError = 0;
+            }
+        }
+        private void UpdateTimeAndSeason()
         {
             Console.CursorVisible = false;
-            if (hours >= Constants.numOfTurnsInDayTime)
+            if (CurrentHours >= Constants.numOfTurnsInDayTime)
             {
                 CurrentDayTime = DayTime.Night;
-                if (hours >= Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
+                if (CurrentHours >= Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
                 {
                     CurrentDayTime = DayTime.Day;
-                    hours = 0;
+                    CurrentHours = 0;
                     CurrentDay++;
+                    TotallDays++;
                 }
                 if(CurrentDay >= Constants.numOfDaysInYear)
                 {
                     CurrentYear++;
+                    CurrentDay=0;
                 }
             }
         }
+        
 
         private void ShowWorldInfo(int hours)
         {
@@ -144,9 +166,11 @@ namespace CellEvolution
                 }
             }
 
+            CurrentErrorProc = (double)ErrorCells * 100 / (double)world.Cells.Count;
+
             Console.CursorVisible = false;
             Console.SetCursorPosition(94, Constants.areaSizeY + 1);
-            Console.Write($"Error%: {ErrorCells} Plants: {PhotoCells} Hunters: {BiteCells} Mushrooms: {AbsorbCells} Students: {EvolveCells} Slip: {SlipCells}            ");
+            Console.Write($"Error %: {CurrentErrorProc} Plants: {PhotoCells} Hunters: {BiteCells} Mushrooms: {AbsorbCells} Students: {EvolveCells} Slip: {SlipCells}            ");
         }
         private void ShowTimeInfo(Stopwatch stopwatchAll, Stopwatch stopwatchCells)
         {
