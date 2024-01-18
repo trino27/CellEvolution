@@ -1,4 +1,6 @@
-﻿namespace CellEvolution.Cell.NN
+﻿using System;
+
+namespace CellEvolution.Cell.NN
 {
     public struct NNCellBrain
     {
@@ -210,7 +212,6 @@
                     l1.biases[i] += gradients[i];
                 }
 
-
                 taskError.Wait();
                 // Обновим ошибку для следующей итерации
                 outputErrors = errorsNext;
@@ -228,8 +229,11 @@
                 });
 
                 taskUpdate.Wait();
+
+                RAdamOptimizerWithThreshold(l.weights, deltas, layers.Length - 2 - k);
             }
         }
+
         public void LearnFromExp(double[] inputs, int correctTarget)
         {
             double[] targets = new double[layers[^1].size];
@@ -237,8 +241,8 @@
 
             FeedForward(inputs);
             BackPropagation(targets);
-
         }
+
         public void LearnErrorFromExp(double[] inputs, int[] errorTarget)
         {
             double[] targets = new double[layers[^1].size];
@@ -259,7 +263,6 @@
 
             FeedForward(inputs);
             BackPropagation(targets);
-
         }
 
         private double SigmoidFunc(double x) => 1.0 / (1.0 + Math.Exp(-x));
@@ -282,8 +285,164 @@
                 int randWeightD2 = random.Next(0, layers[randLayer].nextSize);
 
                 layers[randLayer].weights[randWeightD1, randWeightD2] = random.NextDouble();
-
             }
         }
+
+        private void RAdamOptimizerWithThreshold(double[,] weights, double[,] deltas, int t)
+        {
+            double beta1 = 0.95;       // Увеличил для большего учета старых градиентов.
+            double beta2 = 0.997;      // Увеличил для большего учета старых квадратов градиентов.
+            double epsilon = 1e-6;     // Уменьшил для более высокой устойчивости и предотвращения деления на ноль.
+            double clippingThreshold = 10.0; // Увеличил порог обрезки, чтобы более агрессивно справляться с выбросами.
+            double rho = 0.95;         // Предложенное значение для адаптации, может потребовать дополнительной настройки в зависимости от данных.
+
+
+            int rows = weights.GetLength(0);
+            int cols = weights.GetLength(1);
+
+            double[,] m = new double[rows, cols];
+            double[,] v = new double[rows, cols];
+
+            double beta1t = 1.0 - Math.Pow(beta1, t);
+            double beta2t = 1.0 - Math.Pow(beta2, t);
+
+            double adjustedLearningRate = Constants.learningRate * (1.0 - Constants.noiseIntensity);
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    m[i, j] = beta1 * m[i, j] + (1.0 - beta1) * deltas[j, i];
+                    v[i, j] = beta2 * v[i, j] + (1.0 - beta2) * Math.Pow(deltas[j, i], 2);
+                }
+            }
+
+            // Смещенные оценки первого и второго моментов
+            double mHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta1, t)) / (1.0 - beta1t);
+            double vHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta2, t)) / (1.0 - beta2t);
+
+            // Обновление весов 
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    double mHat = m[i, j] / mHatCorrection;
+                    double vHat = v[i, j] / vHatCorrection;
+
+                    double rhoInf = 2.0 / (1.0 - rho) - 1.0;
+                    double adapt = Math.Max(0, rhoInf - 2.0 * t * Math.Pow(beta2t, 2));
+
+                    double stepSize = adjustedLearningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
+                    double denom = Math.Sqrt(vHat) + epsilon;
+                    double update = stepSize * mHat / denom;
+
+                    // Rectification term
+                    update += adapt * stepSize * mHat;
+
+                    // Добавляем робастность к выбросам
+                    
+                    if (update > clippingThreshold)
+                    {
+                        update = clippingThreshold;
+                    }
+                    else if (update < -clippingThreshold)
+                    {
+                        update = -clippingThreshold;
+                    }
+
+                    weights[i, j] -= update;
+                }
+            }
+        }
+
+        private void RAdamOptimizer(double[,] weights, double[,] deltas, int t)
+        {
+            double beta1 = 0.9;
+            double beta2 = 0.999;
+            double epsilon = 1e-8;
+
+            int rows = weights.GetLength(0);
+            int cols = weights.GetLength(1);
+
+            double[,] m = new double[rows, cols];
+            double[,] v = new double[rows, cols];
+
+            double beta1t = 1.0 - Math.Pow(beta1, t);
+            double beta2t = 1.0 - Math.Pow(beta2, t);
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    m[i, j] = beta1 * m[i, j] + (1.0 - beta1) * deltas[j, i];
+                    v[i, j] = beta2 * v[i, j] + (1.0 - beta2) * Math.Pow(deltas[j, i], 2);
+                }
+            }
+
+            // Смещенные оценки первого и второго моментов
+            double mHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta1, t)) / (1.0 - beta1t);
+            double vHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta2, t)) / (1.0 - beta2t);
+
+            // Обновление весов 
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    double mHat = m[i, j] / mHatCorrection;
+                    double vHat = v[i, j] / vHatCorrection;
+
+                    double rho = 0.9; // Значение rho может быть настроено под ваши данные
+                    double rhoInf = 2.0 / (1.0 - rho) - 1.0;
+                    double adapt = Math.Max(0, rhoInf - 2.0 * t * Math.Pow(beta2t, 2));
+
+                    double stepSize = Constants.learningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
+                    double denom = Math.Sqrt(vHat) + epsilon;
+                    double update = stepSize * mHat / denom;
+
+                    // Rectification term
+                    update += adapt * stepSize * mHat;
+
+                    weights[i, j] -= update;
+                }
+            }
+        }
+        private void AdamOptimizer(double[,] weights, double[,] deltas, int t)
+        {
+            double beta1 = 0.9;
+            double beta2 = 0.999;
+            double epsilon = 1e-8;
+
+            int rows = weights.GetLength(0);
+            int cols = weights.GetLength(1);
+
+            double[,] m = new double[rows, cols];
+            double[,] v = new double[rows, cols];
+
+            double beta1t = 1.0 - Math.Pow(beta1, t);
+            double beta2t = 1.0 - Math.Pow(beta2, t);
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    m[i, j] = beta1 * m[i, j] + (1.0 - beta1) * deltas[j, i];
+                    v[i, j] = beta2 * v[i, j] + (1.0 - beta2) * Math.Pow(deltas[j, i], 2);
+                }
+            }
+
+            // Коррекция смещения моментов
+            double correction = Constants.learningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
+
+            // Обновление весов 
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    weights[i, j] -= correction * m[i, j] / (Math.Sqrt(v[i, j]) + epsilon);
+                }
+            }
+        }
+
+
     }
 }

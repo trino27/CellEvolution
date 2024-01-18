@@ -240,20 +240,22 @@ namespace CellEvolution.Cell.NN
                 brain.LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray());
             }
 
-            List<int> AlreadyLearn = new List<int>();
-            if (numOfMoves % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0)
-            {
-                for (int i = 0; i < LastMovesInputs.Length; i++)
-                {
-                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] && !AlreadyLearn.Contains(LastMovesDecidedActionsNum[i]))
-                    {
-                        brain.LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
-                        AlreadyLearn.Add(LastMovesDecidedActionsNum[i]);
-                    }
-
-                }
-            }
+            
         }
+
+//        List<int> AlreadyLearn = new List<int>();
+//            if (numOfMoves % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0)
+//            {
+//                for (int i = 0; i<LastMovesInputs.Length; i++)
+//                {
+//                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] && !AlreadyLearn.Contains(LastMovesDecidedActionsNum[i]))
+//                    {
+//                        brain.LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
+//                        AlreadyLearn.Add(LastMovesDecidedActionsNum[i]);
+//                    }
+
+//}
+//            }
 
         private void NextGenIndex()
         {
