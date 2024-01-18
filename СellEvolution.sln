@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.33927.210
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "СellEvolution", "СellEvolution\СellEvolution.csproj", "{9F98056B-9E47-4081-A7DB-0D78AB211DB4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "СellEvolution", "СellEvolution\СellEvolution.csproj", "{9F98056B-9E47-4081-A7DB-0D78AB211DB4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CellEvolutionGraphics", "CellEvolutionGraphics\CellEvolutionGraphics.csproj", "{9E4D1F44-9073-41EF-AD91-660680076F77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{9F98056B-9E47-4081-A7DB-0D78AB211DB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F98056B-9E47-4081-A7DB-0D78AB211DB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F98056B-9E47-4081-A7DB-0D78AB211DB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E4D1F44-9073-41EF-AD91-660680076F77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E4D1F44-9073-41EF-AD91-660680076F77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E4D1F44-9073-41EF-AD91-660680076F77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E4D1F44-9073-41EF-AD91-660680076F77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
