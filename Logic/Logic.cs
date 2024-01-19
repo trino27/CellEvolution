@@ -8,6 +8,8 @@ namespace CellEvolution
     {
         Random random = new Random();
 
+        public int flag = -1;
+
         private World world;
         private Stat statSQl;
 

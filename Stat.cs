@@ -8,7 +8,8 @@ namespace СellEvolution
     {
         private readonly ILog log = LogManager.GetLogger(typeof(Stat));
 
-        private readonly string connectionString = "Data Source=DESKTOP-C4JUPMT;Initial Catalog=CellEvolution;Encrypt=False;Integrated Security=True"; // Подставьте свою строку подключения к MS SQL
+        private string connectionString = "Data Source=DESKTOP-C4JUPMT;Initial Catalog=CellEvolution;Encrypt=False;Integrated Security=True"; // Подставьте свою строку подключения к MS SQL
+        private string tableName = "TableCellBrainStatNoGenAdam2fixed";
 
         public Stat()
         {
@@ -22,14 +23,14 @@ namespace СellEvolution
                 connection.Open();
 
                 // Удаляем существующую таблицу
-                string dropTableQuery = "IF OBJECT_ID('TableClearCellBrainStat1', 'U') IS NOT NULL DROP TABLE TableClearCellBrainStat1";
+                string dropTableQuery = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE {tableName}";
                 using (SqlCommand cmdDropTable = new SqlCommand(dropTableQuery, connection))
                 {
                     cmdDropTable.ExecuteNonQuery();
                 }
 
                 // Создаем новую таблицу
-                string createTableQuery = "CREATE TABLE TableClearCellBrainStat1 (Day INT, TotalErrorPoint FLOAT)";
+                string createTableQuery = $"CREATE TABLE {tableName} (Day INT, TotalErrorPoint FLOAT)";
                 using (SqlCommand cmdCreateTable = new SqlCommand(createTableQuery, connection))
                 {
                     cmdCreateTable.ExecuteNonQuery();
@@ -45,7 +46,7 @@ namespace СellEvolution
                 {
                     connection.Open();
 
-                    string query = "INSERT INTO TableClearCellBrainStat1 (Day, TotalErrorPoint) VALUES (@Day, @TotalErrorPoint)";
+                    string query = $"INSERT INTO {tableName} (Day, TotalErrorPoint) VALUES (@Day, @TotalErrorPoint)";
 
                     using (SqlCommand cmd = new SqlCommand(query, connection))
                     {

@@ -7,7 +7,7 @@ namespace CellEvolution.Cell.NN
         private Random random = new Random();
         private readonly object lockObject = new object();
 
-        const int turnBeforeFlag = 0; 
+        const int turnBeforeFlag = 0;
 
         public readonly CellGen gen;
         private readonly NNCellBrain brain;
@@ -202,7 +202,7 @@ namespace CellEvolution.Cell.NN
 
             numOfMoves++;
 
-            UseExpToLearn();
+            brain.UseExpToLearn(IsErrorMove,numOfMoves, LastMovesInputs, LastMovesDecidedActionsNum, ErrorMoves);
 
             gen.RandomMutationDuringLive();
 
@@ -231,31 +231,6 @@ namespace CellEvolution.Cell.NN
                 }
             }
         }
-        
-        private void UseExpToLearn()
-        {
-            if (IsErrorMove)
-            {
-                List<int> AllErrorMoves = LookingForErrorMovesAtTurn(0);
-                brain.LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray());
-            }
-
-            
-        }
-
-//        List<int> AlreadyLearn = new List<int>();
-//            if (numOfMoves % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0)
-//            {
-//                for (int i = 0; i<LastMovesInputs.Length; i++)
-//                {
-//                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] && !AlreadyLearn.Contains(LastMovesDecidedActionsNum[i]))
-//                    {
-//                        brain.LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
-//                        AlreadyLearn.Add(LastMovesDecidedActionsNum[i]);
-//                    }
-
-//}
-//            }
 
         private void NextGenIndex()
         {
@@ -477,119 +452,8 @@ namespace CellEvolution.Cell.NN
             {
                 ErrorMoves[i] = ErrorMoves[i - 1];
             }
-            if(res) CellColor = Constants.errorColor;
+            if (res) CellColor = Constants.errorColor;
             ErrorMoves[0] = res;
-        }
-
-        private List<int> LookingForErrorMovesAtTurn(int indexInMemory)
-        {
-            List<int> AllErrorMoves = new List<int>();
-            if (LastMovesInputs[indexInMemory] != null)
-            {
-                //Photo
-                if (LastMovesInputs[indexInMemory][112] != 1)
-                {
-                    AllErrorMoves.Add(20);
-                }
-
-                //Absorb
-                double energyVal = 0;
-                for(int i = 48; i < 56; i++)
-                {
-                    energyVal += LastMovesInputs[indexInMemory][i];
-                }
-                if (energyVal <= 0)
-                {
-                    AllErrorMoves.Add(21);
-                }
-
-                //Bite
-                if(LastMovesInputs[indexInMemory][16] <= 3)
-                {
-                    AllErrorMoves.Add(12);
-                }
-                if (LastMovesInputs[indexInMemory][23] <= 3)
-                {
-                    AllErrorMoves.Add(13);
-                }
-                if (LastMovesInputs[indexInMemory][29] <= 3)
-                {
-                    AllErrorMoves.Add(14);
-                }
-                if (LastMovesInputs[indexInMemory][30] <= 3)
-                {
-                    AllErrorMoves.Add(15);
-                }
-                if (LastMovesInputs[indexInMemory][31] <= 3)
-                {
-                    AllErrorMoves.Add(16);
-                }
-                if (LastMovesInputs[indexInMemory][24] <= 3)
-                {
-                    AllErrorMoves.Add(17);
-                }
-                if (LastMovesInputs[indexInMemory][18] <= 3)
-                {
-                    AllErrorMoves.Add(18);
-                }
-                if (LastMovesInputs[indexInMemory][17] <= 3)
-                {
-                    AllErrorMoves.Add(19);
-                }
-
-                //Move
-                if (LastMovesInputs[indexInMemory][16] != 1)
-                {
-                    AllErrorMoves.Add(0);
-                }
-                if (LastMovesInputs[indexInMemory][23] != 1)
-                {
-                    AllErrorMoves.Add(1);
-                }
-                if (LastMovesInputs[indexInMemory][29] != 1)
-                {
-                    AllErrorMoves.Add(2);
-                }
-                if (LastMovesInputs[indexInMemory][30] != 1)
-                {
-                    AllErrorMoves.Add(3);
-                }
-                if (LastMovesInputs[indexInMemory][31] != 1)
-                {
-                    AllErrorMoves.Add(4);
-                }
-                if (LastMovesInputs[indexInMemory][24] != 1)
-                {
-                    AllErrorMoves.Add(5);
-                }
-                if (LastMovesInputs[indexInMemory][18] != 1)
-                {
-                    AllErrorMoves.Add(6);
-                }
-                if (LastMovesInputs[indexInMemory][17] != 1)
-                {
-                    AllErrorMoves.Add(7);
-                }
-
-                //Jump
-                if (LastMovesInputs[indexInMemory][21] != 1)
-                {
-                    AllErrorMoves.Add(8);
-                }
-                if (LastMovesInputs[indexInMemory][44] != 1)
-                {
-                    AllErrorMoves.Add(9);
-                }
-                if (LastMovesInputs[indexInMemory][26] != 1)
-                {
-                    AllErrorMoves.Add(10);
-                }
-                if (LastMovesInputs[indexInMemory][3] != 1)
-                {
-                    AllErrorMoves.Add(11);
-                }
-            }
-            return AllErrorMoves;
         }
 
         //Evolving
@@ -830,7 +694,7 @@ namespace CellEvolution.Cell.NN
             CellColor = Constants.absorbCellColor;
             world.Absorb(this);
 
-            if(EnergyBeforeAbsorb == Energy)
+            if (EnergyBeforeAbsorb == Energy)
             {
                 IsErrorMove = true;
             }

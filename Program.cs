@@ -7,10 +7,13 @@ namespace CellEvolution
         static void Main(string[] args)
         {
             Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
+            Logic logic;
+            do
+            {
+                logic = new Logic();
+                logic.StartSimulation();
+            } while (logic.TotallDays <= 300);
             
-
-            Logic logic = new Logic();
-            logic.StartSimulation();
         }
     }
 }

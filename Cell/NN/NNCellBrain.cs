@@ -22,7 +22,6 @@ namespace CellEvolution.Cell.NN
 
         public NNCellBrain()
         {
-            random = new Random();
             NetworkInit();
         }
 
@@ -155,7 +154,7 @@ namespace CellEvolution.Cell.NN
             }
         }
 
-        public void BackPropagation(double[] targets)
+        private void BackPropagation(double[] targets)
         {
             double learningRate = Constants.learningRate;
 
@@ -230,11 +229,34 @@ namespace CellEvolution.Cell.NN
 
                 taskUpdate.Wait();
 
-                //RAdamOptimizerWithThreshold(l.weights, deltas, layers.Length - 2 - k);
+                AdamOptimizer(l.weights, deltas, layers.Length - 2 - k);
             }
         }
 
-        public void LearnFromExp(double[] inputs, int correctTarget)
+        public void UseExpToLearn(bool IsErrorMove, int numOfMoves, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves)
+        {
+            if (IsErrorMove)
+            {
+                List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[0]);
+                LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray());
+            }
+            else if (numOfMoves % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0)
+            {
+                //List<int> AlreadyLearn = new List<int>();
+                for (int i = 0; i < LastMovesInputs.Length; i++)
+                {
+                    List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[i]);
+                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] &&
+                        /*!AlreadyLearn.Contains(LastMovesDecidedActionsNum[i]) &&*/ !AllErrorMoves.Contains(LastMovesDecidedActionsNum[i]))
+                    {
+                        LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
+                        //AlreadyLearn.Add(LastMovesDecidedActionsNum[i]);
+                    }
+                }
+            }
+        }
+
+        private void LearnFromExp(double[] inputs, int correctTarget)
         {
             double[] targets = new double[layers[^1].size];
             targets[correctTarget] = 1;
@@ -243,26 +265,130 @@ namespace CellEvolution.Cell.NN
             BackPropagation(targets);
         }
 
-        public void LearnErrorFromExp(double[] inputs, int[] errorTarget)
+        private void LearnErrorFromExp(double[] inputs, int[] errorTarget)
         {
             double[] targets = new double[layers[^1].size];
-            for (int i = 0; i < targets.Length; i++)
+            int i = 0;
+            do
             {
-                targets[i] = 1;
-            }
-            for (int i = 0; i < targets.Length; i++)
-            {
-                for (int j = 0; j < errorTarget.Length; j++)
-                {
-                    if (errorTarget[j] == i)
-                    {
-                        targets[i] = 0;
-                    }
-                }
-            }
+                i = random.Next(0, 32);
+            } while (errorTarget.Contains(i));
+
+            targets[i] = 1;
 
             FeedForward(inputs);
             BackPropagation(targets);
+        }
+
+        private List<int> LookingForErrorMovesAtTurn(double[] LastMovesInputs)
+        {
+            List<int> AllErrorMoves = new List<int>();
+            if (LastMovesInputs != null)
+            {
+                //Photo
+                if (LastMovesInputs[112] != 1)
+                {
+                    AllErrorMoves.Add(20);
+                }
+
+                //Absorb
+                double energyVal = 0;
+                for (int i = 48; i < 56; i++)
+                {
+                    energyVal += LastMovesInputs[i];
+                }
+                if (energyVal <= 0)
+                {
+                    AllErrorMoves.Add(21);
+                }
+
+                //Bite
+                if (LastMovesInputs[16] <= 3)
+                {
+                    AllErrorMoves.Add(12);
+                }
+                if (LastMovesInputs[23] <= 3)
+                {
+                    AllErrorMoves.Add(13);
+                }
+                if (LastMovesInputs[29] <= 3)
+                {
+                    AllErrorMoves.Add(14);
+                }
+                if (LastMovesInputs[30] <= 3)
+                {
+                    AllErrorMoves.Add(15);
+                }
+                if (LastMovesInputs[31] <= 3)
+                {
+                    AllErrorMoves.Add(16);
+                }
+                if (LastMovesInputs[24] <= 3)
+                {
+                    AllErrorMoves.Add(17);
+                }
+                if (LastMovesInputs[18] <= 3)
+                {
+                    AllErrorMoves.Add(18);
+                }
+                if (LastMovesInputs[17] <= 3)
+                {
+                    AllErrorMoves.Add(19);
+                }
+
+                //Move
+                if (LastMovesInputs[16] != 1)
+                {
+                    AllErrorMoves.Add(0);
+                }
+                if (LastMovesInputs[23] != 1)
+                {
+                    AllErrorMoves.Add(1);
+                }
+                if (LastMovesInputs[29] != 1)
+                {
+                    AllErrorMoves.Add(2);
+                }
+                if (LastMovesInputs[30] != 1)
+                {
+                    AllErrorMoves.Add(3);
+                }
+                if (LastMovesInputs[31] != 1)
+                {
+                    AllErrorMoves.Add(4);
+                }
+                if (LastMovesInputs[24] != 1)
+                {
+                    AllErrorMoves.Add(5);
+                }
+                if (LastMovesInputs[18] != 1)
+                {
+                    AllErrorMoves.Add(6);
+                }
+                if (LastMovesInputs[17] != 1)
+                {
+                    AllErrorMoves.Add(7);
+                }
+
+                //Jump
+                if (LastMovesInputs[21] != 1)
+                {
+                    AllErrorMoves.Add(8);
+                }
+                if (LastMovesInputs[44] != 1)
+                {
+                    AllErrorMoves.Add(9);
+                }
+                if (LastMovesInputs[26] != 1)
+                {
+                    AllErrorMoves.Add(10);
+                }
+                if (LastMovesInputs[3] != 1)
+                {
+                    AllErrorMoves.Add(11);
+                }
+            }
+            return AllErrorMoves;
         }
 
         private double SigmoidFunc(double x) => 1.0 / (1.0 + Math.Exp(-x));
@@ -290,12 +416,11 @@ namespace CellEvolution.Cell.NN
 
         private void RAdamOptimizerWithThreshold(double[,] weights, double[,] deltas, int t)
         {
-            double beta1 = 0.95;       // Увеличил для большего учета старых градиентов.
-            double beta2 = 0.997;      // Увеличил для большего учета старых квадратов градиентов.
-            double epsilon = 1e-6;     // Уменьшил для более высокой устойчивости и предотвращения деления на ноль.
-            double clippingThreshold = 10.0; // Увеличил порог обрезки, чтобы более агрессивно справляться с выбросами.
-            double rho = 0.95;         // Предложенное значение для адаптации, может потребовать дополнительной настройки в зависимости от данных.
-
+            double beta1 = 0.9;
+            double beta2 = 0.999;
+            double epsilon = 1e-6;
+            double rho = 0.9;
+            double clippingThreshold = 5.0;
 
             int rows = weights.GetLength(0);
             int cols = weights.GetLength(1);
@@ -317,17 +442,15 @@ namespace CellEvolution.Cell.NN
                 }
             }
 
-            // Смещенные оценки первого и второго моментов
             double mHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta1, t)) / (1.0 - beta1t);
             double vHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta2, t)) / (1.0 - beta2t);
 
-            // Обновление весов 
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
                 {
                     double mHat = m[i, j] / mHatCorrection;
-                    double vHat = v[i, j] / vHatCorrection;
+                    double vHat = v[i, j] / Math.Sqrt(vHatCorrection);
 
                     double rhoInf = 2.0 / (1.0 - rho) - 1.0;
                     double adapt = Math.Max(0, rhoInf - 2.0 * t * Math.Pow(beta2t, 2));
@@ -336,11 +459,8 @@ namespace CellEvolution.Cell.NN
                     double denom = Math.Sqrt(vHat) + epsilon;
                     double update = stepSize * mHat / denom;
 
-                    // Rectification term
                     update += adapt * stepSize * mHat;
 
-                    // Добавляем робастность к выбросам
-                    
                     if (update > clippingThreshold)
                     {
                         update = clippingThreshold;
@@ -360,6 +480,7 @@ namespace CellEvolution.Cell.NN
             double beta1 = 0.9;
             double beta2 = 0.999;
             double epsilon = 1e-8;
+            double rho = 0.9;
 
             int rows = weights.GetLength(0);
             int cols = weights.GetLength(1);
@@ -379,19 +500,16 @@ namespace CellEvolution.Cell.NN
                 }
             }
 
-            // Смещенные оценки первого и второго моментов
             double mHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta1, t)) / (1.0 - beta1t);
             double vHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta2, t)) / (1.0 - beta2t);
 
-            // Обновление весов 
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
                 {
                     double mHat = m[i, j] / mHatCorrection;
-                    double vHat = v[i, j] / vHatCorrection;
+                    double vHat = v[i, j] / Math.Sqrt(vHatCorrection);
 
-                    double rho = 0.9; // Значение rho может быть настроено под ваши данные
                     double rhoInf = 2.0 / (1.0 - rho) - 1.0;
                     double adapt = Math.Max(0, rhoInf - 2.0 * t * Math.Pow(beta2t, 2));
 
@@ -399,13 +517,13 @@ namespace CellEvolution.Cell.NN
                     double denom = Math.Sqrt(vHat) + epsilon;
                     double update = stepSize * mHat / denom;
 
-                    // Rectification term
                     update += adapt * stepSize * mHat;
 
                     weights[i, j] -= update;
                 }
             }
         }
+
         private void AdamOptimizer(double[,] weights, double[,] deltas, int t)
         {
             double beta1 = 0.9;
@@ -430,10 +548,8 @@ namespace CellEvolution.Cell.NN
                 }
             }
 
-            // Коррекция смещения моментов
             double correction = Constants.learningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
 
-            // Обновление весов 
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
@@ -442,6 +558,7 @@ namespace CellEvolution.Cell.NN
                 }
             }
         }
+
 
 
     }
