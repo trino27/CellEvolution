@@ -10,7 +10,7 @@ namespace CellEvolutionGraphics
         public double TotalErrorPoint { get; set; }
 
         // Метод для загрузки данных из базы данных
-        public static List<StatModel> LoadDataFromDatabase()
+        public static List<StatModel> LoadDataFromDatabase(string tableName)
         {
             List<StatModel> stats = new List<StatModel>();
 
@@ -21,7 +21,7 @@ namespace CellEvolutionGraphics
                 connection.Open();
 
                 // Выбираем данные из базы данных
-                string query = "SELECT Day, TotalErrorPoint FROM TableClearCellBrainStat1";
+                string query = "SELECT Day, TotalErrorPoint FROM " + tableName;
                 using (SqlCommand cmd = new SqlCommand(query, connection))
                 {
                     using (SqlDataReader reader = cmd.ExecuteReader())
