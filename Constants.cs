@@ -32,7 +32,7 @@ namespace CellEvolution
         public const int maxPhotosynthesis = 35; //+ min 
         public const int maxNightPhotosynthesisFine = 100; //+ min
         public const int minPhotosynthesis = 10; 
-        public const int minNightPhotosynthesisFine = 20;
+        public const int minNightPhotosynthesisFine = 20; //20
         public const int availableCellNumAroundMax = 3;
         public const int availableCellNumAroundMin = 2;
 
@@ -43,11 +43,23 @@ namespace CellEvolution
         public const int numOfMemoryLastMoves = 10;
         public const int genCycleSize = liveTime;
 
-        public const double learningRate = 0.0001;
+        public const int brainInputDayNightPoweredK = 100;
+        public const int brainInputInitioationPoweredK = 10;
+        public const int brainInputMaxClonePoweredK = 10;
+        public const int brainInputCurrentAgePoweredK = 10;
+        public const int brainInputEnergyBankPoweredK = 10;
+
+
+        public const double randomGenMutationProbability = 0.2;
+        public const double randomGenMutationDuringLiveProbability = 0.01;
+
+        public const double learningRate = 0.00001;
         public const double noiseIntensity = 0.01;
-        public const double dropoutProbability = 0.2;
-        public const double learnFromExpProbability = 1;
+        public const double dropoutProbability = 0.1;
+        public const double learnFromExpProbability = 0.9;
+
         public const double cloneNoiseProbability = 0.2;
+        public const double cloneNoiseWeightsChangeProc = 0.05;
 
         public const int visionDistance = 3;
         public const int voiceDistance = 5;
@@ -66,8 +78,12 @@ namespace CellEvolution
 
 
         public const ConsoleColor emptyColor = ConsoleColor.Black;
-        public const ConsoleColor wallColor = ConsoleColor.White;
+        public const ConsoleColor borderColor = ConsoleColor.White;
         public const ConsoleColor poisonColor = ConsoleColor.White;
+
+        public const int Kempty = 0;
+        public const int Kborder = 10;
+        public const int Kpoison = 20;
 
         public const ConsoleColor newCellColor = ConsoleColor.Yellow;
         public const ConsoleColor biteCellColor = ConsoleColor.DarkRed;
@@ -76,8 +92,18 @@ namespace CellEvolution
         public const ConsoleColor slipCellColor = ConsoleColor.DarkMagenta;
         public const ConsoleColor evolvingCellColor = ConsoleColor.DarkYellow;
         public const ConsoleColor deadCellColor = ConsoleColor.Gray;
+        public const ConsoleColor errorCellColor = ConsoleColor.Red;
 
-        public const ConsoleColor errorColor = ConsoleColor.Red;
+        public const int KnewCell = 30;
+        public const int KbiteCell = 40;
+        public const int KphotoCell = 50;
+        public const int KabsorbCell = 60;
+        public const int KslipCell = 70;
+        public const int KevolvingCell = 80;
+        public const int KerrorCell = 90;
+        public const int KdeadCell = 100;
+
+        
 
 
         //Free color -  Magenta, DarkCyan

@@ -1,4 +1,4 @@
-﻿using CellEvolution.Cell.GenAlg;
+﻿using static CellEvolution.Cell.GenAlg.CellGen;
 
 namespace CellEvolution.Cell.NN
 {
@@ -7,9 +7,6 @@ namespace CellEvolution.Cell.NN
         private Random random = new Random();
         private readonly object lockObject = new object();
 
-        const int turnBeforeFlag = 0;
-
-        public readonly CellGen gen;
         private readonly NNCellBrain brain;
         private readonly World world;
 
@@ -28,14 +25,9 @@ namespace CellEvolution.Cell.NN
 
         public int Initiation = 1;
 
-        public int CurrentGenIndex = 0;
-
-        public int numOfMoves = 0;
         public int CurrentAge = 0;
 
         public ConsoleColor CellColor = Constants.newCellColor;
-
-        public bool IsErrorMove = false;
 
         public bool IsCorpseEaten = false;
         public bool IsDead = false;
@@ -44,14 +36,6 @@ namespace CellEvolution.Cell.NN
         public bool IsReproducting = false;
         public bool IsCreatingClone = false;
         public bool IsCreatingChildren = false;
-
-        public int[] LastMovesDecidedActionsNum = new int[Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime];
-        public double[][] LastMovesInputs = new double[Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime][];
-        public bool[] ErrorMoves = new bool[Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime];
-
-        private double[] RandomInputToClone;
-
-        private double[] inputs;
 
         public CellModel(int positionX, int positionY, World map, int creationNum)
         {
@@ -64,16 +48,12 @@ namespace CellEvolution.Cell.NN
 
             Energy = Constants.startCellEnergy;
 
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)
-            {
-                LastMovesDecidedActionsNum[i] = -1;
-            }
-
             world = map;
 
-            brain = new NNCellBrain();
+            brain = new NNCellBrain(this);
             brain.RandomFillWeightsParallel();
-            gen = new CellGen();
+
+
         }
         public CellModel(int positionX, int positionY, World map, CellModel original)
         {
@@ -83,27 +63,16 @@ namespace CellEvolution.Cell.NN
 
             generationNum = original.generationNum + 1;
 
+            Energy += original.EnergyBank;
+
             PositionX = positionX;
             PositionY = positionY;
 
             world = map;
 
-            brain = new NNCellBrain();
-            brain.Clone(original.brain, RandomInputToClone);
+            brain = new NNCellBrain(this);
+            brain.Clone(original.brain);
 
-            bool flag = false;
-            if (world.Logic.CurrentTurn > turnBeforeFlag)
-            {
-                flag = true;
-            }
-            gen = new CellGen(original.gen, flag);
-
-            Energy += original.EnergyBank;
-
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)
-            {
-                LastMovesDecidedActionsNum[i] = -1;
-            }
         }
         public CellModel(int positionX, int positionY, World map, CellModel mother, CellModel father)
         {
@@ -140,14 +109,17 @@ namespace CellEvolution.Cell.NN
             }
 
             CellModel mainParent;
+            CellModel secondParent;
 
             if (random.Next(0, 2) == 0)
             {
                 mainParent = mother;
+                secondParent = father;
             }
             else
             {
                 mainParent = father;
+                secondParent = mother;
             }
 
             generationNum = mainParent.generationNum + 1;
@@ -157,23 +129,11 @@ namespace CellEvolution.Cell.NN
 
             world = map;
 
-            brain = new NNCellBrain();
-            brain.Clone(mainParent.brain, RandomInputToClone);
-
-            bool flag = false;
-            if (world.Logic.CurrentTurn > turnBeforeFlag)
-            {
-                flag = true;
-            }
-
-            gen = new CellGen(mother.gen, father.gen, flag);
+            brain = new NNCellBrain(this);
+            brain.Clone(mainParent.brain, secondParent.brain);
 
             Energy = mother.EnergyBank + father.EnergyBank + Constants.startCellEnergy * 2;
 
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)
-            {
-                LastMovesDecidedActionsNum[i] = -1;
-            }
         }
 
 
@@ -181,7 +141,6 @@ namespace CellEvolution.Cell.NN
         {
             IsSlip = false;
             IsCreatingClone = false;
-            IsErrorMove = false;
 
             if (IsReproducting == false)
             {
@@ -193,18 +152,13 @@ namespace CellEvolution.Cell.NN
                 AlreadyUseClone = 0;
             }
 
-            int decidedAction = ChooseAction();
+            PerformAction(brain.ChooseAction());
 
-            PerformAction(decidedAction);
+            if (brain.IsErrorMove) CellColor = Constants.errorCellColor;
 
-            RegisterDecidedAction(decidedAction);
-            RegisterErrorMove(IsErrorMove);
 
-            numOfMoves++;
+            brain.LearnWithTeacher();
 
-            brain.UseExpToLearn(IsErrorMove,numOfMoves, LastMovesInputs, LastMovesDecidedActionsNum, ErrorMoves);
-
-            gen.RandomMutationDuringLive();
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost /*+ world.GetCurrentYear() * Constants.eachYearEnergyCostGain*/;
 
@@ -223,104 +177,24 @@ namespace CellEvolution.Cell.NN
 
                 IsDead = IsNoEnergy();
             }
-            lock (lockObject)
+
+            if (IsDead)
             {
-                if (IsDead)
-                {
-                    CellColor = Constants.deadCellColor;
-                }
+                CellColor = Constants.deadCellColor;
             }
         }
 
-        private void NextGenIndex()
+        public List<int> GetWorldAroundInfo()
         {
-            CurrentGenIndex++;
-            if (CurrentGenIndex >= Constants.genCycleSize)
-            {
-                CurrentGenIndex = 0;
-            }
+            return world.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
         }
-        private int ChooseAction()
+
+        public GenActions[] GetGenomCycle()
         {
-            List<int> availableActions = new List<int>();
-
-            switch (gen.GetCurrentGenAction(CurrentGenIndex))
-            {
-                case CellGen.GenActions.Move:
-                    {
-                        for (int i = 0; i < 12; i++)
-                        {
-                            availableActions.Add(i);
-                        }
-                    }
-                    break;
-                case CellGen.GenActions.Hunt:
-                    {
-                        for (int i = 12; i < 20; i++)
-                        {
-                            availableActions.Add(i);
-                        }
-                    }
-                    break;
-                case CellGen.GenActions.Photosynthesis:
-                    {
-                        availableActions.Add(20);
-                    }
-                    break;
-                case CellGen.GenActions.Absorption:
-                    {
-                        availableActions.Add(21);
-                    }
-                    break;
-                case CellGen.GenActions.Reproduction:
-                    {
-                        availableActions.Add(22);
-                        availableActions.Add(23);
-                    }
-                    break;
-
-                case CellGen.GenActions.Actions:
-                    {
-                        availableActions.Add(24);
-                        availableActions.Add(25);
-                    }
-                    break;
-                case CellGen.GenActions.Evolving:
-                    {
-                        for (int i = 28; i < 32; i++)
-                        {
-                            availableActions.Add(i);
-                        }
-                    }
-                    break;
-
-                case CellGen.GenActions.All:
-                    {
-                        for (int i = 0; i < 32; i++)
-                        {
-                            availableActions.Add(i);
-                        }
-                    }
-                    break;
-            }
-            NextGenIndex();
-
-            inputs = CreateBrainInput();
-            RegisterInput(inputs);
-
-            double rand = random.NextDouble();
-            if (rand < 0.1)
-            {
-                RandomInputToClone = inputs;
-            }
-
-            double[] outputs = brain.FeedForwardWithNoise(inputs);
-            int decidedAction = FindMaxIndexForFindAction(outputs, availableActions);
-
-            return decidedAction;
+            return brain.GetGen().GenActionsCycle;
         }
 
-        private void PerformAction(int decidedAction)
+        private void PerformAction(int decidedAction) //MovesCode
         {
             switch (decidedAction)
             {
@@ -373,87 +247,11 @@ namespace CellEvolution.Cell.NN
                 case 31: DecEnergyBank(); break;
             }
         }
-        private int FindMaxIndexForFindAction(double[] array, List<int> availableActions)
-        {
-            int maxIndex = availableActions[random.Next(0, availableActions.Count)];
-            double maxWeight = array[maxIndex];
-
-            for (int i = 0; i < array.Length; i++)
-            {
-                if (array[i] > maxWeight && availableActions.Contains(i))
-                {
-                    maxWeight = array[i];
-                    maxIndex = i;
-                }
-            }
-
-            return maxIndex;
-        }
-
-        private double[] CreateBrainInput()
-        {
-            double[] inputsBrain = new double[brain.layers[0].size];
-            List<int> area = world.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
-
-            int j = 0;
-            for (int i = 0; i < area.Count; i++) //48+48+9+7 = 112
-            {
-                inputsBrain[j] = area[i];
-                j++;
-            }
-
-            inputsBrain[j] = (Convert.ToInt16(world.IsDay())); //113
-            j++;
-            inputsBrain[j] = (Initiation); //114
-            j++;
-            inputsBrain[j] = (Energy); //115
-            j++;
-            inputsBrain[j] = (MaxClone); //116
-            j++;
-            inputsBrain[j] = (CurrentAge);  //117
-            j++;
-            inputsBrain[j] = (EnergyBank);  //118
-            j++;
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //128
-            {
-                inputsBrain[j] = LastMovesDecidedActionsNum[i];
-                j++;
-            }
-
-            return inputsBrain.ToArray();
-        }
 
         private bool IsNoEnergy()
         {
             if (Energy < 0) return true;
             else return false;
-        }
-        private void RegisterDecidedAction(int decidedAction)
-        {
-            for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
-            {
-                LastMovesDecidedActionsNum[i] = LastMovesDecidedActionsNum[i - 1];
-            }
-
-            LastMovesDecidedActionsNum[0] = decidedAction;
-        }
-        private void RegisterInput(double[] input)
-        {
-            for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
-            {
-                LastMovesInputs[i] = LastMovesInputs[i - 1];
-            }
-
-            LastMovesInputs[0] = input;
-        }
-        private void RegisterErrorMove(bool res)
-        {
-            for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
-            {
-                ErrorMoves[i] = ErrorMoves[i - 1];
-            }
-            if (res) CellColor = Constants.errorColor;
-            ErrorMoves[0] = res;
         }
 
         //Evolving
@@ -488,22 +286,19 @@ namespace CellEvolution.Cell.NN
         private void MoveUp()
         {
             if (world.IsMoveAvailable(PositionX, PositionY - 1)) PositionY--;
-            else IsErrorMove = true;
+
         }
         private void MoveDown()
         {
             if (world.IsMoveAvailable(PositionX, PositionY + 1)) PositionY++;
-            else IsErrorMove = true;
         }
         private void MoveLeft()
         {
             if (world.IsMoveAvailable(PositionX - 1, PositionY)) PositionX--;
-            else IsErrorMove = true;
         }
         private void MoveRight()
         {
             if (world.IsMoveAvailable(PositionX + 1, PositionY)) PositionX++;
-            else IsErrorMove = true;
         }
 
         private void MoveLeftUp()
@@ -513,7 +308,6 @@ namespace CellEvolution.Cell.NN
                 PositionX--;
                 PositionY--;
             }
-            else IsErrorMove = true;
         }
         private void MoveRightUp()
         {
@@ -522,7 +316,6 @@ namespace CellEvolution.Cell.NN
                 PositionX++;
                 PositionY--;
             }
-            else IsErrorMove = true;
         }
         private void MoveRightDown()
         {
@@ -531,7 +324,6 @@ namespace CellEvolution.Cell.NN
                 PositionX++;
                 PositionY++;
             }
-            else IsErrorMove = true;
         }
         private void MoveLeftDown()
         {
@@ -540,7 +332,6 @@ namespace CellEvolution.Cell.NN
                 PositionX--;
                 PositionY++;
             }
-            else IsErrorMove = true;
         }
 
         //Jump
@@ -551,7 +342,6 @@ namespace CellEvolution.Cell.NN
                 PositionY -= Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
             }
-            else IsErrorMove = true;
         }
         private void JumpRight()
         {
@@ -560,7 +350,6 @@ namespace CellEvolution.Cell.NN
                 PositionX += Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
             }
-            else IsErrorMove = true;
         }
         private void JumpDown()
         {
@@ -570,7 +359,6 @@ namespace CellEvolution.Cell.NN
                 Energy -= Constants.jumpEnergyCost;
 
             }
-            else IsErrorMove = true;
         }
         private void JumpLeft()
         {
@@ -579,7 +367,6 @@ namespace CellEvolution.Cell.NN
                 PositionX -= Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
             }
-            else IsErrorMove = true;
         }
 
         //Bite
@@ -590,7 +377,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX - 1, PositionY - 1));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteUp()
         {
@@ -599,7 +385,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX, PositionY - 1));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteRightUp()
         {
@@ -608,7 +393,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX + 1, PositionY - 1));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteRight()
         {
@@ -617,7 +401,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX + 1, PositionY));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteRightDown()
         {
@@ -626,7 +409,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX + 1, PositionY + 1));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteDown()
         {
@@ -635,7 +417,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX, PositionY + 1));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteLeftDown()
         {
@@ -644,7 +425,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX - 1, PositionY + 1));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
         private void BiteLeft()
         {
@@ -653,7 +433,6 @@ namespace CellEvolution.Cell.NN
                 world.Hunt(this, world.GetCell(PositionX - 1, PositionY));
                 CellColor = Constants.biteCellColor;
             }
-            else IsErrorMove = true;
         }
 
         //Action
@@ -683,21 +462,12 @@ namespace CellEvolution.Cell.NN
                 double loseEnergy = Constants.minNightPhotosynthesisFine + Constants.maxNightPhotosynthesisFine / 100.0 * proc;
                 Energy -= (int)loseEnergy;
                 CellColor = Constants.photoCellColor;
-
-                IsErrorMove = true;
             }
         }
         private void Absorption()
         {
-            int EnergyBeforeAbsorb = Energy;
-
             CellColor = Constants.absorbCellColor;
             world.Absorb(this);
-
-            if (EnergyBeforeAbsorb == Energy)
-            {
-                IsErrorMove = true;
-            }
         }
         private void Slip()
         {

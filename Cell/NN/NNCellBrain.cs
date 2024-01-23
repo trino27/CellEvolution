@@ -1,28 +1,54 @@
-﻿using System;
+﻿using CellEvolution.Cell.GenAlg;
+using System.Diagnostics.Metrics;
+using СellEvolution.Cell.NN;
 
 namespace CellEvolution.Cell.NN
 {
-    public struct NNCellBrain
+    public class NNCellBrain
     {
         public readonly Random random = new Random();
+
+        public readonly NNTeacher teacher;
+        private readonly CellModel cell; 
+        private CellGen gen;
+
+        public bool IsErrorMove = false;
+
+        private double[] inputs;
+
+        public int[] LastMovesDecidedActionsNum = new int[Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime];
+        public double[][] LastMovesInputs = new double[Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime][];
+        public bool[] ErrorMoves = new bool[Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime];
 
         private int[] layersSizes =
             {
                 128,
 
+                256,
                 128,
-                128,
-                96,
                 64,
 
                 32
-            };
+            }; //128 128 96 64 32
 
         public NNLayers[] layers;
 
-        public NNCellBrain()
+        public NNCellBrain(CellModel cell)
         {
             NetworkInit();
+            InitMemory();
+
+            this.cell = cell; 
+            gen = new CellGen();
+            teacher = new NNTeacher(this);
+        }
+
+        private void InitMemory()
+        {
+            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)
+            {
+                this.LastMovesDecidedActionsNum[i] = -1;
+            }
         }
 
         private void NetworkInit()
@@ -98,6 +124,16 @@ namespace CellEvolution.Cell.NN
             return layers[layers.Length - 1].neurons;
         }
 
+        public CellGen GetGen()
+        {
+            return gen;
+        }
+
+        public void LearnWithTeacher()
+        {
+            teacher.UseExpToLearn(IsErrorMove, LastMovesInputs, LastMovesDecidedActionsNum, ErrorMoves);
+        }
+
         private double GenerateRandomNoise()
         {
             double u1 = 1.0 - random.NextDouble();
@@ -105,6 +141,155 @@ namespace CellEvolution.Cell.NN
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 
+        public int ChooseAction() //MovesCode
+        {
+            List<int> availableActions = new List<int>();
+
+            switch (gen.GetCurrentGenAction())
+            {
+                case CellGen.GenActions.Move:
+                    {
+                        for (int i = 0; i < 12; i++)
+                        {
+                            availableActions.Add(i);
+                        }
+                    }
+                    break;
+                case CellGen.GenActions.Hunt:
+                    {
+                        for (int i = 12; i < 20; i++)
+                        {
+                            availableActions.Add(i);
+                        }
+                    }
+                    break;
+                case CellGen.GenActions.Photosynthesis:
+                    {
+                        availableActions.Add(20);
+                    }
+                    break;
+                case CellGen.GenActions.Absorption:
+                    {
+                        availableActions.Add(21);
+                    }
+                    break;
+                case CellGen.GenActions.Reproduction:
+                    {
+                        availableActions.Add(22);
+                        availableActions.Add(23);
+                    }
+                    break;
+
+                case CellGen.GenActions.Actions:
+                    {
+                        availableActions.Add(24);
+                        availableActions.Add(25);
+                    }
+                    break;
+                case CellGen.GenActions.Evolving:
+                    {
+                        for (int i = 28; i < 32; i++)
+                        {
+                            availableActions.Add(i);
+                        }
+                    }
+                    break;
+
+                case CellGen.GenActions.All:
+                    {
+                        for (int i = 0; i < 32; i++)
+                        {
+                            availableActions.Add(i);
+                        }
+                    }
+                    break;
+            }
+
+            inputs = CreateBrainInput();
+            RegisterInput(inputs);
+            
+            double[] outputs = FeedForwardWithNoise(inputs);
+            int decidedAction = FindMaxIndexForFindAction(outputs, availableActions);
+            RegisterDecidedAction(decidedAction);
+            RegisterErrorMove(teacher.IsDecidedMoveError(decidedAction, inputs));
+
+            return decidedAction;
+        }
+
+        private int FindMaxIndexForFindAction(double[] array, List<int> availableActions)
+        {
+            int maxIndex = availableActions[random.Next(0, availableActions.Count)];
+            double maxWeight = array[maxIndex];
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i] > maxWeight && availableActions.Contains(i))
+                {
+                    maxWeight = array[i];
+                    maxIndex = i;
+                }
+            }
+
+            return maxIndex;
+        }
+
+        private double[] CreateBrainInput()
+        {
+            double[] inputsBrain = new double[layers[0].size];
+            List<int> areaInfo = cell.GetWorldAroundInfo();
+
+            int j = 0;
+            for (int i = 0; i < areaInfo.Count; i++) //48+48+9+7 = 0-47 48-95 96-104 105-111 112
+            {
+                inputsBrain[j] = areaInfo[i];
+                j++;
+            }
+            inputsBrain[j] = (cell.Initiation) * Constants.brainInputInitioationPoweredK; //113
+            j++;
+            inputsBrain[j] = (cell.Energy); //114
+            j++;
+            inputsBrain[j] = (cell.MaxClone) * Constants.brainInputMaxClonePoweredK; //115
+            j++;
+            inputsBrain[j] = (cell.CurrentAge) * Constants.brainInputCurrentAgePoweredK;  //116
+            j++;
+            inputsBrain[j] = (cell.EnergyBank) * Constants.brainInputEnergyBankPoweredK;  //117
+            j++;
+            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //127
+            {
+                inputsBrain[j] = LastMovesDecidedActionsNum[i];
+                j++;
+            }
+
+            return inputsBrain.ToArray();
+        }
+
+        public void RegisterDecidedAction(int decidedAction)
+        {
+            for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
+            {
+                LastMovesDecidedActionsNum[i] = LastMovesDecidedActionsNum[i - 1];
+            }
+
+            LastMovesDecidedActionsNum[0] = decidedAction;
+        }
+        public void RegisterInput(double[] input)
+        {
+            for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
+            {
+                LastMovesInputs[i] = LastMovesInputs[i - 1];
+            }
+
+            LastMovesInputs[0] = input;
+        }
+        public void RegisterErrorMove(bool res)
+        {
+            for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
+            {
+                ErrorMoves[i] = ErrorMoves[i - 1];
+            }
+            IsErrorMove = res;
+            ErrorMoves[0] = res;
+        }
         public void RandomFillWeightsParallel()
         {
             NNLayers[] layersTemp = layers;
@@ -129,7 +314,7 @@ namespace CellEvolution.Cell.NN
             layers = layersTemp;
         }
 
-        public void Clone(NNCellBrain original, double[]? randomInputToClone)
+        public void Clone(NNCellBrain original)
         {
             double key = random.NextDouble();
 
@@ -139,6 +324,21 @@ namespace CellEvolution.Cell.NN
             {
                 RandomCloneNoise();
             }
+
+            gen = new CellGen(original.gen);
+        }
+        public void Clone(NNCellBrain mainParent, NNCellBrain secondParent)
+        {
+            double key = random.NextDouble();
+
+            CopyNNLayers(mainParent);
+
+            if (key < Constants.cloneNoiseProbability)
+            {
+                RandomCloneNoise();
+            }
+
+            gen = new CellGen(mainParent.gen, secondParent.gen);
         }
 
         private void CopyNNLayers(NNCellBrain original)
@@ -154,245 +354,7 @@ namespace CellEvolution.Cell.NN
             }
         }
 
-        private void BackPropagation(double[] targets)
-        {
-            double learningRate = Constants.learningRate;
-
-            int outputErrorSize = layers[layers.Length - 1].size;
-
-            double[] outputErrors = new double[outputErrorSize];
-
-            for (int i = 0; i < outputErrorSize; i++)
-            {
-                outputErrors[i] = targets[i] - layers[layers.Length - 1].neurons[i];
-            }
-
-            for (int k = layers.Length - 2; k >= 0; k--)
-            {
-                NNLayers l = layers[k];
-                NNLayers l1 = layers[k + 1];
-
-                double[] errorsNext = new double[l.size];
-                Task taskError = Task.Run(() =>
-                { // Обновим веса текущего слоя
-                    Parallel.For(0, l.size, i =>
-                    {
-                        double errorSum = 0;
-                        for (int j = 0; j < l1.size; j++)
-                        {
-                            errorSum += l.weights[i, j] * outputErrors[j];
-                        }
-                        errorsNext[i] = errorSum;
-                    });
-                });
-
-                double[] gradients = new double[l1.size];
-                for (int i = 0; i < l1.size; i++)
-                {
-                    gradients[i] = outputErrors[i] * DsigmoidFunc(layers[k + 1].neurons[i]);
-                    gradients[i] *= learningRate;
-                }
-
-                double[,] deltas = new double[l1.size, l.size];
-                Task taskDeltas = Task.Run(() =>
-                { // Обновим веса текущего слоя
-                    Parallel.For(0, l1.size, i =>
-                    {
-                        for (int j = 0; j < l.size; j++)
-                        {
-                            deltas[i, j] = gradients[i] * l.neurons[j];
-                        }
-                    });
-                });
-
-                // Обновим смещения (biases) следующего слоя
-                for (int i = 0; i < l1.size; i++)
-                {
-                    l1.biases[i] += gradients[i];
-                }
-
-                taskError.Wait();
-                // Обновим ошибку для следующей итерации
-                outputErrors = errorsNext;
-
-                taskDeltas.Wait();
-                Task taskUpdate = Task.Run(() =>
-                { // Обновим веса текущего слоя
-                    Parallel.For(0, l1.size, i =>
-                    {
-                        for (int j = 0; j < l.size; j++)
-                        {
-                            l.weights[j, i] += deltas[i, j];
-                        }
-                    });
-                });
-
-                taskUpdate.Wait();
-
-                AdamOptimizer(l.weights, deltas, layers.Length - 2 - k);
-            }
-        }
-
-        public void UseExpToLearn(bool IsErrorMove, int numOfMoves, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves)
-        {
-            if (IsErrorMove)
-            {
-                List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[0]);
-                LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray());
-            }
-            else if (numOfMoves % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0)
-            {
-                //List<int> AlreadyLearn = new List<int>();
-                for (int i = 0; i < LastMovesInputs.Length; i++)
-                {
-                    List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[i]);
-                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] &&
-                        /*!AlreadyLearn.Contains(LastMovesDecidedActionsNum[i]) &&*/ !AllErrorMoves.Contains(LastMovesDecidedActionsNum[i]))
-                    {
-                        LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
-                        //AlreadyLearn.Add(LastMovesDecidedActionsNum[i]);
-                    }
-                }
-            }
-        }
-
-        private void LearnFromExp(double[] inputs, int correctTarget)
-        {
-            double[] targets = new double[layers[^1].size];
-            targets[correctTarget] = 1;
-
-            FeedForward(inputs);
-            BackPropagation(targets);
-        }
-
-        private void LearnErrorFromExp(double[] inputs, int[] errorTarget)
-        {
-            double[] targets = new double[layers[^1].size];
-            int i = 0;
-            do
-            {
-                i = random.Next(0, 32);
-            } while (errorTarget.Contains(i));
-
-            targets[i] = 1;
-
-            FeedForward(inputs);
-            BackPropagation(targets);
-        }
-
-        private List<int> LookingForErrorMovesAtTurn(double[] LastMovesInputs)
-        {
-            List<int> AllErrorMoves = new List<int>();
-            if (LastMovesInputs != null)
-            {
-                //Photo
-                if (LastMovesInputs[112] != 1)
-                {
-                    AllErrorMoves.Add(20);
-                }
-
-                //Absorb
-                double energyVal = 0;
-                for (int i = 48; i < 56; i++)
-                {
-                    energyVal += LastMovesInputs[i];
-                }
-                if (energyVal <= 0)
-                {
-                    AllErrorMoves.Add(21);
-                }
-
-                //Bite
-                if (LastMovesInputs[16] <= 3)
-                {
-                    AllErrorMoves.Add(12);
-                }
-                if (LastMovesInputs[23] <= 3)
-                {
-                    AllErrorMoves.Add(13);
-                }
-                if (LastMovesInputs[29] <= 3)
-                {
-                    AllErrorMoves.Add(14);
-                }
-                if (LastMovesInputs[30] <= 3)
-                {
-                    AllErrorMoves.Add(15);
-                }
-                if (LastMovesInputs[31] <= 3)
-                {
-                    AllErrorMoves.Add(16);
-                }
-                if (LastMovesInputs[24] <= 3)
-                {
-                    AllErrorMoves.Add(17);
-                }
-                if (LastMovesInputs[18] <= 3)
-                {
-                    AllErrorMoves.Add(18);
-                }
-                if (LastMovesInputs[17] <= 3)
-                {
-                    AllErrorMoves.Add(19);
-                }
-
-                //Move
-                if (LastMovesInputs[16] != 1)
-                {
-                    AllErrorMoves.Add(0);
-                }
-                if (LastMovesInputs[23] != 1)
-                {
-                    AllErrorMoves.Add(1);
-                }
-                if (LastMovesInputs[29] != 1)
-                {
-                    AllErrorMoves.Add(2);
-                }
-                if (LastMovesInputs[30] != 1)
-                {
-                    AllErrorMoves.Add(3);
-                }
-                if (LastMovesInputs[31] != 1)
-                {
-                    AllErrorMoves.Add(4);
-                }
-                if (LastMovesInputs[24] != 1)
-                {
-                    AllErrorMoves.Add(5);
-                }
-                if (LastMovesInputs[18] != 1)
-                {
-                    AllErrorMoves.Add(6);
-                }
-                if (LastMovesInputs[17] != 1)
-                {
-                    AllErrorMoves.Add(7);
-                }
-
-                //Jump
-                if (LastMovesInputs[21] != 1)
-                {
-                    AllErrorMoves.Add(8);
-                }
-                if (LastMovesInputs[44] != 1)
-                {
-                    AllErrorMoves.Add(9);
-                }
-                if (LastMovesInputs[26] != 1)
-                {
-                    AllErrorMoves.Add(10);
-                }
-                if (LastMovesInputs[3] != 1)
-                {
-                    AllErrorMoves.Add(11);
-                }
-            }
-            return AllErrorMoves;
-        }
-
         private double SigmoidFunc(double x) => 1.0 / (1.0 + Math.Exp(-x));
-        private double DsigmoidFunc(double x) => x * (1.0 - x);
 
         private void RandomCloneNoise()
         {
@@ -402,7 +364,7 @@ namespace CellEvolution.Cell.NN
                 NumOfAllWeights += l.weights.LongLength;
             }
 
-            int NumOfChanging = random.Next(0, Convert.ToInt32(NumOfAllWeights / 10));
+            int NumOfChanging = random.Next(0, Convert.ToInt32(NumOfAllWeights * Constants.cloneNoiseWeightsChangeProc));
 
             for (int i = 0; i < NumOfChanging; i++)
             {
@@ -413,153 +375,5 @@ namespace CellEvolution.Cell.NN
                 layers[randLayer].weights[randWeightD1, randWeightD2] = random.NextDouble();
             }
         }
-
-        private void RAdamOptimizerWithThreshold(double[,] weights, double[,] deltas, int t)
-        {
-            double beta1 = 0.9;
-            double beta2 = 0.999;
-            double epsilon = 1e-6;
-            double rho = 0.9;
-            double clippingThreshold = 5.0;
-
-            int rows = weights.GetLength(0);
-            int cols = weights.GetLength(1);
-
-            double[,] m = new double[rows, cols];
-            double[,] v = new double[rows, cols];
-
-            double beta1t = 1.0 - Math.Pow(beta1, t);
-            double beta2t = 1.0 - Math.Pow(beta2, t);
-
-            double adjustedLearningRate = Constants.learningRate * (1.0 - Constants.noiseIntensity);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    m[i, j] = beta1 * m[i, j] + (1.0 - beta1) * deltas[j, i];
-                    v[i, j] = beta2 * v[i, j] + (1.0 - beta2) * Math.Pow(deltas[j, i], 2);
-                }
-            }
-
-            double mHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta1, t)) / (1.0 - beta1t);
-            double vHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta2, t)) / (1.0 - beta2t);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    double mHat = m[i, j] / mHatCorrection;
-                    double vHat = v[i, j] / Math.Sqrt(vHatCorrection);
-
-                    double rhoInf = 2.0 / (1.0 - rho) - 1.0;
-                    double adapt = Math.Max(0, rhoInf - 2.0 * t * Math.Pow(beta2t, 2));
-
-                    double stepSize = adjustedLearningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
-                    double denom = Math.Sqrt(vHat) + epsilon;
-                    double update = stepSize * mHat / denom;
-
-                    update += adapt * stepSize * mHat;
-
-                    if (update > clippingThreshold)
-                    {
-                        update = clippingThreshold;
-                    }
-                    else if (update < -clippingThreshold)
-                    {
-                        update = -clippingThreshold;
-                    }
-
-                    weights[i, j] -= update;
-                }
-            }
-        }
-
-        private void RAdamOptimizer(double[,] weights, double[,] deltas, int t)
-        {
-            double beta1 = 0.9;
-            double beta2 = 0.999;
-            double epsilon = 1e-8;
-            double rho = 0.9;
-
-            int rows = weights.GetLength(0);
-            int cols = weights.GetLength(1);
-
-            double[,] m = new double[rows, cols];
-            double[,] v = new double[rows, cols];
-
-            double beta1t = 1.0 - Math.Pow(beta1, t);
-            double beta2t = 1.0 - Math.Pow(beta2, t);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    m[i, j] = beta1 * m[i, j] + (1.0 - beta1) * deltas[j, i];
-                    v[i, j] = beta2 * v[i, j] + (1.0 - beta2) * Math.Pow(deltas[j, i], 2);
-                }
-            }
-
-            double mHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta1, t)) / (1.0 - beta1t);
-            double vHatCorrection = Math.Sqrt(1.0 - Math.Pow(beta2, t)) / (1.0 - beta2t);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    double mHat = m[i, j] / mHatCorrection;
-                    double vHat = v[i, j] / Math.Sqrt(vHatCorrection);
-
-                    double rhoInf = 2.0 / (1.0 - rho) - 1.0;
-                    double adapt = Math.Max(0, rhoInf - 2.0 * t * Math.Pow(beta2t, 2));
-
-                    double stepSize = Constants.learningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
-                    double denom = Math.Sqrt(vHat) + epsilon;
-                    double update = stepSize * mHat / denom;
-
-                    update += adapt * stepSize * mHat;
-
-                    weights[i, j] -= update;
-                }
-            }
-        }
-
-        private void AdamOptimizer(double[,] weights, double[,] deltas, int t)
-        {
-            double beta1 = 0.9;
-            double beta2 = 0.999;
-            double epsilon = 1e-8;
-
-            int rows = weights.GetLength(0);
-            int cols = weights.GetLength(1);
-
-            double[,] m = new double[rows, cols];
-            double[,] v = new double[rows, cols];
-
-            double beta1t = 1.0 - Math.Pow(beta1, t);
-            double beta2t = 1.0 - Math.Pow(beta2, t);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    m[i, j] = beta1 * m[i, j] + (1.0 - beta1) * deltas[j, i];
-                    v[i, j] = beta2 * v[i, j] + (1.0 - beta2) * Math.Pow(deltas[j, i], 2);
-                }
-            }
-
-            double correction = Constants.learningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    weights[i, j] -= correction * m[i, j] / (Math.Sqrt(v[i, j]) + epsilon);
-                }
-            }
-        }
-
-
-
     }
 }

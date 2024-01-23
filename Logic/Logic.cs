@@ -56,13 +56,13 @@ namespace CellEvolution
                 for (int i = 0; i < world.Cells.Count; i++)
                 {
                     int index = i;
-                    Task task = Task.Run(() =>
-                    {
+                    //Task task = Task.Run(() =>
+                    //{
                         world.CellMove(index);
 
-                    });
+                   // });
 
-                    tasks.Add(task);
+                   // tasks.Add(task);
                 }
 
                 Task.WaitAll(tasks.ToArray());
@@ -89,11 +89,30 @@ namespace CellEvolution
         private void UpdateStat()
         {
             TotallDayError += CurrentErrorProc;
-            if (CurrentHours == 0)
+            if (CurrentHours == 0 && TotallDayError != 0)
             {
-                statSQl.InsertData(TotallDays, TotallDayError);
+                statSQl.InsertDataError(TotallDays, TotallDayError);
                 TotallDayError = 0;
+
+                statSQl.InsertDataAllActionsProc(TotallDays, CountActionsInCellGensProc());
             }
+        }
+
+        private double CountActionsInCellGensProc()
+        {
+            int TotallNum = 0;
+            foreach(var cell in world.Cells)
+            {
+                foreach(var gen in cell.GetGenomCycle())
+                {
+                    if(gen == Cell.GenAlg.CellGen.GenActions.All)
+                    {
+                        TotallNum++;
+                    }
+                }
+            }
+
+            return (double)TotallNum * 100.0 / (double)(world.Cells.Count * Constants.genCycleSize);
         }
         private void UpdateTimeAndSeason()
         {
@@ -163,7 +182,7 @@ namespace CellEvolution
                     case Constants.absorbCellColor: AbsorbCells++; break;
                     case Constants.evolvingCellColor: EvolveCells++; break;
                     case Constants.slipCellColor: SlipCells++; break;
-                    case Constants.errorColor: ErrorCells++; break;
+                    case Constants.errorCellColor: ErrorCells++; break;
                     default: break;
                 }
             }

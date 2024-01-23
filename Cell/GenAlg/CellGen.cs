@@ -3,43 +3,45 @@
     public partial struct CellGen
     {
         private Random random = new Random();
-        public GenActions[] GenActionsCycle;
-
-        public bool flag = true;
+        public GenActions[] GenActionsCycle { get; }
+        private int CurrentGenIndex = 0;
 
         public CellGen()
         {
             GenActionsCycle = new GenActions[Constants.genCycleSize];
             FillRandomGens();
-
-            HardCodeGens();
         }
-        public CellGen(CellGen original, bool flag)
+        public CellGen(CellGen original)
         {
-            this.flag = flag;
             GenActionsCycle = new GenActions[Constants.genCycleSize];
             Array.Copy(original.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
             RandomMutation();
-
-            HardCodeGens();
         }
-        public CellGen(CellGen mother, CellGen father, bool flag)
+        public CellGen(CellGen mother, CellGen father)
         {
-            this.flag = flag;
             GenActionsCycle = new GenActions[Constants.genCycleSize];
             ConnectGens(mother, father);
             RandomMutation();
-
-            HardCodeGens();
         }
 
-        public GenActions GetCurrentGenAction(int CurrentIndex)
+        public GenActions GetCurrentGenAction()
         {
-            GenActions genAction = GenActionsCycle[CurrentIndex];
+            GenActions genAction = GenActionsCycle[CurrentGenIndex];
+
+            NextGenIndex();
+            RandomMutationDuringLive();
 
             return genAction;
         }
 
+        private void NextGenIndex()
+        {
+            CurrentGenIndex++;
+            if (CurrentGenIndex >= Constants.genCycleSize)
+            {
+                CurrentGenIndex = 0;
+            }
+        }
         private void ConnectGens(CellGen mother, CellGen father)
         {
             Array.Copy(father.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
@@ -56,12 +58,12 @@
 
             }while(random.Next(0, 3) != 0);
         }
-        public void RandomMutation()
+        private void RandomMutation()
         {
             bool stopMutation = true;
             do
             {
-                if (random.Next(0, 7) == 0)
+                if (random.NextDouble() < Constants.randomGenMutationProbability)
                 {
                     GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
                 }
@@ -71,12 +73,12 @@
                 }
             } while (stopMutation);
         }
-        public void RandomMutationDuringLive()
+        private void RandomMutationDuringLive()
         {
             bool stopMutation = true;
             do
             {
-                if (random.Next(0, 256) == 0)
+                if (random.NextDouble() < Constants.randomGenMutationDuringLiveProbability)
                 {
                     GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
                 }
@@ -91,19 +93,6 @@
             for (int i = 0; i < GenActionsCycle.Length; i++)
             {
                 GenActionsCycle[i] = (GenActions)random.Next(0, 8);
-            }
-        }
-
-        private void HardCodeGens() //!!!!!!!!!!!!!
-        {
-            if (flag)
-            {
-                for (int i = 0; i < GenActionsCycle.Length; i++)
-                {
-                    GenActionsCycle[i] = GenActions.All;
-                }
-
-                GenActionsCycle[^1] = GenActions.Reproduction;
             }
         }
     }
