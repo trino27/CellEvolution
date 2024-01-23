@@ -4,15 +4,15 @@ using System.Data.SqlClient;
 
 namespace CellEvolutionGraphics
 {
-    public class StatModel
+    public class StatModelError
     {
         public int Day { get; set; }
-        public double TotalErrorPoint { get; set; }
+        public double ErrorPoint { get; set; }
 
         // Метод для загрузки данных из базы данных
-        public static List<StatModel> LoadDataFromDatabase(string tableName)
+        public static List<StatModelError> LoadDataFromDatabase(string tableName)
         {
-            List<StatModel> stats = new List<StatModel>();
+            List<StatModelError> stats = new List<StatModelError>();
 
             string connectionString = "Data Source=DESKTOP-C4JUPMT;Initial Catalog=CellEvolution;Encrypt=False;Integrated Security=True";
 
@@ -21,17 +21,17 @@ namespace CellEvolutionGraphics
                 connection.Open();
 
                 // Выбираем данные из базы данных
-                string query = "SELECT Day, TotalErrorPoint FROM " + tableName;
+                string query = "SELECT Day, ErrorPoint FROM " + tableName;
                 using (SqlCommand cmd = new SqlCommand(query, connection))
                 {
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            StatModel stat = new StatModel
+                            StatModelError stat = new StatModelError
                             {
                                 Day = Convert.ToInt32(reader["Day"]),
-                                TotalErrorPoint = Convert.ToDouble(reader["TotalErrorPoint"])
+                                ErrorPoint = Convert.ToDouble(reader["ErrorPoint"])
                             };
                             stats.Add(stat);
                         }

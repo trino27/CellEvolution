@@ -1,6 +1,6 @@
 ﻿namespace CellEvolutionGraphics
 {
-    partial class Form1
+    partial class ErrorStat
     {
         /// <summary>
         ///  Required designer variable.
@@ -42,14 +42,15 @@
             cartesianChart1.TabIndex = 0;
             cartesianChart1.Text = "cartesianChart1";
             // 
-            // Form1
+            // ErrorStat
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1294, 664);
             Controls.Add(cartesianChart1);
-            Name = "Form1";
+            Name = "ErrorStat";
             Text = "Form1";
+            WindowState = FormWindowState.Maximized;
             Load += Form1_Load;
             ResumeLayout(false);
         }
