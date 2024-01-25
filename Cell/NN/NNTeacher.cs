@@ -1,10 +1,6 @@
 ﻿using CellEvolution;
 using CellEvolution.Cell.NN;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static CellEvolution.Cell.NN.CellModel;
 
 namespace СellEvolution.Cell.NN
 {
@@ -20,39 +16,39 @@ namespace СellEvolution.Cell.NN
             this.brain = brain;
         }
 
-        public void UseExpToLearn(bool IsErrorMove, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves)
+        public void UseExpToLearn(bool IsErrorMove, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves) //Rewrite
         {
             lastExpLearning++;
             if (IsErrorMove)
             {
-                List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[0]);
+                List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[0]);
                 LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray(), LastMovesInputs[0]);
             }
             if (lastExpLearning >= 16)
             {
                 for (int i = 0; i < LastMovesInputs.Length; i++)
                 {
-                    List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[i]);
+                    List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[i]);
                     if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] &&
-                         !AllErrorMoves.Contains(LastMovesDecidedActionsNum[i]))
+                         !AllErrorMoves.Contains((CellAction)LastMovesDecidedActionsNum[i]))
                     {
-                        LearnFromExp(LastMovesInputs[i], LastMovesDecidedActionsNum[i]);
+                        LearnFromExp(LastMovesInputs[i], (CellAction)LastMovesDecidedActionsNum[i]);
                     }
                 }
                 lastExpLearning = 0;
             }
         }
 
-        private void LearnFromExp(double[] inputs, int correctTarget)
+        private void LearnFromExp(double[] inputs, CellAction correctTarget)
         {
             double[] targets = new double[brain.layers[^1].size];
-            targets[correctTarget] = 1;
+            targets[(int)correctTarget] = 1;
 
             brain.FeedForward(inputs);
             BackPropagation(targets);
         }
 
-        private void LearnErrorFromExp(double[] inputs, int[] errorTarget, double[] LastMovesInputs)
+        private void LearnErrorFromExp(double[] inputs, CellAction[] errorTarget, double[] LastMovesInputs)
         {
             double[] targets = new double[brain.layers[^1].size];
             int imitationRes = Imitation(LastMovesInputs, errorTarget);
@@ -66,7 +62,7 @@ namespace СellEvolution.Cell.NN
                 do
                 {
                     i = random.Next(0, 32);
-                } while (errorTarget.Contains(i));
+                } while (errorTarget.Contains((CellAction)i));
 
                 targets[i] = 1;
             }
@@ -75,7 +71,7 @@ namespace СellEvolution.Cell.NN
             BackPropagation(targets);
         }
 
-        private int Imitation(double[] LastMovesInput, int[] errorTarget) // MovesCode
+        private int Imitation(double[] LastMovesInput, CellAction[] errorTarget)
         {
             List<double> OtherCellsMovesAround = GetInfoFromMemoriesAboutCellsMove(LastMovesInput);
 
@@ -85,63 +81,73 @@ namespace СellEvolution.Cell.NN
                 {
                     case Constants.KabsorbCell:
                         {
-                            if (!errorTarget.Contains(21))
+                            if (!errorTarget.Contains(CellAction.Absorption))
                             {
-                                return 21;
+                                return (int)CellAction.Absorption;
                             }
                         }
                         break;
                     case Constants.KphotoCell:
                         {
-                            if (!errorTarget.Contains(20))
+                            if (!errorTarget.Contains(CellAction.Photosynthesis))
                             {
-                                return 20;
+                                return (int)CellAction.Photosynthesis;
                             }
                         }
                         break;
                     case Constants.KslipCell:
                         {
-                            if (!errorTarget.Contains(24))
+                            if (!errorTarget.Contains(CellAction.Slip))
                             {
-                                return 24;
+                                return (int)CellAction.Slip;
                             }
                         }
                         break;
                     case Constants.KevolvingCell:
                         {
-                            List<int> availableMoves = new List<int>();
-                            for (int j = 28; j < 32; j++)
+                            List<CellAction> availableMoves = new List<CellAction>();
+
+                            if (!errorTarget.Contains(CellAction.GainInitiation))
                             {
-                                if (!errorTarget.Contains(j))
-                                {
-                                    availableMoves.Add(j);
-                                }
+                                availableMoves.Add(CellAction.GainInitiation);
                             }
+                            if (!errorTarget.Contains(CellAction.GainMaxClone))
+                            {
+                                availableMoves.Add(CellAction.GainMaxClone);
+                            }
+                            if (!errorTarget.Contains(CellAction.GainEnergyBank))
+                            {
+                                availableMoves.Add(CellAction.GainEnergyBank);
+                            }
+                            if (!errorTarget.Contains(CellAction.DecEnergyBank))
+                            {
+                                availableMoves.Add(CellAction.DecEnergyBank);
+                            }
+
                             if (availableMoves.Count > 1)
                             {
-                                return availableMoves[random.Next(0, availableMoves.Count)];
+                                return (int)availableMoves[random.Next(0, availableMoves.Count)];
                             }
                         }
                         break;
                     case Constants.KbiteCell:
                         {
-                            List<int> availableMoves = new List<int>();
-                            for (int j = 12; j < 20; j++)
+                            List<CellAction> availableMoves = new List<CellAction>();
+                            for (int j = (int)CellAction.BiteLeftUp; j <= (int)CellAction.BiteLeft; j++)
                             {
-                                if (!errorTarget.Contains(j))
+                                if (!errorTarget.Contains((CellAction)j))
                                 {
-                                    availableMoves.Add(j);
+                                    availableMoves.Add((CellAction)j);
                                 }
                             }
                             if (availableMoves.Count > 1)
                             {
-                                return availableMoves[random.Next(0, availableMoves.Count)];
+                                return (int)availableMoves[random.Next(0, availableMoves.Count)];
                             }
                         }
                         break;
                 }
             }
-
 
             return -1;
         }
@@ -172,35 +178,35 @@ namespace СellEvolution.Cell.NN
             return res;
         }
 
-        private List<int> LookingForErrorMovesAtTurn(double[] LastMovesInputs) //Input
+        private List<CellAction> LookingForErrorMovesAtTurn(double[] LastMovesInputs) //Input
         {
-            List<int> AllErrorMoves = new List<int>();
+            List<CellAction> AllErrorMoves = new List<CellAction>();
             if (LastMovesInputs != null)
             {
                 //Reproduction
                 if (LastMovesInputs[114] < Constants.cloneEnergyCost)
                 {
-                    AllErrorMoves.Add(22);
-                    AllErrorMoves.Add(23);
+                    AllErrorMoves.Add(CellAction.Clone);
+                    AllErrorMoves.Add(CellAction.Reproduction);
 
                     if (LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                     {
                         //Actions
-                        AllErrorMoves.Add(24);
-                        AllErrorMoves.Add(25);
+                        AllErrorMoves.Add(CellAction.Slip);
+                        AllErrorMoves.Add(CellAction.Shout);
 
                         //Evolving
-                        AllErrorMoves.Add(28);
-                        AllErrorMoves.Add(29);
-                        AllErrorMoves.Add(30);
-                        AllErrorMoves.Add(31);
+                        AllErrorMoves.Add(CellAction.GainEnergyBank);
+                        AllErrorMoves.Add(CellAction.DecEnergyBank);
+                        AllErrorMoves.Add(CellAction.GainInitiation);
+                        AllErrorMoves.Add(CellAction.GainMaxClone);
                     }
                 }
 
                 //Photo
                 if (LastMovesInputs[112] != 1 * Constants.brainInputDayNightPoweredK)
                 {
-                    AllErrorMoves.Add(20);
+                    AllErrorMoves.Add(CellAction.Photosynthesis);
                 }
 
                 //Absorb
@@ -211,101 +217,101 @@ namespace СellEvolution.Cell.NN
                 }
                 if (energyVal <= 0)
                 {
-                    AllErrorMoves.Add(21);
+                    AllErrorMoves.Add(CellAction.Absorption);
                 }
 
                 //Bite
                 if (LastMovesInputs[16] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(12);
+                    AllErrorMoves.Add(CellAction.BiteLeftUp);
                 }
                 if (LastMovesInputs[23] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(13);
+                    AllErrorMoves.Add(CellAction.BiteUp);
                 }
                 if (LastMovesInputs[29] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(14);
+                    AllErrorMoves.Add(CellAction.BiteRightUp);
                 }
                 if (LastMovesInputs[30] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(15);
+                    AllErrorMoves.Add(CellAction.BiteRight);
                 }
                 if (LastMovesInputs[31] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(16);
+                    AllErrorMoves.Add(CellAction.BiteRightDown);
                 }
                 if (LastMovesInputs[24] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(17);
+                    AllErrorMoves.Add(CellAction.BiteDown);
                 }
                 if (LastMovesInputs[18] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(18);
+                    AllErrorMoves.Add(CellAction.BiteLeftDown);
                 }
                 if (LastMovesInputs[17] < Constants.KnewCell)
                 {
-                    AllErrorMoves.Add(19);
+                    AllErrorMoves.Add(CellAction.BiteLeft);
                 }
 
                 //Move
                 if (LastMovesInputs[16] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(0);
+                    AllErrorMoves.Add(CellAction.MoveLeftUp);
                 }
                 if (LastMovesInputs[23] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(1);
+                    AllErrorMoves.Add(CellAction.MoveUp);
                 }
                 if (LastMovesInputs[29] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(2);
+                    AllErrorMoves.Add(CellAction.MoveRightUp);
                 }
                 if (LastMovesInputs[30] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(3);
+                    AllErrorMoves.Add(CellAction.MoveRight);
                 }
                 if (LastMovesInputs[31] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(4);
+                    AllErrorMoves.Add(CellAction.MoveRightDown);
                 }
                 if (LastMovesInputs[24] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(5);
+                    AllErrorMoves.Add(CellAction.MoveDown);
                 }
                 if (LastMovesInputs[18] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(6);
+                    AllErrorMoves.Add(CellAction.MoveLeftDown);
                 }
                 if (LastMovesInputs[17] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2)
                 {
-                    AllErrorMoves.Add(7);
+                    AllErrorMoves.Add(CellAction.MoveLeft);
                 }
 
                 //Jump
                 if (LastMovesInputs[21] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
-                    AllErrorMoves.Add(8);
+                    AllErrorMoves.Add(CellAction.JumpUp);
                 }
                 if (LastMovesInputs[44] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
-                    AllErrorMoves.Add(9);
+                    AllErrorMoves.Add(CellAction.JumpRight);
                 }
                 if (LastMovesInputs[26] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
-                    AllErrorMoves.Add(10);
+                    AllErrorMoves.Add(CellAction.JumpDown);
                 }
                 if (LastMovesInputs[3] != Constants.Kempty || LastMovesInputs[114] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
-                    AllErrorMoves.Add(11);
+                    AllErrorMoves.Add(CellAction.JumpLeft);
                 }
             }
             return AllErrorMoves;
         }
 
-        public bool IsDecidedMoveError(int decidedAction, double[] LastInput)
+        public bool IsDecidedMoveError(CellAction decidedAction, double[] LastInput)
         {
-            List<int> AllErrorMoves = LookingForErrorMovesAtTurn(LastInput);
+            List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastInput);
             return AllErrorMoves.Contains(decidedAction);
         }
 
@@ -442,6 +448,6 @@ namespace СellEvolution.Cell.NN
 
         private double DsigmoidFunc(double x) => x * (1.0 - x);
 
-       
+
     }
 }

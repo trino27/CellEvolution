@@ -3,30 +3,30 @@
     public partial struct CellGen
     {
         private Random random = new Random();
-        public GenActions[] GenActionsCycle { get; }
+        public GenAction[] GenActionsCycle { get; }
         private int CurrentGenIndex = 0;
 
         public CellGen()
         {
-            GenActionsCycle = new GenActions[Constants.genCycleSize];
+            GenActionsCycle = new GenAction[Constants.genCycleSize];
             FillRandomGens();
         }
         public CellGen(CellGen original)
         {
-            GenActionsCycle = new GenActions[Constants.genCycleSize];
+            GenActionsCycle = new GenAction[Constants.genCycleSize];
             Array.Copy(original.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
             RandomMutation();
         }
         public CellGen(CellGen mother, CellGen father)
         {
-            GenActionsCycle = new GenActions[Constants.genCycleSize];
+            GenActionsCycle = new GenAction[Constants.genCycleSize];
             ConnectGens(mother, father);
             RandomMutation();
         }
 
-        public GenActions GetCurrentGenAction()
+        public GenAction GetCurrentGenAction()
         {
-            GenActions genAction = GenActionsCycle[CurrentGenIndex];
+            GenAction genAction = GenActionsCycle[CurrentGenIndex];
 
             NextGenIndex();
             RandomMutationDuringLive();
@@ -65,7 +65,7 @@
             {
                 if (random.NextDouble() < Constants.randomGenMutationProbability)
                 {
-                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
+                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 8);
                 }
                 else
                 {
@@ -80,7 +80,7 @@
             {
                 if (random.NextDouble() < Constants.randomGenMutationDuringLiveProbability)
                 {
-                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenActions)random.Next(0, 8);
+                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 8);
                 }
                 else
                 {
@@ -92,7 +92,7 @@
         {
             for (int i = 0; i < GenActionsCycle.Length; i++)
             {
-                GenActionsCycle[i] = (GenActions)random.Next(0, 8);
+                GenActionsCycle[i] = (GenAction)random.Next(0, 8);
             }
         }
     }

@@ -8,10 +8,8 @@ namespace CellEvolution
     {
         Random random = new Random();
 
-        public int flag = -1;
-
         private World world;
-        private Stat statSQl;
+        private StatDatabase statSQl;
 
         public int CurrentYear = 0;
         public int CurrentDay = 0;
@@ -29,7 +27,7 @@ namespace CellEvolution
         public Logic()
         {
             world = new World(this);
-            statSQl = new Stat();
+            statSQl = new StatDatabase();
         }
 
         public void StartSimulation()
@@ -56,13 +54,13 @@ namespace CellEvolution
                 for (int i = 0; i < world.Cells.Count; i++)
                 {
                     int index = i;
-                    //Task task = Task.Run(() =>
-                    //{
+                    Task task = Task.Run(() =>
+                    {
                         world.CellMove(index);
 
-                   // });
+                    });
 
-                   // tasks.Add(task);
+                    tasks.Add(task);
                 }
 
                 Task.WaitAll(tasks.ToArray());
@@ -105,7 +103,7 @@ namespace CellEvolution
             {
                 foreach(var gen in cell.GetGenomCycle())
                 {
-                    if(gen == Cell.GenAlg.CellGen.GenActions.All)
+                    if(gen == Cell.GenAlg.CellGen.GenAction.All)
                     {
                         TotallNum++;
                     }
@@ -135,7 +133,6 @@ namespace CellEvolution
             }
         }
         
-
         private void ShowWorldInfo(int hours)
         {
             Console.CursorVisible = false;

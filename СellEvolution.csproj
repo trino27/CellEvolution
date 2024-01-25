@@ -9,11 +9,8 @@
 
   <ItemGroup>
     <Compile Remove="Cell\Новая папка1\**" />
-    <Compile Remove="Cell\Новая папка\**" />
     <EmbeddedResource Remove="Cell\Новая папка1\**" />
-    <EmbeddedResource Remove="Cell\Новая папка\**" />
     <None Remove="Cell\Новая папка1\**" />
-    <None Remove="Cell\Новая папка\**" />
   </ItemGroup>
 
   <ItemGroup>

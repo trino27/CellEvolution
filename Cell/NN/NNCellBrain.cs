@@ -1,6 +1,7 @@
 ﻿using CellEvolution.Cell.GenAlg;
 using System.Diagnostics.Metrics;
 using СellEvolution.Cell.NN;
+using static CellEvolution.Cell.NN.CellModel;
 
 namespace CellEvolution.Cell.NN
 {
@@ -26,10 +27,11 @@ namespace CellEvolution.Cell.NN
 
                 256,
                 128,
+                96,
                 64,
 
                 32
-            }; //128 128 96 64 32
+            };
 
         public NNLayers[] layers;
 
@@ -141,65 +143,65 @@ namespace CellEvolution.Cell.NN
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 
-        public int ChooseAction() //MovesCode
+        public CellAction ChooseAction()
         {
-            List<int> availableActions = new List<int>();
+            List<CellAction> availableActions = new List<CellAction>();
 
             switch (gen.GetCurrentGenAction())
             {
-                case CellGen.GenActions.Move:
+                case CellGen.GenAction.Move:
                     {
-                        for (int i = 0; i < 12; i++)
+                        for (int i = (int)CellAction.MoveLeftUp; i <= (int)CellAction.JumpLeft; i++)
                         {
-                            availableActions.Add(i);
+                            availableActions.Add((CellAction)i);
                         }
                     }
                     break;
-                case CellGen.GenActions.Hunt:
+                case CellGen.GenAction.Hunt:
                     {
-                        for (int i = 12; i < 20; i++)
+                        for (int i = (int)CellAction.BiteLeftUp; i <= (int)CellAction.BiteLeft; i++)
                         {
-                            availableActions.Add(i);
+                            availableActions.Add((CellAction)i);
                         }
                     }
                     break;
-                case CellGen.GenActions.Photosynthesis:
+                case CellGen.GenAction.Photosynthesis:
                     {
-                        availableActions.Add(20);
+                        availableActions.Add(CellAction.Photosynthesis);
                     }
                     break;
-                case CellGen.GenActions.Absorption:
+                case CellGen.GenAction.Absorption:
                     {
-                        availableActions.Add(21);
+                        availableActions.Add(CellAction.Absorption);
                     }
                     break;
-                case CellGen.GenActions.Reproduction:
+                case CellGen.GenAction.Reproduction:
                     {
-                        availableActions.Add(22);
-                        availableActions.Add(23);
+                        availableActions.Add(CellAction.Reproduction);
+                        availableActions.Add(CellAction.Clone);
                     }
                     break;
 
-                case CellGen.GenActions.Actions:
+                case CellGen.GenAction.Actions:
                     {
-                        availableActions.Add(24);
-                        availableActions.Add(25);
+                        availableActions.Add(CellAction.Slip);
+                        availableActions.Add(CellAction.Shout);
                     }
                     break;
-                case CellGen.GenActions.Evolving:
+                case CellGen.GenAction.Evolving:
                     {
-                        for (int i = 28; i < 32; i++)
+                        for (int i = (int)CellAction.GainInitiation; i <= (int)CellAction.DecEnergyBank; i++)
                         {
-                            availableActions.Add(i);
+                            availableActions.Add((CellAction)i);
                         }
                     }
                     break;
 
-                case CellGen.GenActions.All:
+                case CellGen.GenAction.All:
                     {
                         for (int i = 0; i < 32; i++)
                         {
-                            availableActions.Add(i);
+                            availableActions.Add((CellAction)i);
                         }
                     }
                     break;
@@ -209,28 +211,28 @@ namespace CellEvolution.Cell.NN
             RegisterInput(inputs);
             
             double[] outputs = FeedForwardWithNoise(inputs);
-            int decidedAction = FindMaxIndexForFindAction(outputs, availableActions);
+            CellAction decidedAction = FindMaxIndexForFindAction(outputs, availableActions);
             RegisterDecidedAction(decidedAction);
             RegisterErrorMove(teacher.IsDecidedMoveError(decidedAction, inputs));
 
             return decidedAction;
         }
 
-        private int FindMaxIndexForFindAction(double[] array, List<int> availableActions)
+        private CellAction FindMaxIndexForFindAction(double[] array, List<CellAction> availableActions)
         {
-            int maxIndex = availableActions[random.Next(0, availableActions.Count)];
+            int maxIndex = (int)availableActions[random.Next(0, availableActions.Count)];
             double maxWeight = array[maxIndex];
 
             for (int i = 0; i < array.Length; i++)
             {
-                if (array[i] > maxWeight && availableActions.Contains(i))
+                if (array[i] > maxWeight && availableActions.Contains((CellAction)i))
                 {
                     maxWeight = array[i];
                     maxIndex = i;
                 }
             }
 
-            return maxIndex;
+            return (CellAction)maxIndex;
         }
 
         private double[] CreateBrainInput()
@@ -263,14 +265,14 @@ namespace CellEvolution.Cell.NN
             return inputsBrain.ToArray();
         }
 
-        public void RegisterDecidedAction(int decidedAction)
+        public void RegisterDecidedAction(CellAction decidedAction)
         {
             for (int i = Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime - 1; i > 0; i--)
             {
                 LastMovesDecidedActionsNum[i] = LastMovesDecidedActionsNum[i - 1];
             }
 
-            LastMovesDecidedActionsNum[0] = decidedAction;
+            LastMovesDecidedActionsNum[0] = (int)decidedAction;
         }
         public void RegisterInput(double[] input)
         {

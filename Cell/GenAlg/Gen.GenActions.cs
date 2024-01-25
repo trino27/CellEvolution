@@ -2,7 +2,7 @@
 {
     public partial struct CellGen
     {
-        public enum GenActions : byte
+        public enum GenAction : byte
         {
             Move,
             Hunt,

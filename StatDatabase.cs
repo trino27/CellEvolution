@@ -4,15 +4,15 @@ using System.Data.SqlClient;
 
 namespace СellEvolution
 {
-    internal class Stat
+    public class StatDatabase
     {
-        private readonly ILog log = LogManager.GetLogger(typeof(Stat));
+        private readonly ILog log = LogManager.GetLogger(typeof(StatDatabase));
 
         private string connectionString = "Data Source=DESKTOP-C4JUPMT;Initial Catalog=CellEvolution;Encrypt=False;Integrated Security=True"; // Подставьте свою строку подключения к MS SQL
-        private string tableName = "ErrorAdam";
-        private string tableName2 = "AllAction";
+        private string tableErrorMoves = "ErrorAdam";
+        private string tableGenAll = "AllAction";
 
-        public Stat()
+        public StatDatabase()
         {
             InitializeDatabase();
         }
@@ -24,28 +24,28 @@ namespace СellEvolution
                 connection.Open();
 
                 // Удаляем существующую таблицу
-                string dropTableQuery = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE {tableName}";
+                string dropTableQuery = $"IF OBJECT_ID('{tableErrorMoves}', 'U') IS NOT NULL DROP TABLE {tableErrorMoves}";
                 using (SqlCommand cmdDropTable = new SqlCommand(dropTableQuery, connection))
                 {
                     cmdDropTable.ExecuteNonQuery();
                 }
 
                 // Создаем новую таблицу
-                string createTableQuery = $"CREATE TABLE {tableName} (Day INT, ErrorPoint FLOAT)";
+                string createTableQuery = $"CREATE TABLE {tableErrorMoves} (Day INT, ErrorPoint FLOAT)";
                 using (SqlCommand cmdCreateTable = new SqlCommand(createTableQuery, connection))
                 {
                     cmdCreateTable.ExecuteNonQuery();
                 }
 
                 // Удаляем существующую таблицу
-                string dropTableQuery2 = $"IF OBJECT_ID('{tableName2}', 'U') IS NOT NULL DROP TABLE {tableName2}";
+                string dropTableQuery2 = $"IF OBJECT_ID('{tableGenAll}', 'U') IS NOT NULL DROP TABLE {tableGenAll}";
                 using (SqlCommand cmdDropTable = new SqlCommand(dropTableQuery2, connection))
                 {
                     cmdDropTable.ExecuteNonQuery();
                 }
 
                 // Создаем новую таблицу
-                string createTableQuery2 = $"CREATE TABLE {tableName2} (Day INT, Procent FLOAT)";
+                string createTableQuery2 = $"CREATE TABLE {tableGenAll} (Day INT, Procent FLOAT)";
                 using (SqlCommand cmdCreateTable = new SqlCommand(createTableQuery2, connection))
                 {
                     cmdCreateTable.ExecuteNonQuery();
@@ -61,7 +61,7 @@ namespace СellEvolution
                 {
                     connection.Open();
 
-                    string query = $"INSERT INTO {tableName} (Day, ErrorPoint) VALUES (@Day, @ErrorPoint)";
+                    string query = $"INSERT INTO {tableErrorMoves} (Day, ErrorPoint) VALUES (@Day, @ErrorPoint)";
 
                     using (SqlCommand cmd = new SqlCommand(query, connection))
                     {
@@ -89,7 +89,7 @@ namespace СellEvolution
                 {
                     connection.Open();
 
-                    string query = $"INSERT INTO {tableName2} (Day, Procent) VALUES (@Day, @Procent)";
+                    string query = $"INSERT INTO {tableGenAll} (Day, Procent) VALUES (@Day, @Procent)";
 
                     using (SqlCommand cmd = new SqlCommand(query, connection))
                     {
