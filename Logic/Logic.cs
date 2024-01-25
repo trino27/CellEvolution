@@ -9,6 +9,8 @@ namespace CellEvolution
         Random random = new Random();
 
         private World world;
+        
+
         private StatDatabase statSQl;
 
         public int CurrentYear = 0;
@@ -18,7 +20,6 @@ namespace CellEvolution
 
         public int TotallDays = 0;
         public double TotallDayError = 0;
-        
 
         public DayTime CurrentDayTime = DayTime.Day;
 
@@ -32,7 +33,9 @@ namespace CellEvolution
 
         public void StartSimulation()
         {
-            world.CreateVisual();
+            world.InitWorldRenderer(new WorldRenderer(world));
+            world.StartRenderIfRendererExist();
+            world.Renderer.CreateWorldVisual();
             
             Stopwatch stopwatchAll = new Stopwatch();
             Stopwatch stopwatchCells = new Stopwatch();
@@ -72,8 +75,8 @@ namespace CellEvolution
 
                 world.ClearDeadCells();
 
-                world.StartReproduction();
-                world.StartCreatingClones();
+                world.CellStartReproduction();
+                world.CellStartCreatingClones();
 
                 world.ClearAreaVoiceParallel();
 
@@ -81,7 +84,6 @@ namespace CellEvolution
 
                 stopwatchAll.Stop();
                 ShowTimeInfo(stopwatchAll, stopwatchCells);
-
             } while (world.Cells.Count > 0);
         }
         private void UpdateStat()
