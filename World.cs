@@ -346,6 +346,7 @@ namespace CellEvolution
             }
         } 
         public int GetCurrentAreaEnergy(int positionX, int positionY) => AreaEnergy[positionX, positionY];
+
         public List<int> GetAreaCharAroundCellInt(int positionX, int positionY, int dist) 
         {
             lock (lockObject)
@@ -556,16 +557,16 @@ namespace CellEvolution
 
             lock (lockObject)
             {
-                for (int i = 0; i < cellA.GetGenomCycle().Length; i++)
+                for (int i = 0; i < cellA.GetGenomeCycle().Length; i++)
                 {
-                    if (cellA.GetGenomCycle()[i] == cellB.GetGenomCycle()[i])
+                    if (cellA.GetGenomeCycle()[i] == cellB.GetGenomeCycle()[i])
                     {
                         simK++;
                     }
                 }
             }
 
-            double temp = simK * 100.0 / cellA.GetGenomCycle().Length;
+            double temp = simK * 100.0 / cellA.GetGenomeCycle().Length;
 
             return (int)temp;
         }

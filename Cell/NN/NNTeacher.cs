@@ -6,9 +6,8 @@ namespace СellEvolution.Cell.NN
 {
     public class NNTeacher
     {
-        public readonly Random random = new Random();
-
-        public readonly NNCellBrain brain;
+        private readonly Random random = new Random();
+        private readonly NNCellBrain brain;
         private int lastExpLearning = 0;
 
         public NNTeacher(NNCellBrain brain)
@@ -16,7 +15,7 @@ namespace СellEvolution.Cell.NN
             this.brain = brain;
         }
 
-        public void UseExpToLearn(bool IsErrorMove, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves) //Rewrite
+        public void UseExpToLearn(bool IsErrorMove, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves)
         {
             lastExpLearning++;
             if (IsErrorMove)
@@ -37,6 +36,12 @@ namespace СellEvolution.Cell.NN
                 }
                 lastExpLearning = 0;
             }
+        }
+
+        public bool IsDecidedMoveError(CellAction decidedAction, double[] LastInput)
+        {
+            List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastInput);
+            return AllErrorMoves.Contains(decidedAction);
         }
 
         private void LearnFromExp(double[] inputs, CellAction correctTarget)
@@ -309,12 +314,6 @@ namespace СellEvolution.Cell.NN
             return AllErrorMoves;
         }
 
-        public bool IsDecidedMoveError(CellAction decidedAction, double[] LastInput)
-        {
-            List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastInput);
-            return AllErrorMoves.Contains(decidedAction);
-        }
-
         private void BackPropagation(double[] targets)
         {
             double learningRate = Constants.learningRate;
@@ -447,7 +446,5 @@ namespace СellEvolution.Cell.NN
         }
 
         private double DsigmoidFunc(double x) => x * (1.0 - x);
-
-
     }
 }

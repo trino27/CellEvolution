@@ -101,7 +101,7 @@ namespace CellEvolution
             int TotallNum = 0;
             foreach(var cell in world.Cells)
             {
-                foreach(var gen in cell.GetGenomCycle())
+                foreach(var gen in cell.GetGenomeCycle())
                 {
                     if(gen == Cell.GenAlg.CellGen.GenAction.All)
                     {

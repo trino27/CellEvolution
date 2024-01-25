@@ -12,7 +12,7 @@ namespace CellEvolution.Cell.NN
 
         private readonly Guid id;
         private readonly int generationNum = 0;
-        private int[] spiecie = new int[1];
+        private int[] specie = new int[1];
 
         private Dictionary<CellAction, Action> actionDictionary;
 
@@ -42,7 +42,7 @@ namespace CellEvolution.Cell.NN
         {
             id = Guid.NewGuid();
 
-            spiecie[0] = creationNum;
+            specie[0] = creationNum;
 
             world = map;
 
@@ -56,7 +56,7 @@ namespace CellEvolution.Cell.NN
         {
             id = Guid.NewGuid();
 
-            spiecie = original.spiecie;
+            specie = original.specie;
 
             world = map;
 
@@ -93,7 +93,7 @@ namespace CellEvolution.Cell.NN
             brain = new NNCellBrain(this);
             brain.Clone(mainParent.brain, secondParent.brain);
 
-            SpiecieFromParentsInit(mother, father);
+            SpecieFromParentsInit(mother, father);
             ActionDictionaryInit();
             CellInit(positionX, positionY, mother.EnergyBank + father.EnergyBank + Constants.startCellEnergy * 2);
         }
@@ -110,33 +110,33 @@ namespace CellEvolution.Cell.NN
 
             Energy += energy;
         }
-        private void SpiecieFromParentsInit(CellModel mother, CellModel father)
+        private void SpecieFromParentsInit(CellModel mother, CellModel father)
         {
             int numSameSpecies = 0;
-            for (int i = 0; i < mother.spiecie.Length; i++)
+            for (int i = 0; i < mother.specie.Length; i++)
             {
-                for (int j = 0; j < father.spiecie.Length; j++)
+                for (int j = 0; j < father.specie.Length; j++)
                 {
-                    if (mother.spiecie[i] == father.spiecie[j]) numSameSpecies++;
+                    if (mother.specie[i] == father.specie[j]) numSameSpecies++;
                 }
             }
 
-            spiecie = new int[father.spiecie.Length + mother.spiecie.Length - numSameSpecies];
+            specie = new int[father.specie.Length + mother.specie.Length - numSameSpecies];
             {
                 int i = 0;
-                for (int j = 0; j < father.spiecie.Length; j++)
+                for (int j = 0; j < father.specie.Length; j++)
                 {
-                    if (!spiecie.Contains(father.spiecie[j]))
+                    if (!specie.Contains(father.specie[j]))
                     {
-                        spiecie[i] = father.spiecie[j];
+                        specie[i] = father.specie[j];
                         i++;
                     }
                 }
-                for (int j = 0; j < mother.spiecie.Length; j++)
+                for (int j = 0; j < mother.specie.Length; j++)
                 {
-                    if (!spiecie.Contains(mother.spiecie[j]))
+                    if (!specie.Contains(mother.specie[j]))
                     {
-                        spiecie[i] = mother.spiecie[j];
+                        specie[i] = mother.specie[j];
                         i++;
                     }
                 }
@@ -233,7 +233,7 @@ namespace CellEvolution.Cell.NN
             return world.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
         }
 
-        public GenAction[] GetGenomCycle()
+        public GenAction[] GetGenomeCycle()
         {
             return brain.GetGen().GenActionsCycle;
         }

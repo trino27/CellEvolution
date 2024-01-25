@@ -292,6 +292,7 @@ namespace CellEvolution.Cell.NN
             IsErrorMove = res;
             ErrorMoves[0] = res;
         }
+
         public void RandomFillWeightsParallel()
         {
             NNLayers[] layersTemp = layers;
