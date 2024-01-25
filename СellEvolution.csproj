@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Remove="Cell\eeb0nyuw.noe~" />
+    <None Remove="WorldResources\hozt4pjy.35z~" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.Metrics;
+using СellEvolution.WorldResources;
 using static CellEvolution.Cell.GenAlg.CellGen;
 
 namespace CellEvolution.Cell.NN
@@ -38,13 +39,13 @@ namespace CellEvolution.Cell.NN
         public bool IsCreatingChildren = false;
         public bool IsCreatingClone = false;
 
-        public CellModel(int positionX, int positionY, World map, int creationNum)
+        public CellModel(int positionX, int positionY, World world, int creationNum)
         {
             id = Guid.NewGuid();
 
             specie[0] = creationNum;
 
-            world = map;
+            this.world = world;
 
             brain = new NNCellBrain(this);
             brain.RandomFillWeightsParallel();
@@ -52,13 +53,13 @@ namespace CellEvolution.Cell.NN
             ActionDictionaryInit();
             CellInit(positionX, positionY);
         }
-        public CellModel(int positionX, int positionY, World map, CellModel original)
+        public CellModel(int positionX, int positionY, World world, CellModel original)
         {
             id = Guid.NewGuid();
 
             specie = original.specie;
 
-            world = map;
+            this.world = world;
 
             generationNum = original.generationNum + 1;
 
@@ -68,7 +69,7 @@ namespace CellEvolution.Cell.NN
             ActionDictionaryInit();
             CellInit(positionX, positionY, original.EnergyBank);
         }
-        public CellModel(int positionX, int positionY, World map, CellModel mother, CellModel father)
+        public CellModel(int positionX, int positionY, World world, CellModel mother, CellModel father)
         {
             id = Guid.NewGuid();
 
@@ -88,7 +89,7 @@ namespace CellEvolution.Cell.NN
 
             generationNum = mainParent.generationNum + 1;
 
-            world = map;
+            this.world = world;
 
             brain = new NNCellBrain(this);
             brain.Clone(mainParent.brain, secondParent.brain);
@@ -206,7 +207,7 @@ namespace CellEvolution.Cell.NN
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost;
 
-            if (world.IsAreaPoisoned(PositionX, PositionY))
+            if (world.WorldArea.IsAreaPoisoned(PositionX, PositionY))
             {
                 CurrentAge += Constants.poisonedDecLive;
             }
@@ -230,7 +231,7 @@ namespace CellEvolution.Cell.NN
 
         public List<int> GetWorldAroundInfo()
         {
-            return world.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
+            return world.WorldArea.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
         }
 
         public GenAction[] GetGenomeCycle()
@@ -283,25 +284,25 @@ namespace CellEvolution.Cell.NN
         //         \/areaMaxY
         private void MoveUp()
         {
-            if (world.IsMoveAvailable(PositionX, PositionY - 1)) PositionY--;
+            if (world.cellActionHandler.IsMoveAvailable(PositionX, PositionY - 1)) PositionY--;
 
         }
         private void MoveDown()
         {
-            if (world.IsMoveAvailable(PositionX, PositionY + 1)) PositionY++;
+            if (world.cellActionHandler.IsMoveAvailable(PositionX, PositionY + 1)) PositionY++;
         }
         private void MoveLeft()
         {
-            if (world.IsMoveAvailable(PositionX - 1, PositionY)) PositionX--;
+            if (world.cellActionHandler.IsMoveAvailable(PositionX - 1, PositionY)) PositionX--;
         }
         private void MoveRight()
         {
-            if (world.IsMoveAvailable(PositionX + 1, PositionY)) PositionX++;
+            if (world.cellActionHandler.IsMoveAvailable(PositionX + 1, PositionY)) PositionX++;
         }
 
         private void MoveLeftUp()
         {
-            if (world.IsMoveAvailable(PositionX - 1, PositionY - 1))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX - 1, PositionY - 1))
             {
                 PositionX--;
                 PositionY--;
@@ -309,7 +310,7 @@ namespace CellEvolution.Cell.NN
         }
         private void MoveRightUp()
         {
-            if (world.IsMoveAvailable(PositionX + 1, PositionY - 1))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX + 1, PositionY - 1))
             {
                 PositionX++;
                 PositionY--;
@@ -317,7 +318,7 @@ namespace CellEvolution.Cell.NN
         }
         private void MoveRightDown()
         {
-            if (world.IsMoveAvailable(PositionX + 1, PositionY + 1))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX + 1, PositionY + 1))
             {
                 PositionX++;
                 PositionY++;
@@ -325,7 +326,7 @@ namespace CellEvolution.Cell.NN
         }
         private void MoveLeftDown()
         {
-            if (world.IsMoveAvailable(PositionX - 1, PositionY + 1))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX - 1, PositionY + 1))
             {
                 PositionX--;
                 PositionY++;
@@ -335,7 +336,7 @@ namespace CellEvolution.Cell.NN
         //Jump
         private void JumpUp()
         {
-            if (world.IsMoveAvailable(PositionX, PositionY - Constants.jumpDistance))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX, PositionY - Constants.jumpDistance))
             {
                 PositionY -= Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
@@ -343,7 +344,7 @@ namespace CellEvolution.Cell.NN
         }
         private void JumpRight()
         {
-            if (world.IsMoveAvailable(PositionX + Constants.jumpDistance, PositionY))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX + Constants.jumpDistance, PositionY))
             {
                 PositionX += Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
@@ -351,7 +352,7 @@ namespace CellEvolution.Cell.NN
         }
         private void JumpDown()
         {
-            if (world.IsMoveAvailable(PositionX, PositionY + Constants.jumpDistance))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX, PositionY + Constants.jumpDistance))
             {
                 PositionY += Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
@@ -360,7 +361,7 @@ namespace CellEvolution.Cell.NN
         }
         private void JumpLeft()
         {
-            if (world.IsMoveAvailable(PositionX - Constants.jumpDistance, PositionY))
+            if (world.cellActionHandler.IsMoveAvailable(PositionX - Constants.jumpDistance, PositionY))
             {
                 PositionX -= Constants.jumpDistance;
                 Energy -= Constants.jumpEnergyCost;
@@ -370,65 +371,65 @@ namespace CellEvolution.Cell.NN
         //Bite
         private void BiteLeftUp()
         {
-            if (world.IsVictimExists(PositionX - 1, PositionY - 1))
+            if (world.cellActionHandler.IsVictimExists(PositionX - 1, PositionY - 1))
             {
-                world.CellHunt(this, world.GetCell(PositionX - 1, PositionY - 1));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX - 1, PositionY - 1));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteUp()
         {
-            if (world.IsVictimExists(PositionX, PositionY - 1))
+            if (world.cellActionHandler.IsVictimExists(PositionX, PositionY - 1))
             {
-                world.CellHunt(this, world.GetCell(PositionX, PositionY - 1));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX, PositionY - 1));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteRightUp()
         {
-            if (world.IsVictimExists(PositionX + 1, PositionY - 1))
+            if (world.cellActionHandler.IsVictimExists(PositionX + 1, PositionY - 1))
             {
-                world.CellHunt(this, world.GetCell(PositionX + 1, PositionY - 1));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX + 1, PositionY - 1));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteRight()
         {
-            if (world.IsVictimExists(PositionX + 1, PositionY))
+            if (world.cellActionHandler.IsVictimExists(PositionX + 1, PositionY))
             {
-                world.CellHunt(this, world.GetCell(PositionX + 1, PositionY));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX + 1, PositionY));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteRightDown()
         {
-            if (world.IsVictimExists(PositionX + 1, PositionY + 1))
+            if (world.cellActionHandler.IsVictimExists(PositionX + 1, PositionY + 1))
             {
-                world.CellHunt(this, world.GetCell(PositionX + 1, PositionY + 1));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX + 1, PositionY + 1));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteDown()
         {
-            if (world.IsVictimExists(PositionX, PositionY + 1))
+            if (world.cellActionHandler.IsVictimExists(PositionX, PositionY + 1))
             {
-                world.CellHunt(this, world.GetCell(PositionX, PositionY + 1));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX, PositionY + 1));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteLeftDown()
         {
-            if (world.IsVictimExists(PositionX - 1, PositionY + 1))
+            if (world.cellActionHandler.IsVictimExists(PositionX - 1, PositionY + 1))
             {
-                world.CellHunt(this, world.GetCell(PositionX - 1, PositionY + 1));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX - 1, PositionY + 1));
                 CellColor = Constants.biteCellColor;
             }
         }
         private void BiteLeft()
         {
-            if (world.IsVictimExists(PositionX - 1, PositionY))
+            if (world.cellActionHandler.IsVictimExists(PositionX - 1, PositionY))
             {
-                world.CellHunt(this, world.GetCell(PositionX - 1, PositionY));
+                world.cellActionHandler.CellHunt(this, world.GetCell(PositionX - 1, PositionY));
                 CellColor = Constants.biteCellColor;
             }
         }
@@ -436,12 +437,12 @@ namespace CellEvolution.Cell.NN
         //Action
         private void Photosynthesis()
         {
-            if (world.IsDay())
+            if (world.CurrentDayTime == World.DayTime.Day)
             {
                 double proc = (double)world.Cells.Count * 100 / (double)((Constants.areaSizeX - 2) * (Constants.areaSizeY - 2));
                 double addEnergy = Constants.minPhotosynthesis + Constants.maxPhotosynthesis / 100.0 * (100 - proc);
 
-                int numOfCellsAround = world.GetNumOfLiveCellsAround(PositionX, PositionY);
+                int numOfCellsAround = world.WorldArea.GetNumOfLiveCellsAround(PositionX, PositionY);
                 if (numOfCellsAround > Constants.availableCellNumAroundMax)
                 {
                     addEnergy = addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMax) * (numOfCellsAround + 1 - Constants.availableCellNumAroundMax));
@@ -465,7 +466,7 @@ namespace CellEvolution.Cell.NN
         private void Absorption()
         {
             CellColor = Constants.absorbCellColor;
-            world.CellAbsorb(this);
+            world.cellActionHandler.CellAbsorb(this);
         }
         private void Slip()
         {
@@ -474,7 +475,7 @@ namespace CellEvolution.Cell.NN
         }
         private void Shout()
         {
-            world.CellShout(this);
+            world.cellActionHandler.CellShout(this);
         }
 
         //Reproduction

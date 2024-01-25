@@ -1,14 +1,16 @@
-﻿using CellEvolution.Cell.NN;
+﻿using CellEvolution;
+using CellEvolution.Cell.NN;
 using System;
 using System.Collections.Generic;
 
-namespace CellEvolution
+namespace СellEvolution.WorldResources
 {
-    public class WorldRenderer
+    public class Renderer
     {
         private object lockObject = new object();
+        private bool worldCreated = false;
         private World world;
-        public WorldRenderer(World world)
+        public Renderer(World world)
         {
             this.world = world;
         }
@@ -27,23 +29,23 @@ namespace CellEvolution
 
                         if (x % 2 == 0)
                         {
-                            if (Constants.borderChar == world.AreaChar[x / 2, y])
+                            if (Constants.borderChar == world.WorldArea.AreaChar[x / 2, y])
                             {
                                 Console.ForegroundColor = Constants.borderColor;
                             }
-                            else if (Constants.cellChar == world.AreaChar[x / 2, y])
+                            else if (Constants.cellChar == world.WorldArea.AreaChar[x / 2, y])
                             {
                                 Console.ForegroundColor = world.GetCell(x / 2, y).CellColor;
                             }
-                            else if (Constants.emptyChar == world.AreaChar[x / 2, y])
+                            else if (Constants.emptyChar == world.WorldArea.AreaChar[x / 2, y])
                             {
                                 Console.ForegroundColor = Constants.emptyColor;
                             }
-                            else if (Constants.poisonChar == world.AreaChar[x / 2, y])
+                            else if (Constants.poisonChar == world.WorldArea.AreaChar[x / 2, y])
                             {
                                 Console.ForegroundColor = Constants.poisonColor;
                             }
-                            Console.Write(world.AreaChar[x / 2, y]);
+                            Console.Write(world.WorldArea.AreaChar[x / 2, y]);
                             Console.ResetColor();
                         }
                         else
@@ -54,18 +56,21 @@ namespace CellEvolution
                 }
             }
             Console.ResetColor();
-
+            worldCreated = true;
         }
 
         public void VisualChange(int x, int y, char ch, ConsoleColor fore)
         {
-            lock (lockObject)
+            if (worldCreated)
             {
-                Console.CursorVisible = false;
-                Console.SetCursorPosition(x * 2, y);
-                Console.ForegroundColor = fore;
-                Console.Write(ch);
-                Console.ResetColor();
+                lock (lockObject)
+                {
+                    Console.CursorVisible = false;
+                    Console.SetCursorPosition(x * 2, y);
+                    Console.ForegroundColor = fore;
+                    Console.Write(ch);
+                    Console.ResetColor();
+                }
             }
         }
     }

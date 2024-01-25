@@ -1,4 +1,5 @@
 ﻿using System;
+using СellEvolution.Simulation;
 
 namespace CellEvolution
 {
@@ -7,12 +8,13 @@ namespace CellEvolution
         static void Main(string[] args)
         {
             Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
-            Logic logic;
+            
+            Simulation simulation = new Simulation();
             do
             {
-                logic = new Logic();
-                logic.StartSimulation();
-            } while (logic.TotallDays <= 300);
+                simulation.StartSimulation();
+
+            } while (true);
             
         }
     }

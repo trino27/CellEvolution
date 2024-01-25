@@ -1,5 +1,4 @@
 ﻿using log4net;
-using System;
 using System.Data.SqlClient;
 
 namespace СellEvolution
@@ -15,6 +14,67 @@ namespace СellEvolution
         public StatDatabase()
         {
             InitializeDatabase();
+        }
+
+        public void UpdateStat(int Day, double DayErrorValue, double ActionsInCellGensProc)
+        {
+            InsertDataError(Day, DayErrorValue);
+            InsertDataAllActionsProc(Day, ActionsInCellGensProc);
+        }
+
+        public bool InsertDataError(int lineNumber, double value)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string query = $"INSERT INTO {tableErrorMoves} (Day, ErrorPoint) VALUES (@Day, @ErrorPoint)";
+
+                    using (SqlCommand cmd = new SqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@Day", lineNumber);
+                        cmd.Parameters.AddWithValue("@ErrorPoint", value);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error inserting data: {ex.Message}");
+                return false;
+            }
+        }
+        public bool InsertDataAllActionsProc(int lineNumber, double value)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    string query = $"INSERT INTO {tableGenAll} (Day, Procent) VALUES (@Day, @Procent)";
+
+                    using (SqlCommand cmd = new SqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@Day", lineNumber);
+                        cmd.Parameters.AddWithValue("@Procent", value);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error inserting data: {ex.Message}");
+                return false;
+            }
         }
 
         private void InitializeDatabase()
@@ -50,62 +110,6 @@ namespace СellEvolution
                 {
                     cmdCreateTable.ExecuteNonQuery();
                 }
-            }
-        }
-
-        public bool InsertDataError(int lineNumber, double value)
-        {
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string query = $"INSERT INTO {tableErrorMoves} (Day, ErrorPoint) VALUES (@Day, @ErrorPoint)";
-
-                    using (SqlCommand cmd = new SqlCommand(query, connection))
-                    {
-                        cmd.Parameters.AddWithValue("@Day", lineNumber);
-                        cmd.Parameters.AddWithValue("@ErrorPoint", value);
-
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                log.Error($"Error inserting data: {ex.Message}");
-                return false;
-            }
-        }
-
-        public bool InsertDataAllActionsProc(int lineNumber, double value)
-        {
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string query = $"INSERT INTO {tableGenAll} (Day, Procent) VALUES (@Day, @Procent)";
-
-                    using (SqlCommand cmd = new SqlCommand(query, connection))
-                    {
-                        cmd.Parameters.AddWithValue("@Day", lineNumber);
-                        cmd.Parameters.AddWithValue("@Procent", value);
-
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                log.Error($"Error inserting data: {ex.Message}");
-                return false;
             }
         }
     }
