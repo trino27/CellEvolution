@@ -56,7 +56,7 @@
                     GenActionsCycle[i] = mother.GenActionsCycle[i];
                 }
 
-            }while(random.Next(0, 3) != 0);
+            }while(random.Next(0, 2) == 0);
         }
         private void RandomMutation()
         {

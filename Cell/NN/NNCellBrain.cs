@@ -27,8 +27,8 @@ namespace CellEvolution.Cell.NN
 
                 256,
                 128,
+                128,
                 96,
-                64,
 
                 32
             };
@@ -42,6 +42,26 @@ namespace CellEvolution.Cell.NN
 
             this.cell = cell; 
             gen = new CellGen();
+            teacher = new NNTeacher(this);
+        }
+
+        public NNCellBrain(CellModel cell, NNCellBrain original)
+        {
+            NetworkInit();
+            InitMemory();
+
+            this.cell = cell;
+            gen = new CellGen(original.gen);
+            teacher = new NNTeacher(this);
+        }
+
+        public NNCellBrain(CellModel cell, NNCellBrain mother, NNCellBrain father)
+        {
+            NetworkInit();
+            InitMemory();
+
+            this.cell = cell;
+            gen = new CellGen(mother.gen, father.gen);
             teacher = new NNTeacher(this);
         }
 
@@ -246,7 +266,7 @@ namespace CellEvolution.Cell.NN
                 inputsBrain[j] = areaInfo[i];
                 j++;
             }
-            inputsBrain[j] = (cell.Initiation) * Constants.brainInputInitioationPoweredK; //113
+            inputsBrain[j] = (cell.Initiation) * Constants.brainInputInitiationPoweredK; //113
             j++;
             inputsBrain[j] = (cell.Energy); //114
             j++;
@@ -258,7 +278,7 @@ namespace CellEvolution.Cell.NN
             j++;
             for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //127
             {
-                inputsBrain[j] = LastMovesDecidedActionsNum[i];
+                inputsBrain[j] = LastMovesDecidedActionsNum[i] * Constants.brainLastMovePoweredK + 1;
                 j++;
             }
 
@@ -327,8 +347,6 @@ namespace CellEvolution.Cell.NN
             {
                 RandomCloneNoise();
             }
-
-            gen = new CellGen(original.gen);
         }
         public void Clone(NNCellBrain mainParent, NNCellBrain secondParent)
         {

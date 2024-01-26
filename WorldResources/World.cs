@@ -57,14 +57,26 @@ namespace СellEvolution.WorldResources
         public void MakeTurn()
         {
             SortByInitiation();
+
             PerformCellLogicParallel();
+            //PerformCellLogic();
 
             WorldArea.ClearDeadCells();
+
             cellActionHandler.CellStartReproduction();
             cellActionHandler.CellStartCreatingClones();
+
             WorldArea.ClearAreaVoiceParallel();
 
             UpdateTimeAndSeason();
+        }
+
+        private void PerformCellLogic()
+        {
+            for (int i = 0; i < Cells.Count; i++)
+            {
+                    cellActionHandler.CellMove(i);
+            }
         }
         private void PerformCellLogicParallel()
         {
@@ -115,10 +127,10 @@ namespace СellEvolution.WorldResources
             if (CurrentHours >= Constants.numOfTurnsInDayTime)
             {
                 currentDayTime = DayTime.Night;
-                if (CurrentHours > Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
+                if (CurrentHours >= Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
                 {
                     currentDayTime = DayTime.Day;
-                    currentHours = 1;
+                    currentHours = 0;
                     currentDay++;
                     totalDays++;
                 }

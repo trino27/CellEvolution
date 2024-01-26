@@ -8,7 +8,7 @@ namespace СellEvolution.Cell.NN
     {
         private readonly Random random = new Random();
         private readonly NNCellBrain brain;
-        private int lastExpLearning = 0;
+        //private int lastExpLearning = 0;
 
         public NNTeacher(NNCellBrain brain)
         {
@@ -17,25 +17,25 @@ namespace СellEvolution.Cell.NN
 
         public void UseExpToLearn(bool IsErrorMove, double[][] LastMovesInputs, int[] LastMovesDecidedActionsNum, bool[] ErrorMoves)
         {
-            lastExpLearning++;
+            //lastExpLearning++;
             if (IsErrorMove)
             {
                 List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[0]);
                 LearnErrorFromExp(LastMovesInputs[0], AllErrorMoves.ToArray(), LastMovesInputs[0]);
             }
-            if (lastExpLearning >= 16)
-            {
-                for (int i = 0; i < LastMovesInputs.Length; i++)
-                {
-                    List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[i]);
-                    if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] &&
-                         !AllErrorMoves.Contains((CellAction)LastMovesDecidedActionsNum[i]))
-                    {
-                        LearnFromExp(LastMovesInputs[i], (CellAction)LastMovesDecidedActionsNum[i]);
-                    }
-                }
-                lastExpLearning = 0;
-            }
+            //if (lastExpLearning >= 16)
+            //{
+            //    for (int i = 0; i < LastMovesInputs.Length; i++)
+            //    {
+            //        List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastMovesInputs[i]);
+            //        if (random.NextDouble() < Constants.learnFromExpProbability && !ErrorMoves[i] &&
+            //             !AllErrorMoves.Contains((CellAction)LastMovesDecidedActionsNum[i]))
+            //        {
+            //            LearnFromExp(LastMovesInputs[i], (CellAction)LastMovesDecidedActionsNum[i]);
+            //        }
+            //    }
+            //    lastExpLearning = 0;
+            //}
         }
 
         public bool IsDecidedMoveError(CellAction decidedAction, double[] LastInput)

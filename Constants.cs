@@ -44,10 +44,11 @@ namespace CellEvolution
         public const int genCycleSize = liveTime;
 
         public const int brainInputDayNightPoweredK = 100;
-        public const int brainInputInitioationPoweredK = 10;
+        public const int brainInputInitiationPoweredK = 10;
         public const int brainInputMaxClonePoweredK = 10;
         public const int brainInputCurrentAgePoweredK = 10;
         public const int brainInputEnergyBankPoweredK = 10;
+        public const int brainLastMovePoweredK = 5;
 
 
         public const double randomGenMutationProbability = 0.2;

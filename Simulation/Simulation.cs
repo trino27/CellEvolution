@@ -36,6 +36,8 @@ namespace СellEvolution.Simulation
 
             do
             {
+                UpdateCellsTypeInfo();
+                UpdateDayErrorValue();
                 
 
                 ShowWorldInfo();
@@ -46,9 +48,6 @@ namespace СellEvolution.Simulation
                 stopwatchCells.Restart();
                 world.MakeTurn();
                 stopwatchCells.Stop();
-
-                UpdateCellsTypeInfo();
-                statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
 
             } while(world.Cells.Count > 0);
         }
@@ -87,23 +86,6 @@ namespace СellEvolution.Simulation
         }
         private void ShowCellsTypeInfo()
         {
-            foreach (var j in world.Cells)
-            {
-                switch (j.CellColor)
-                {
-                    case Constants.photoCellColor: PhotoCells++; break;
-                    case Constants.biteCellColor: BiteCells++; break;
-                    case Constants.absorbCellColor: AbsorbCells++; break;
-                    case Constants.evolvingCellColor: EvolveCells++; break;
-                    case Constants.slipCellColor: SlipCells++; break;
-                    case Constants.errorCellColor: ErrorCells++; break;
-                    default: break;
-                }
-            }
-            if (world.Cells.Count != 0)
-            {
-                CurrentErrorProc = (double)ErrorCells * 100 / (double)world.Cells.Count;
-            }
             Console.CursorVisible = false;
             Console.SetCursorPosition(94, Constants.areaSizeY + 1);
             Console.Write($"Error %: {CurrentErrorProc} Plants: {PhotoCells} Hunters: {BiteCells} Mushrooms: {AbsorbCells} Students: {EvolveCells} Slip: {SlipCells}            ");
@@ -141,13 +123,14 @@ namespace СellEvolution.Simulation
             {
                 CurrentErrorProc = (double)ErrorCells * 100 / (double)world.Cells.Count;
             }
-            UpdateDayErrorValue();
+            
         }
         
         private void UpdateDayErrorValue()
         {
-            if(world.TotalDays % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0 && world.TotalDays != 0)
+            if(world.CurrentHours % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0 && world.CurrentHours != 0)
             {
+                statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
                 DayErrorValue = 0;
             }
             DayErrorValue += CurrentErrorProc;

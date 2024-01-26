@@ -63,7 +63,7 @@ namespace CellEvolution.Cell.NN
 
             generationNum = original.generationNum + 1;
 
-            brain = new NNCellBrain(this);
+            brain = new NNCellBrain(this, original.brain);
             brain.Clone(original.brain);
 
             ActionDictionaryInit();
@@ -91,7 +91,7 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new NNCellBrain(this);
+            brain = new NNCellBrain(this, mother.brain, father.brain);
             brain.Clone(mainParent.brain, secondParent.brain);
 
             SpecieFromParentsInit(mother, father);
@@ -187,7 +187,7 @@ namespace CellEvolution.Cell.NN
             IsSlip = false;
             IsCreatingClone = false;
 
-            if (IsCreatingChildren == false)
+            if (!IsCreatingChildren)
             {
                 AlreadyUseClone = 0;
             }
@@ -199,11 +199,12 @@ namespace CellEvolution.Cell.NN
 
             PerformAction(brain.ChooseAction());
 
-            if (brain.IsErrorMove) CellColor = Constants.errorCellColor;
-
+            if (brain.IsErrorMove)
+            {
+                CellColor = Constants.errorCellColor;
+            }
 
             brain.LearnWithTeacher();
-
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost;
 
@@ -211,14 +212,21 @@ namespace CellEvolution.Cell.NN
             {
                 CurrentAge += Constants.poisonedDecLive;
             }
+
             if (CurrentAge >= Constants.liveTime)
             {
                 IsDead = true;
             }
             else
             {
-                if (!IsSlip) CurrentAge += Constants.actionLiveCost;
-                else CurrentAge += Constants.slipLiveCost;
+                if (!IsSlip)
+                {
+                    CurrentAge += Constants.actionLiveCost;
+                }
+                else
+                {
+                    CurrentAge += Constants.slipLiveCost;
+                }
 
                 IsDead = IsNoEnergy();
             }
