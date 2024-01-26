@@ -25,40 +25,40 @@ namespace СellEvolution.WorldResources
             AreaVoice = new int[Constants.areaSizeX, Constants.areaSizeY];
 
             Console.WriteLine("Creating World!");
-            CreateAreas();
+            CreateAreasParallel();
             Console.WriteLine("World Created!");
         }
 
-        private void CreateAreaColor()
+        private void CreateAreaColorParallel() 
         {
-            for (int y = 0; y < Constants.areaSizeY; y++)
+            Parallel.For(0, Constants.areaSizeY, y =>
             {
                 for (int x = 0; x < Constants.areaSizeX; x++)
                 {
-                    if (Constants.borderChar == AreaChar[x, y])
+                    lock (lockObject)
                     {
-                        Console.ForegroundColor = Constants.borderColor;
-                        AreaColor[x, y] = Console.ForegroundColor;
-                    }
-                    else if (Constants.cellChar == AreaChar[x, y])
-                    {
-                        Console.ForegroundColor = world.GetCell(x, y).CellColor;
-                        AreaColor[x, y] = Console.ForegroundColor;
-                    }
-                    else if (Constants.emptyChar == AreaChar[x, y])
-                    {
-                        Console.ForegroundColor = Constants.emptyColor;
-                        AreaColor[x, y] = Console.ForegroundColor;
-                    }
-                    else if (Constants.poisonChar == AreaChar[x, y])
-                    {
-                        Console.ForegroundColor = Constants.poisonColor;
-                        AreaColor[x, y] = Console.ForegroundColor;
+                        if (Constants.borderChar == AreaChar[x, y])
+                        {
+                            AreaColor[x, y] = Constants.borderColor;
+                        }
+                        else if (Constants.cellChar == AreaChar[x, y])
+                        {
+                            AreaColor[x, y] = world.GetCell(x, y).CellColor;
+                        }
+                        else if (Constants.emptyChar == AreaChar[x, y])
+                        {
+                            AreaColor[x, y] = Constants.emptyColor;
+                        }
+                        else if (Constants.poisonChar == AreaChar[x, y])
+                        {
+                            AreaColor[x, y] = Constants.poisonColor;
+                        }
                     }
                 }
-            }
+            });
         }
-        private void CreateAreas()
+
+        private void CreateAreasParallel()
         {
             Console.WriteLine("Creating Borders!");
             Task taskX = new Task(() =>
@@ -119,18 +119,17 @@ namespace СellEvolution.WorldResources
             taskCell.Wait();
             taskEmpty.Wait();
 
-            CreateAreaColor();
+            CreateAreaColorParallel();
         }
 
         public void FillAreaParallel()
         {
             Parallel.For(1, Constants.areaSizeY - 1, y =>
             {
-                for (int x = 1; x < Constants.areaSizeX - 1; x++)
+                Parallel.For(1, Constants.areaSizeX - 1, x =>
                 {
                     lock (lockObject)
                     {
-
                         if (AreaEnergy[x, y] < Constants.areaEnergyStartVal)
                         {
                             AreaEnergy[x, y] = Constants.areaEnergyStartVal;
@@ -145,28 +144,19 @@ namespace СellEvolution.WorldResources
                             AreaChar[x, y] = Constants.emptyChar;
                             AreaColor[x, y] = Constants.emptyColor;
                         }
-
                     }
-                }
+                });
             });
-
         }
-        
+
         public int GetNumOfLiveCellsAround(int positionX, int positionY)
         {
             lock (lockObject)
             {
-                List<int> area = GetAreaCharAroundCellInt(positionX, positionY, 1);
-                int res = 0;
-
-                for (int i = 0; i < area.Count; i++)
-                {
-                    if (area[i] >= Constants.KnewCell && area[i] < Constants.KdeadCell) res++;
-                }
-
-                return res;
+                return GetAreaCharAroundCellInt(positionX, positionY, 1).Count(cell => cell >= Constants.KnewCell && cell < Constants.KdeadCell);
             }
         }
+
         public int GetCurrentAreaEnergy(int positionX, int positionY) => AreaEnergy[positionX, positionY];
 
         public List<int> GetAreaCharAroundCellInt(int positionX, int positionY, int dist)

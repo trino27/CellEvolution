@@ -18,45 +18,50 @@ namespace СellEvolution.Cell
         {
             if (i < world.Cells.Count && !world.Cells[i].IsDead)
             {
-                int LastX = world.Cells[i].PositionX;
-                int LastY = world.Cells[i].PositionY;
+                int lastX = world.Cells[i].PositionX;
+                int lastY = world.Cells[i].PositionY;
 
                 world.Cells[i].MakeAction();
 
-                if (!(world.Cells[i].PositionX == LastX && world.Cells[i].PositionY == LastY))
+                if (world.Cells[i].PositionX != lastX || world.Cells[i].PositionY != lastY)
                 {
-                    CellChangePos(world.Cells[i], LastX, LastY);
+                    CellChangePos(world.Cells[i], lastX, lastY);
                 }
                 else
                 {
-                    if (world.WorldArea.IsAreaPoisoned(LastX, LastY))
+                    if (world.WorldArea.IsAreaPoisoned(lastX, lastY))
                     {
-                        world.WorldArea.CreatePoisonArea(LastX, LastY);
+                        world.WorldArea.CreatePoisonArea(lastX, lastY);
                     }
                     else
                     {
-                        world.WorldArea.AreaColor[world.Cells[i].PositionX, world.Cells[i].PositionY] = world.Cells[i].CellColor;
-
-                        if (world.IsRenderAllow)
-                        {
-                            world.worldRenderer.VisualChange(world.Cells[i].PositionX, world.Cells[i].PositionY, Constants.cellChar, world.Cells[i].CellColor);
-                        }
+                        UpdateAreaAfterMove(world.Cells[i]);
                     }
                 }
-
             }
         }
+
+        private void UpdateAreaAfterMove(CellModel cell)
+        {
+            lock (lockObject)
+            {
+                int posX = cell.PositionX;
+                int posY = cell.PositionY;
+
+                world.WorldArea.AreaColor[posX, posY] = cell.CellColor;
+
+                if (world.IsRenderAllow)
+                {
+                    world.worldRenderer.VisualChange(posX, posY, Constants.cellChar, cell.CellColor);
+                }
+            }
+        }
+
         public void CellChangePos(CellModel cell, int lastX, int lastY)
         {
             lock (lockObject)
             {
-                if (world.IsRenderAllow)
-                {
-                    world.worldRenderer.VisualChange(cell.PositionX, cell.PositionY, Constants.cellChar, cell.CellColor);
-                }
-
-                world.WorldArea.AreaColor[cell.PositionX, cell.PositionY] = cell.CellColor;
-                world.WorldArea.AreaChar[cell.PositionX, cell.PositionY] = Constants.cellChar;
+                UpdateAreaAfterMove(cell);
 
                 if (world.WorldArea.IsAreaPoisoned(lastX, lastY))
                 {
@@ -73,7 +78,6 @@ namespace СellEvolution.Cell
                     world.WorldArea.AreaColor[lastX, lastY] = Constants.emptyColor;
                 }
             }
-
         }
 
         public void CellHunt(CellModel hunter, CellModel victim)
