@@ -1,12 +1,7 @@
-﻿using CellEvolution.Cell.NN;
-using CellEvolution;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static СellEvolution.Cell.CellActionHandler;
+﻿using CellEvolution;
+using CellEvolution.Cell.NN;
 using СellEvolution.Cell;
+using СellEvolution.Meteor;
 
 namespace СellEvolution.WorldResources
 {
@@ -22,10 +17,12 @@ namespace СellEvolution.WorldResources
 
         public Renderer worldRenderer;
 
-        private long currentTurn = 1;
+        private long currentTurn = 0;
         private int currentYear = 0;
         private int currentDay = 1;
         private int currentHours = 1;
+
+        private int MeteorNight = 0;
 
         private DayTime currentDayTime = DayTime.Day;
         private int totalDays = 0;
@@ -57,27 +54,53 @@ namespace СellEvolution.WorldResources
         public void MakeTurn()
         {
             SortByInitiation();
+            UpdateTimeAndSeason();
 
             PerformCellLogicParallel();
-            //PerformCellLogic();
 
             WorldArea.ClearDeadCells();
+
+            MeteorFalling();
 
             cellActionHandler.CellStartReproduction();
             cellActionHandler.CellStartCreatingClones();
 
             WorldArea.ClearAreaVoiceParallel();
-
-            UpdateTimeAndSeason();
         }
 
-        private void PerformCellLogic()
+        private void MeteorFalling()
         {
-            for (int i = 0; i < Cells.Count; i++)
+            MeteorModel meteor = new MeteorModel();
+
+            if (meteor.IsCreateMeteorBlocks)
             {
-                    cellActionHandler.CellMove(i);
+                foreach (var meteorBlock in meteor.MeteorBlocks)
+                {
+                    KillCellAtArea(meteorBlock.PositionX, meteorBlock.PositionY);
+                    WorldArea.CreateMeteorBlock(meteorBlock);
+                }
+
+                if (meteor.NightTurns > MeteorNight)
+                {
+                    MeteorNight = meteor.NightTurns;
+                }
             }
         }
+
+        private void KillCellAtArea(int x, int y)
+        {
+            if (GetCell(x, y) != null)
+            {
+                CellModel targetCell = GetCell(x, y);
+                Cells.Remove(targetCell);
+
+                targetCell.IsDead = true;
+
+                WorldArea.DeadCellToAreaEnergy(targetCell);
+                WorldArea.ClearAreaFromDeadCell(targetCell.PositionX, targetCell.PositionY);
+            }
+        }
+
         private void PerformCellLogicParallel()
         {
             List<Task> tasks = new List<Task>();
@@ -124,24 +147,38 @@ namespace СellEvolution.WorldResources
         private void UpdateTimeAndSeason()
         {
             Console.CursorVisible = false;
-            if (CurrentHours >= Constants.numOfTurnsInDayTime)
-            {
-                currentDayTime = DayTime.Night;
-                if (CurrentHours >= Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
-                {
-                    currentDayTime = DayTime.Day;
-                    currentHours = 0;
-                    currentDay++;
-                    totalDays++;
-                }
-                if (CurrentDay > Constants.numOfDaysInYear)
-                {
-                    currentYear++;
-                    currentDay = 1;
-                }
-            }
             currentTurn++;
             currentHours++;
+
+            if (MeteorNight == 0)
+            {
+                if (CurrentHours > Constants.numOfTurnsInDayTime)
+                {
+                    currentDayTime = DayTime.Night;
+
+                }
+                else
+                {
+                    currentDayTime = DayTime.Day;
+                }
+
+            }else
+            {
+                currentDayTime = DayTime.Night;
+                MeteorNight--;
+            }
+
+            if (CurrentHours > Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
+            {
+                currentHours = 1;
+                currentDay++;
+                totalDays++;
+            }
+            if (CurrentDay > Constants.numOfDaysInYear)
+            {
+                currentYear++;
+                currentDay = 1;
+            }
         }
         private void SortByInitiation()
         {

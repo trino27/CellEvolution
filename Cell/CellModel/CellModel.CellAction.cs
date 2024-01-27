@@ -42,9 +42,10 @@
             //Action
             Slip, 
             Shout, 
-
-            Evolving1, 
-            Evolving2,
+            Hide,
+            
+            //Mine
+            Mine,
 
             //Evolving
             GainInitiation,

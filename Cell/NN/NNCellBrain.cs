@@ -1,5 +1,4 @@
 ﻿using CellEvolution.Cell.GenAlg;
-using System.Diagnostics.Metrics;
 using СellEvolution.Cell.NN;
 using static CellEvolution.Cell.NN.CellModel;
 
@@ -10,7 +9,7 @@ namespace CellEvolution.Cell.NN
         public readonly Random random = new Random();
 
         public readonly NNTeacher teacher;
-        private readonly CellModel cell; 
+        private readonly CellModel cell;
         private CellGen gen;
 
         public bool IsErrorMove = false;
@@ -40,7 +39,7 @@ namespace CellEvolution.Cell.NN
             NetworkInit();
             InitMemory();
 
-            this.cell = cell; 
+            this.cell = cell;
             gen = new CellGen();
             teacher = new NNTeacher(this);
         }
@@ -206,6 +205,7 @@ namespace CellEvolution.Cell.NN
                     {
                         availableActions.Add(CellAction.Slip);
                         availableActions.Add(CellAction.Shout);
+                        availableActions.Add(CellAction.Hide);
                     }
                     break;
                 case CellGen.GenAction.Evolving:
@@ -214,6 +214,11 @@ namespace CellEvolution.Cell.NN
                         {
                             availableActions.Add((CellAction)i);
                         }
+                    }
+                    break;
+                case CellGen.GenAction.Mine:
+                    {
+                        availableActions.Add(CellAction.Mine);
                     }
                     break;
 
@@ -229,7 +234,7 @@ namespace CellEvolution.Cell.NN
 
             inputs = CreateBrainInput();
             RegisterInput(inputs);
-            
+
             double[] outputs = FeedForwardWithNoise(inputs);
             CellAction decidedAction = FindMaxIndexForFindAction(outputs, availableActions);
             RegisterDecidedAction(decidedAction);

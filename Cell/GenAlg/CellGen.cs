@@ -65,7 +65,7 @@
             {
                 if (random.NextDouble() < Constants.randomGenMutationProbability)
                 {
-                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 8);
+                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 9);
                 }
                 else
                 {
@@ -80,7 +80,7 @@
             {
                 if (random.NextDouble() < Constants.randomGenMutationDuringLiveProbability)
                 {
-                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 8);
+                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 9);
                 }
                 else
                 {
@@ -92,7 +92,7 @@
         {
             for (int i = 0; i < GenActionsCycle.Length; i++)
             {
-                GenActionsCycle[i] = (GenAction)random.Next(0, 8);
+                GenActionsCycle[i] = (GenAction)random.Next(0, 9);
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿using CellEvolution;
 using CellEvolution.Cell.NN;
-using System.Collections.Generic;
+using СellEvolution.Meteor;
 
 namespace СellEvolution.WorldResources
 {
@@ -14,6 +14,8 @@ namespace СellEvolution.WorldResources
         public ConsoleColor[,] AreaColor;
         public int[,] AreaVoice;
         public int[,] AreaEnergy;
+
+        public List<MeteorBlock> MeteorBlocks = new List<MeteorBlock>();
 
         public WorldArea(World world)
         {
@@ -29,7 +31,7 @@ namespace СellEvolution.WorldResources
             Console.WriteLine("World Created!");
         }
 
-        private void CreateAreaColorParallel() 
+        private void CreateAreaColorParallel()
         {
             Parallel.For(0, Constants.areaSizeY, y =>
             {
@@ -179,6 +181,7 @@ namespace СellEvolution.WorldResources
                                     case Constants.borderChar: k = Constants.Kborder; break;
                                     case Constants.emptyChar: k = Constants.Kempty; break;
                                     case Constants.poisonChar: k = Constants.Kpoison; break;
+                                    case Constants.meteorChar: k = Constants.Kmeteor; break;
                                     case Constants.cellChar:
                                         {
                                             switch (AreaColor[x, y])
@@ -188,6 +191,8 @@ namespace СellEvolution.WorldResources
                                                 case Constants.photoCellColor: k = Constants.KphotoCell; break; // plant
                                                 case Constants.absorbCellColor: k = Constants.KabsorbCell; break; // mushroom
                                                 case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
+                                                case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
+                                                case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
                                                 case Constants.evolvingCellColor: k = Constants.KevolvingCell; break; // evolving
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
@@ -228,6 +233,7 @@ namespace СellEvolution.WorldResources
                                     case Constants.borderChar: k = Constants.Kborder; break;
                                     case Constants.emptyChar: k = Constants.Kempty; break;
                                     case Constants.poisonChar: k = Constants.Kpoison; break;
+                                    case Constants.meteorChar: k = Constants.Kmeteor; break;
                                     case Constants.cellChar:
                                         {
                                             switch (AreaColor[x, y])
@@ -237,6 +243,8 @@ namespace СellEvolution.WorldResources
                                                 case Constants.photoCellColor: k = Constants.KphotoCell; break; // plant
                                                 case Constants.absorbCellColor: k = Constants.KabsorbCell; break; // mushroom
                                                 case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
+                                                case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
+                                                case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
                                                 case Constants.evolvingCellColor: k = Constants.KevolvingCell; break; // evolving
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
@@ -258,7 +266,6 @@ namespace СellEvolution.WorldResources
                 return area;
             }
         }
-
         public List<int> GetInfoFromAreaToCellBrainInput(int positionX, int positionY)
         {
             lock (lockObject)
@@ -288,6 +295,7 @@ namespace СellEvolution.WorldResources
                                     case Constants.borderChar: k = Constants.Kborder; break;
                                     case Constants.emptyChar: k = Constants.Kempty; break;
                                     case Constants.poisonChar: k = Constants.Kpoison; break;
+                                    case Constants.meteorChar: k = Constants.Kmeteor; break;
                                     case Constants.cellChar:
                                         {
                                             switch (AreaColor[x, y])
@@ -297,6 +305,8 @@ namespace СellEvolution.WorldResources
                                                 case Constants.photoCellColor: k = Constants.KphotoCell; break; // plant
                                                 case Constants.absorbCellColor: k = Constants.KabsorbCell; break; // mushroom
                                                 case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
+                                                case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
+                                                case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
                                                 case Constants.evolvingCellColor: k = Constants.KevolvingCell; break; // evolving
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
@@ -444,6 +454,55 @@ namespace СellEvolution.WorldResources
 
         }
 
+        public void CreateMeteorBlock(MeteorBlock meteorBlock)
+        {
+            lock (lockObject)
+            {
+                if (MeteorBlocks.Exists(meteorBlock2 => meteorBlock.PositionX == meteorBlock2.PositionX && meteorBlock.PositionY == meteorBlock2.PositionY))
+                {
+                    MeteorBlocks.Remove(GetMeteorBlock(meteorBlock.PositionX, meteorBlock.PositionY));
+                }
+
+                MeteorBlocks.Add(meteorBlock);
+
+                AreaChar[meteorBlock.PositionX, meteorBlock.PositionY] = Constants.meteorChar;
+                AreaColor[meteorBlock.PositionX, meteorBlock.PositionY] = Constants.meteorColor;
+
+                if (world.IsRenderAllow)
+                {
+                    world.worldRenderer.VisualChange(meteorBlock.PositionX, meteorBlock.PositionY, Constants.meteorChar, Constants.meteorColor);
+                }
+            }
+        }
+        public void ClearMeteorBlock(MeteorBlock meteorBlock)
+        {
+            lock (lockObject)
+            {
+                if (IsAreaPoisoned(meteorBlock.PositionX, meteorBlock.PositionY))
+                {
+                    world.WorldArea.CreatePoisonArea(meteorBlock.PositionX, meteorBlock.PositionY);
+                }
+                else
+                {
+                    if (world.IsRenderAllow)
+                    {
+                        world.worldRenderer.VisualChange(meteorBlock.PositionX, meteorBlock.PositionY, Constants.emptyChar, Constants.emptyColor);
+                    }
+
+                    world.WorldArea.AreaChar[meteorBlock.PositionX, meteorBlock.PositionY] = Constants.emptyChar;
+                    world.WorldArea.AreaColor[meteorBlock.PositionX, meteorBlock.PositionY] = Constants.emptyColor;
+                }
+            }
+        }
+
+        public MeteorBlock GetMeteorBlock(int x, int y)
+        {
+            lock (lockObject)
+            {
+                return MeteorBlocks.FirstOrDefault(meteorBlock => meteorBlock.PositionX == x && meteorBlock.PositionY == y);
+            }
+        }
+
         public void ClearDeadCells()
         {
             lock (lockObject)
@@ -460,7 +519,6 @@ namespace СellEvolution.WorldResources
                 world.Cells.RemoveAll(cell => cell.IsDead);
             }
         }
-
         public void ClearAreaFromDeadCell(int positionX, int positionY)
         {
             if (IsAreaPoisoned(positionX, positionY))
@@ -471,7 +529,6 @@ namespace СellEvolution.WorldResources
             {
                 AreaChar[positionX, positionY] = Constants.emptyChar;
                 AreaColor[positionX, positionY] = Constants.emptyColor;
-
 
                 if (world.IsRenderAllow)
                 {
@@ -497,7 +554,24 @@ namespace СellEvolution.WorldResources
                 CreatePoisonArea(x, y);
             }
         }
+        public void DeadCellToAreaEnergy(CellModel cell)
+        {
+            int x = cell.PositionX;
+            int y = cell.PositionY;
+            if (cell.Energy / 4 > Constants.minEnergyFromDeadCell)
+            {
+                AreaEnergy[x, y] += cell.Energy / 4;
+            }
+            else
+            {
+                AreaEnergy[x, y] += Constants.minEnergyFromDeadCell;
+            }
 
+            if (IsAreaPoisoned(x, y) && AreaChar[x, y] == Constants.emptyChar)
+            {
+                CreatePoisonArea(x, y);
+            }
+        }
         public bool IsAreaPoisoned(int x, int y) => AreaEnergy[x, y] > Constants.energyAreaPoisonedCorner;
     }
 }

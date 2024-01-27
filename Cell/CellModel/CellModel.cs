@@ -35,6 +35,7 @@ namespace CellEvolution.Cell.NN
         public bool IsCorpseEaten = false;
         public bool IsDead = false;
         public bool IsSlip = false;
+        public bool IsHide = false;
 
         public bool IsCreatingChildren = false;
         public bool IsCreatingClone = false;
@@ -173,8 +174,8 @@ namespace CellEvolution.Cell.NN
             { CellAction.Reproduction, Reproduction },
             { CellAction.Slip, Slip },
             { CellAction.Shout, Shout },
-            { CellAction.Evolving1, null },
-            { CellAction.Evolving2, null },
+            { CellAction.Hide, Hide },
+            { CellAction.Mine, Mine },
             { CellAction.GainInitiation, GainInitiation },
             { CellAction.GainMaxClone, GainMaxClone },
             { CellAction.GainEnergyBank, GainEnergyBank },
@@ -186,6 +187,7 @@ namespace CellEvolution.Cell.NN
         {
             IsSlip = false;
             IsCreatingClone = false;
+            IsHide = false;
 
             if (!IsCreatingChildren)
             {
@@ -476,6 +478,12 @@ namespace CellEvolution.Cell.NN
             CellColor = Constants.absorbCellColor;
             world.cellActionHandler.CellAbsorb(this);
         }
+        private void Mine()
+        {
+            CellColor = Constants.mineCellColor;
+            world.cellActionHandler.CellMine(this);
+        }
+
         private void Slip()
         {
             IsSlip = true;
@@ -484,6 +492,11 @@ namespace CellEvolution.Cell.NN
         private void Shout()
         {
             world.cellActionHandler.CellShout(this);
+        }
+        private void Hide()
+        {
+            IsHide = true;
+            CellColor = Constants.hideCellColor;
         }
 
         //Reproduction

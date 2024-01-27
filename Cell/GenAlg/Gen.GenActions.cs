@@ -11,6 +11,7 @@
             Reproduction,
             Evolving,
             Actions,
+            Mine,
             All
         }
     }

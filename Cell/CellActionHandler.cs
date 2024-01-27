@@ -169,7 +169,38 @@ namespace СellEvolution.Cell
                 }
             }
         }
+        public void CellMine(CellModel miner)
+        {
+            int addEnergy = 0;
+            for (int x = miner.PositionX - Constants.mineDistance; x <= miner.PositionX + Constants.mineDistance; x++)
+            {
+                for (int y = miner.PositionY - Constants.mineDistance; y <= miner.PositionY + Constants.mineDistance; y++)
+                {
+                    if (world.WorldArea.AreaChar[x, y] == Constants.meteorChar)
+                    {
+                        if (world.WorldArea.GetMeteorBlock(x, y).OrbNum >= Constants.mineAmount)
+                        {
+                            world.WorldArea.GetMeteorBlock(x, y).OrbNum -= Constants.mineAmount;
 
+                            addEnergy += Constants.mineAmount;
+                        }
+                        else
+                        {
+                            addEnergy += world.WorldArea.GetMeteorBlock(x, y).OrbNum;
+
+                            world.WorldArea.GetMeteorBlock(x, y).OrbNum = 0;
+                        }
+
+                        if (world.WorldArea.GetMeteorBlock(x, y).OrbNum <= 0)
+                        {
+                            world.WorldArea.ClearMeteorBlock(world.WorldArea.GetMeteorBlock(x, y));
+                        }
+                    }
+                }
+            }
+
+            miner.Energy += addEnergy;
+        }
         public void CellStartCreatingClones()
         {
             lock (lockObject)
@@ -335,7 +366,7 @@ namespace СellEvolution.Cell
         {
             lock (lockObject)
             {
-                return world.Cells.Any(cell => cell.PositionX == positionX && cell.PositionY == positionY);
+                return world.Cells.Any(cell => cell.PositionX == positionX && cell.PositionY == positionY && !cell.IsHide) ;
             }
         }
         public bool IsMoveAvailable(int positionX, int positionY)
