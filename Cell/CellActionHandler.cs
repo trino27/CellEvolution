@@ -163,7 +163,7 @@ namespace СellEvolution.Cell
                         if (y >= 0 && y < Constants.areaSizeY &&
                             x >= 0 && x < Constants.areaSizeX &&
                              world.WorldArea.AreaVoice[x, y] != 0 &&
-                             random.Next(0,2) == 0)
+                             random.Next(0, 2) == 0)
                         {
                             world.WorldArea.AreaVoice[x, y] = index + 1;
                         }
@@ -171,38 +171,132 @@ namespace СellEvolution.Cell
                 }
             }
         }
-        public void CellMine(CellModel miner)
+
+        public void CellMineTop(CellModel miner)
         {
             int addEnergy = 0;
-            for (int x = miner.PositionX - Constants.mineDistance; x <= miner.PositionX + Constants.mineDistance; x++)
+            int y = miner.PositionY - 1;
+            for (int x = miner.PositionX - 1; x <= miner.PositionX + 1; x++)
             {
-                for (int y = miner.PositionY - Constants.mineDistance; y <= miner.PositionY + Constants.mineDistance; y++)
+                if (world.WorldArea.GetMeteorBlock(x, y) != null)
                 {
-                    if (world.WorldArea.AreaChar[x, y] == Constants.meteorChar)
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum >= Constants.mineAmount)
                     {
-                        if (world.WorldArea.GetMeteorBlock(x, y).OrbNum >= Constants.mineAmount)
-                        {
-                            world.WorldArea.GetMeteorBlock(x, y).OrbNum -= Constants.mineAmount;
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum -= Constants.mineAmount;
 
-                            addEnergy += Constants.mineAmount;
-                        }
-                        else
-                        {
-                            addEnergy += world.WorldArea.GetMeteorBlock(x, y).OrbNum;
+                        addEnergy += Constants.mineAmount;
+                    }
+                    else
+                    {
+                        addEnergy += world.WorldArea.GetMeteorBlock(x, y).OrbNum;
 
-                            world.WorldArea.GetMeteorBlock(x, y).OrbNum = 0;
-                        }
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum = 0;
+                    }
 
-                        if (world.WorldArea.GetMeteorBlock(x, y).OrbNum <= 0)
-                        {
-                            world.WorldArea.ClearMeteorBlock(world.WorldArea.GetMeteorBlock(x, y));
-                        }
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum <= 0)
+                    {
+                        world.WorldArea.ClearMeteorBlock(world.WorldArea.GetMeteorBlock(x, y));
                     }
                 }
             }
 
+
             miner.Energy += addEnergy;
         }
+        public void CellMineRightSide(CellModel miner)
+        {
+            int addEnergy = 0;
+            int x = miner.PositionX + 1;
+            for (int y = miner.PositionY - 1; y <= miner.PositionY + 1; y++)
+            {
+                if (world.WorldArea.GetMeteorBlock(x, y) != null)
+                {
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum >= Constants.mineAmount)
+                    {
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum -= Constants.mineAmount;
+
+                        addEnergy += Constants.mineAmount;
+                    }
+                    else
+                    {
+                        addEnergy += world.WorldArea.GetMeteorBlock(x, y).OrbNum;
+
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum = 0;
+                    }
+
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum <= 0)
+                    {
+                        world.WorldArea.ClearMeteorBlock(world.WorldArea.GetMeteorBlock(x, y));
+                    }
+                }
+            }
+
+
+            miner.Energy += addEnergy;
+        }
+        public void CellMineBottom(CellModel miner)
+        {
+            int addEnergy = 0;
+            int y = miner.PositionY + 1;
+            for (int x = miner.PositionX - 1; x <= miner.PositionX + 1; x++)
+            {
+                if (world.WorldArea.GetMeteorBlock(x, y) != null)
+                {
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum >= Constants.mineAmount)
+                    {
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum -= Constants.mineAmount;
+
+                        addEnergy += Constants.mineAmount;
+                    }
+                    else
+                    {
+                        addEnergy += world.WorldArea.GetMeteorBlock(x, y).OrbNum;
+
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum = 0;
+                    }
+
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum <= 0)
+                    {
+                        world.WorldArea.ClearMeteorBlock(world.WorldArea.GetMeteorBlock(x, y));
+                    }
+                }
+            }
+
+
+            miner.Energy += addEnergy;
+        }
+        public void CellMineLeftSide(CellModel miner)
+        {
+            int addEnergy = 0;
+            int x = miner.PositionX - 1;
+            for (int y = miner.PositionY - 1; y <= miner.PositionY + 1; y++)
+            {
+                if (world.WorldArea.GetMeteorBlock(x, y) != null)
+                {
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum >= Constants.mineAmount)
+                    {
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum -= Constants.mineAmount;
+
+                        addEnergy += Constants.mineAmount;
+                    }
+                    else
+                    {
+                        addEnergy += world.WorldArea.GetMeteorBlock(x, y).OrbNum;
+
+                        world.WorldArea.GetMeteorBlock(x, y).OrbNum = 0;
+                    }
+
+                    if (world.WorldArea.GetMeteorBlock(x, y).OrbNum <= 0)
+                    {
+                        world.WorldArea.ClearMeteorBlock(world.WorldArea.GetMeteorBlock(x, y));
+                    }
+                }
+            }
+
+
+            miner.Energy += addEnergy;
+        }
+
         public void CellStartCreatingClones()
         {
             lock (lockObject)
@@ -229,7 +323,7 @@ namespace СellEvolution.Cell
                 (int x, int y) = newCellCoord[randomIndex];
 
                 if (world.WorldArea.AreaChar[x, y] == Constants.emptyChar &&
-                    cell.Energy > Constants.cloneEnergyCost  * 2)
+                    cell.Energy > Constants.cloneEnergyCost * 2)
                 {
                     world.Cells.Add(new CellModel(x, y, world, cell));
 
@@ -274,7 +368,7 @@ namespace СellEvolution.Cell
                 CellModel mother;
                 CellModel father;
 
-                if (random.Next(0,2) == 0)
+                if (random.Next(0, 2) == 0)
                 {
                     father = cell;
                     mother = world.GetCell(otherPartnerX, otherPartnerY);
@@ -368,7 +462,7 @@ namespace СellEvolution.Cell
         {
             lock (lockObject)
             {
-                return world.Cells.Any(cell => cell.PositionX == positionX && cell.PositionY == positionY && !cell.IsHide) ;
+                return world.Cells.Any(cell => cell.PositionX == positionX && cell.PositionY == positionY && !cell.IsHide);
             }
         }
         public bool IsMoveAvailable(int positionX, int positionY)

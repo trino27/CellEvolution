@@ -27,7 +27,7 @@ namespace CellEvolution.Cell.NN
                 256,
                 128,
                 128,
-                96,
+                64,
 
                 32
             };
@@ -210,7 +210,10 @@ namespace CellEvolution.Cell.NN
                     break;
                 case CellGen.GenAction.Mine:
                     {
-                        availableActions.Add(CellAction.Mine);
+                        availableActions.Add(CellAction.MineTop);
+                        availableActions.Add(CellAction.MineRightSide);
+                        availableActions.Add(CellAction.MineBottom);
+                        availableActions.Add(CellAction.MineLeftSide);
                     }
                     break;
 

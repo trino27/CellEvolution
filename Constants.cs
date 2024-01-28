@@ -9,10 +9,12 @@ namespace CellEvolution
     static class Constants
     {
         public const int maxClone = 8;
-        public const int maxLive = 1024;
+        public const int maxLive = 256;
 
-        public const int poisonedDecEnergy = 35;
+
         public const int energyAreaPoisonedCorner = 50;
+        public const int poisonedDecEnergy = energyAreaPoisonedCorner;
+        
 
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
@@ -59,7 +61,7 @@ namespace CellEvolution
         public const double meteorHugeSizeProbability = 0.0008;
 
         public const double randomGenMutationProbability = 0.2;
-        public const double randomGenMutationDuringLiveProbability = 0.01;
+        public const double randomGenMutationDuringLiveProbability = 0.02;
 
         public const double learningRate = 0.00001;
         public const double noiseIntensity = 0.01;
@@ -73,7 +75,6 @@ namespace CellEvolution
         public const int voiceDistance = 5;
         public const int energyAreaVisionDistance = 1;
         public const int energyAreaAbsorbDistance = 1;
-        public const int mineDistance = 1;
         public const int startCellCreationDistance = 2;
 
         public const int areaSizeX = 105; //118 //105

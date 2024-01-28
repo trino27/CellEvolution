@@ -45,12 +45,11 @@
             Hide,
             
             //Mine
-            Mine,
-
-            //Evolving
-            GainInitiation,
-            GainMaxClone, 
-            GainEnergyBank, 
+            MineTop,
+            MineRightSide,
+            MineBottom, 
+            MineLeftSide,
+            
             DecEnergyBank
         }
     }

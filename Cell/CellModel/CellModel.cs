@@ -163,10 +163,10 @@ namespace CellEvolution.Cell.NN
             { CellAction.Slip, Slip },
             { CellAction.Shout, Shout },
             { CellAction.Hide, Hide },
-            { CellAction.Mine, Mine },
-            { CellAction.GainInitiation, null },
-            { CellAction.GainMaxClone, null },
-            { CellAction.GainEnergyBank, null },
+            { CellAction.MineTop, MineTop },
+            { CellAction.MineRightSide, MineRightSide },
+            { CellAction.MineBottom, MineBottom },
+            { CellAction.MineLeftSide, MineLeftSide },
             { CellAction.DecEnergyBank, null }
         };
         }
@@ -429,10 +429,25 @@ namespace CellEvolution.Cell.NN
             CellColor = Constants.absorbCellColor;
             world.cellActionHandler.CellAbsorb(this);
         }
-        private void Mine()
+        private void MineTop()
         {
             CellColor = Constants.mineCellColor;
-            world.cellActionHandler.CellMine(this);
+            world.cellActionHandler.CellMineTop(this);
+        }
+        private void MineRightSide()
+        {
+            CellColor = Constants.mineCellColor;
+            world.cellActionHandler.CellMineRightSide(this);
+        }
+        private void MineBottom()
+        {
+            CellColor = Constants.mineCellColor;
+            world.cellActionHandler.CellMineBottom(this);
+        }
+        private void MineLeftSide()
+        {
+            CellColor = Constants.mineCellColor;
+            world.cellActionHandler.CellMineLeftSide(this);
         }
 
         private void Slip()
