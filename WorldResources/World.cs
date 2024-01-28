@@ -53,7 +53,7 @@ namespace СellEvolution.WorldResources
 
         public void MakeTurn()
         {
-            SortByInitiation();
+            Shuffle(Cells);
             UpdateTimeAndSeason();
 
             PerformCellLogicParallel();
@@ -179,11 +179,6 @@ namespace СellEvolution.WorldResources
                 currentYear++;
                 currentDay = 1;
             }
-        }
-        private void SortByInitiation()
-        {
-            Shuffle(Cells);
-            Cells = Cells.OrderBy(c => c.Initiation).ToList();
         }
         private void Shuffle<T>(List<T> array)
         {

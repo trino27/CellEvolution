@@ -193,7 +193,6 @@ namespace СellEvolution.WorldResources
                                                 case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
                                                 case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
                                                 case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
-                                                case Constants.evolvingCellColor: k = Constants.KevolvingCell; break; // evolving
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
                                             }
@@ -245,7 +244,6 @@ namespace СellEvolution.WorldResources
                                                 case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
                                                 case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
                                                 case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
-                                                case Constants.evolvingCellColor: k = Constants.KevolvingCell; break; // evolving
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
                                             }
@@ -307,7 +305,6 @@ namespace СellEvolution.WorldResources
                                                 case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
                                                 case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
                                                 case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
-                                                case Constants.evolvingCellColor: k = Constants.KevolvingCell; break; // evolving
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
                                             }
@@ -354,13 +351,10 @@ namespace СellEvolution.WorldResources
 
                     res.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(positionX, positionY), world.Cells[AreaVoice[positionX, positionY] - 1]));
                     res.Add(world.Cells[AreaVoice[positionX, positionY] - 1].Energy);
-                    res.Add(world.Cells[AreaVoice[positionX, positionY] - 1].EnergyBank);
-                    res.Add(world.Cells[AreaVoice[positionX, positionY] - 1].MaxClone);
-                    res.Add(world.Cells[AreaVoice[positionX, positionY] - 1].Initiation);
                 }
                 else
                 {
-                    for (int i = 0; i < 7; i++)
+                    for (int i = 0; i < 4; i++)
                     {
                         res.Add(0);
                     }

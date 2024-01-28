@@ -9,7 +9,6 @@
             Photosynthesis,
             Absorption,
             Reproduction,
-            Evolving,
             Actions,
             Mine,
             All

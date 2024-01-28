@@ -108,33 +108,6 @@ namespace СellEvolution.Cell.NN
                             }
                         }
                         break;
-                    case Constants.KevolvingCell:
-                        {
-                            List<CellAction> availableMoves = new List<CellAction>();
-
-                            if (!errorTarget.Contains(CellAction.GainInitiation))
-                            {
-                                availableMoves.Add(CellAction.GainInitiation);
-                            }
-                            if (!errorTarget.Contains(CellAction.GainMaxClone))
-                            {
-                                availableMoves.Add(CellAction.GainMaxClone);
-                            }
-                            if (!errorTarget.Contains(CellAction.GainEnergyBank))
-                            {
-                                availableMoves.Add(CellAction.GainEnergyBank);
-                            }
-                            if (!errorTarget.Contains(CellAction.DecEnergyBank))
-                            {
-                                availableMoves.Add(CellAction.DecEnergyBank);
-                            }
-
-                            if (availableMoves.Count > 1)
-                            {
-                                return (int)availableMoves[random.Next(0, availableMoves.Count)];
-                            }
-                        }
-                        break;
                     case Constants.KbiteCell:
                         {
                             List<CellAction> availableMoves = new List<CellAction>();
@@ -189,27 +162,21 @@ namespace СellEvolution.Cell.NN
             if (LastMovesInputs != null)
             {
                 //Reproduction
-                if (LastMovesInputs[114] < Constants.cloneEnergyCost)
+                if (LastMovesInputs[110] < Constants.cloneEnergyCost)
                 {
                     AllErrorMoves.Add(CellAction.Clone);
                     AllErrorMoves.Add(CellAction.Reproduction);
 
-                    if (LastMovesInputs[114] < Constants.actionEnergyCost * 2)
+                    if (LastMovesInputs[110] < Constants.actionEnergyCost * 2)
                     {
                         //Actions
                         AllErrorMoves.Add(CellAction.Slip);
                         AllErrorMoves.Add(CellAction.Shout);
-
-                        //Evolving
-                        AllErrorMoves.Add(CellAction.GainEnergyBank);
-                        AllErrorMoves.Add(CellAction.DecEnergyBank);
-                        AllErrorMoves.Add(CellAction.GainInitiation);
-                        AllErrorMoves.Add(CellAction.GainMaxClone);
                     }
                 }
 
                 //Photo
-                if (LastMovesInputs[112] != 1 * Constants.brainInputDayNightPoweredK)
+                if (LastMovesInputs[109] != 1 * Constants.brainInputDayNightPoweredK)
                 {
                     AllErrorMoves.Add(CellAction.Photosynthesis);
                 }

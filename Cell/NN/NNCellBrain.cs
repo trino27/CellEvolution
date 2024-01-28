@@ -22,7 +22,7 @@ namespace CellEvolution.Cell.NN
 
         private int[] layersSizes =
             {
-                128,
+                127,
 
                 256,
                 128,
@@ -208,14 +208,6 @@ namespace CellEvolution.Cell.NN
                         availableActions.Add(CellAction.Hide);
                     }
                     break;
-                case CellGen.GenAction.Evolving:
-                    {
-                        for (int i = (int)CellAction.GainInitiation; i <= (int)CellAction.DecEnergyBank; i++)
-                        {
-                            availableActions.Add((CellAction)i);
-                        }
-                    }
-                    break;
                 case CellGen.GenAction.Mine:
                     {
                         availableActions.Add(CellAction.Mine);
@@ -266,22 +258,15 @@ namespace CellEvolution.Cell.NN
             List<int> areaInfo = cell.GetWorldAroundInfo();
 
             int j = 0;
-            for (int i = 0; i < areaInfo.Count; i++) //48+48+9+7 = 0-47 48-95 96-104 105-111 112
+            for (int i = 0; i < areaInfo.Count; i++) //48+48+9+4+1 = 0-47 48-95 96-104 105-108 109
             {
                 inputsBrain[j] = areaInfo[i];
                 j++;
             }
-            inputsBrain[j] = (cell.Initiation) * Constants.brainInputInitiationPoweredK; //113
+            inputsBrain[j] = (cell.Energy); //110
             j++;
-            inputsBrain[j] = (cell.Energy); //114
-            j++;
-            inputsBrain[j] = (cell.MaxClone) * Constants.brainInputMaxClonePoweredK; //115
-            j++;
-            inputsBrain[j] = (cell.CurrentAge) * Constants.brainInputCurrentAgePoweredK;  //116
-            j++;
-            inputsBrain[j] = (cell.EnergyBank) * Constants.brainInputEnergyBankPoweredK;  //117
-            j++;
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //127
+           
+            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //111 - 126
             {
                 inputsBrain[j] = LastMovesDecidedActionsNum[i] * Constants.brainLastMovePoweredK + 1;
                 j++;

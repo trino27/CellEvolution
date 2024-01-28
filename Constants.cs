@@ -8,12 +8,11 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int liveTime = 64;
-        public const int poisonedDecLive = 5;
-        public const int energyAreaPoisonedCorner = 50;
+        public const int maxClone = 8;
+        public const int maxLive = 1024;
 
-        public const int actionLiveCost = 1;
-        public const int slipLiveCost = 1;
+        public const int poisonedDecEnergy = 35;
+        public const int energyAreaPoisonedCorner = 50;
 
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
@@ -38,18 +37,13 @@ namespace CellEvolution
         public const int availableCellNumAroundMax = 3;
         public const int availableCellNumAroundMin = 2;
 
-        public const int jumpEnergyCost = 3;
+        public const int jumpEnergyCost = 5;
         public const int jumpDistance = 3;
-        public const int energyBankChangeNum = 5;
 
-        public const int numOfMemoryLastMoves = 10;
-        public const int genCycleSize = liveTime;
+        public const int numOfMemoryLastMoves = 16;
+        public const int genCycleSize = 64;
 
         public const int brainInputDayNightPoweredK = 100;
-        public const int brainInputInitiationPoweredK = 10;
-        public const int brainInputMaxClonePoweredK = 10;
-        public const int brainInputCurrentAgePoweredK = 10;
-        public const int brainInputEnergyBankPoweredK = 10;
         public const int brainLastMovePoweredK = 5;
 
         public const int meteorBlockOrbNumMin = 100;
@@ -62,7 +56,7 @@ namespace CellEvolution
         public const double meteorSmallSizeProbability = 0.30;
         public const double meteorMidSizeProbability = 0.05;
         public const double meteorBigSizeProbability = 0.005;
-        public const double meteorHugeSizeProbability = 0.0005;
+        public const double meteorHugeSizeProbability = 0.0008;
 
         public const double randomGenMutationProbability = 0.2;
         public const double randomGenMutationDuringLiveProbability = 0.01;
@@ -107,9 +101,8 @@ namespace CellEvolution
         public const ConsoleColor photoCellColor = ConsoleColor.Green;
         public const ConsoleColor absorbCellColor = ConsoleColor.Blue;
         public const ConsoleColor slipCellColor = ConsoleColor.DarkMagenta;
-        public const ConsoleColor evolvingCellColor = ConsoleColor.DarkYellow;
         public const ConsoleColor hideCellColor = ConsoleColor.Magenta;
-        public const ConsoleColor mineCellColor = ConsoleColor.DarkCyan;
+        public const ConsoleColor mineCellColor = ConsoleColor.DarkYellow;
         public const ConsoleColor deadCellColor = ConsoleColor.Gray;
         public const ConsoleColor errorCellColor = ConsoleColor.Red;
 
@@ -118,7 +111,6 @@ namespace CellEvolution
         public const int KphotoCell = 50;
         public const int KabsorbCell = 60;
         public const int KslipCell = 70;
-        public const int KevolvingCell = 80;
         public const int KhideCell = 90;
         public const int KmineCell = 100;
         public const int KerrorCell = 110;

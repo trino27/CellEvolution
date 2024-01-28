@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Metrics;
-using СellEvolution.WorldResources;
+﻿using СellEvolution.WorldResources;
 using static CellEvolution.Cell.GenAlg.CellGen;
 
 namespace CellEvolution.Cell.NN
@@ -17,16 +16,12 @@ namespace CellEvolution.Cell.NN
 
         private Dictionary<CellAction, Action> actionDictionary;
 
-        public int MaxClone = 4;
         public int AlreadyUseClone = 0;
 
         public int PositionX;
         public int PositionY;
 
         public int Energy = Constants.startCellEnergy;
-        public int EnergyBank = 0;
-
-        public int Initiation = 1;
 
         public int CurrentAge = 0;
 
@@ -68,7 +63,7 @@ namespace CellEvolution.Cell.NN
             brain.Clone(original.brain);
 
             ActionDictionaryInit();
-            CellInit(positionX, positionY, original.EnergyBank);
+            CellInit(positionX, positionY);
         }
         public CellModel(int positionX, int positionY, World world, CellModel mother, CellModel father)
         {
@@ -97,20 +92,13 @@ namespace CellEvolution.Cell.NN
 
             SpecieFromParentsInit(mother, father);
             ActionDictionaryInit();
-            CellInit(positionX, positionY, mother.EnergyBank + father.EnergyBank + Constants.startCellEnergy * 2);
+            CellInit(positionX, positionY);
         }
 
         private void CellInit(int positionX, int positionY)
         {
             PositionX = positionX;
             PositionY = positionY;
-        }
-        private void CellInit(int positionX, int positionY, int energy)
-        {
-            PositionX = positionX;
-            PositionY = positionY;
-
-            Energy += energy;
         }
         private void SpecieFromParentsInit(CellModel mother, CellModel father)
         {
@@ -176,10 +164,10 @@ namespace CellEvolution.Cell.NN
             { CellAction.Shout, Shout },
             { CellAction.Hide, Hide },
             { CellAction.Mine, Mine },
-            { CellAction.GainInitiation, GainInitiation },
-            { CellAction.GainMaxClone, GainMaxClone },
-            { CellAction.GainEnergyBank, GainEnergyBank },
-            { CellAction.DecEnergyBank, DecEnergyBank }
+            { CellAction.GainInitiation, null },
+            { CellAction.GainMaxClone, null },
+            { CellAction.GainEnergyBank, null },
+            { CellAction.DecEnergyBank, null }
         };
         }
 
@@ -193,7 +181,7 @@ namespace CellEvolution.Cell.NN
             {
                 AlreadyUseClone = 0;
             }
-            else if (AlreadyUseClone == MaxClone)
+            else if (AlreadyUseClone == Constants.maxClone)
             {
                 IsCreatingChildren = false;
                 AlreadyUseClone = 0;
@@ -212,26 +200,12 @@ namespace CellEvolution.Cell.NN
 
             if (world.WorldArea.IsAreaPoisoned(PositionX, PositionY))
             {
-                CurrentAge += Constants.poisonedDecLive;
+                Energy -= Constants.poisonedDecEnergy;
             }
 
-            if (CurrentAge >= Constants.liveTime)
-            {
-                IsDead = true;
-            }
-            else
-            {
-                if (!IsSlip)
-                {
-                    CurrentAge += Constants.actionLiveCost;
-                }
-                else
-                {
-                    CurrentAge += Constants.slipLiveCost;
-                }
+            IsDead = IsNoEnergy();
 
-                IsDead = IsNoEnergy();
-            }
+            if (CurrentAge > Constants.maxLive) IsDead = true;
 
             if (IsDead)
             {
@@ -249,7 +223,7 @@ namespace CellEvolution.Cell.NN
             return brain.GetGen().GenActionsCycle;
         }
 
-        private void PerformAction(CellAction decidedAction) 
+        private void PerformAction(CellAction decidedAction)
         {
             if (actionDictionary.TryGetValue(decidedAction, out var action))
             {
@@ -261,29 +235,6 @@ namespace CellEvolution.Cell.NN
         {
             if (Energy < 0) return true;
             else return false;
-        }
-
-        //Evolving
-        private void GainInitiation()
-        {
-            Initiation++;
-            CellColor = Constants.evolvingCellColor;
-
-        }
-        private void GainMaxClone()
-        {
-            MaxClone++;
-            CellColor = Constants.evolvingCellColor;
-        }
-        private void GainEnergyBank()
-        {
-            EnergyBank += Constants.energyBankChangeNum;
-            CellColor = Constants.evolvingCellColor;
-        }
-        private void DecEnergyBank()
-        {
-            EnergyBank -= Constants.energyBankChangeNum;
-            CellColor = Constants.evolvingCellColor;
         }
 
         //Move x0 y0 -------> areaMaxX

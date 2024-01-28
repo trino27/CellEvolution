@@ -19,7 +19,7 @@ namespace СellEvolution.Simulation
         public int PhotoCells = 0;
         public int BiteCells = 0;
         public int AbsorbCells = 0;
-        public int EvolveCells = 0;
+        public int MineCells = 0;
         public int ErrorCells = 0;
         public int SlipCells = 0;
 
@@ -88,7 +88,7 @@ namespace СellEvolution.Simulation
         {
             Console.CursorVisible = false;
             Console.SetCursorPosition(94, Constants.areaSizeY + 1);
-            Console.Write($"Error %: {CurrentErrorProc} Plants: {PhotoCells} Hunters: {BiteCells} Mushrooms: {AbsorbCells} Students: {EvolveCells} Slip: {SlipCells}            ");
+            Console.Write($"Error %: {CurrentErrorProc} Photo: {PhotoCells} Hunters: {BiteCells} Absorb: {AbsorbCells} Mine: {MineCells} Slip: {SlipCells}            ");
         }
         private void ShowTimeInfo(Stopwatch stopwatchCells)
         {
@@ -102,7 +102,7 @@ namespace СellEvolution.Simulation
             PhotoCells = 0;
             BiteCells = 0;
             AbsorbCells = 0;
-            EvolveCells = 0;
+            MineCells = 0;
             ErrorCells = 0;
             SlipCells = 0;
 
@@ -113,7 +113,7 @@ namespace СellEvolution.Simulation
                     case Constants.photoCellColor: PhotoCells++; break;
                     case Constants.biteCellColor: BiteCells++; break;
                     case Constants.absorbCellColor: AbsorbCells++; break;
-                    case Constants.evolvingCellColor: EvolveCells++; break;
+                    case Constants.mineCellColor: MineCells++; break;
                     case Constants.slipCellColor: SlipCells++; break;
                     case Constants.errorCellColor: ErrorCells++; break;
                     default: break;

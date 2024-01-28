@@ -6,6 +6,8 @@ namespace СellEvolution.Cell
 {
     public class CellActionHandler
     {
+        Random random = new Random();
+
         private readonly World world;
         private object lockObject = new object();
 
@@ -161,7 +163,7 @@ namespace СellEvolution.Cell
                         if (y >= 0 && y < Constants.areaSizeY &&
                             x >= 0 && x < Constants.areaSizeX &&
                              world.WorldArea.AreaVoice[x, y] != 0 &&
-                             world.Cells[index].Initiation >= world.Cells[world.WorldArea.AreaVoice[x, y] - 1].Initiation)
+                             random.Next(0,2) == 0)
                         {
                             world.WorldArea.AreaVoice[x, y] = index + 1;
                         }
@@ -221,20 +223,20 @@ namespace СellEvolution.Cell
         {
             List<(int, int)> newCellCoord = world.WorldArea.FindAllEmptyCharNearCellCoord(cell.PositionX, cell.PositionY);
 
-            for (int j = 0; j < cell.MaxClone && newCellCoord.Count > 0; j++)
+            for (int j = 0; j < Constants.maxClone && newCellCoord.Count > 0; j++)
             {
                 int randomIndex = GetRandomIndex(newCellCoord.Count);
                 (int x, int y) = newCellCoord[randomIndex];
 
                 if (world.WorldArea.AreaChar[x, y] == Constants.emptyChar &&
-                    cell.Energy > (Constants.cloneEnergyCost + cell.EnergyBank) * 2)
+                    cell.Energy > Constants.cloneEnergyCost  * 2)
                 {
                     world.Cells.Add(new CellModel(x, y, world, cell));
 
                     world.WorldArea.AreaChar[x, y] = Constants.cellChar;
                     world.WorldArea.AreaColor[x, y] = Constants.newCellColor;
 
-                    int temp = Constants.cloneEnergyCost + cell.EnergyBank;
+                    int temp = Constants.cloneEnergyCost;
                     if (temp > 0)
                     {
                         cell.Energy -= temp;
@@ -272,7 +274,7 @@ namespace СellEvolution.Cell
                 CellModel mother;
                 CellModel father;
 
-                if (cell.Initiation >= world.GetCell(otherPartnerX, otherPartnerY).Initiation)
+                if (random.Next(0,2) == 0)
                 {
                     father = cell;
                     mother = world.GetCell(otherPartnerX, otherPartnerY);
@@ -283,14 +285,14 @@ namespace СellEvolution.Cell
                     father = world.GetCell(otherPartnerX, otherPartnerY);
                 }
 
-                for (int j = mother.AlreadyUseClone; j < mother.MaxClone && newCellCoord.Count > 0; j++)
+                for (int j = mother.AlreadyUseClone; j < Constants.maxClone && newCellCoord.Count > 0; j++)
                 {
                     int randomIndex = GetRandomIndex(newCellCoord.Count);
                     (int x, int y) = newCellCoord[randomIndex];
 
                     if (world.WorldArea.AreaChar[x, y] == Constants.emptyChar &&
-                        mother.Energy > (Constants.cloneEnergyCost + mother.EnergyBank) * 2 &&
-                        father.Energy > (Constants.cloneEnergyCost + mother.EnergyBank) * 2)
+                        mother.Energy > Constants.cloneEnergyCost * 2 &&
+                        father.Energy > Constants.cloneEnergyCost * 2)
                     {
                         world.Cells.Add(new CellModel(x, y, world, mother, father));
 
@@ -299,8 +301,8 @@ namespace СellEvolution.Cell
                         world.WorldArea.AreaChar[x, y] = Constants.cellChar;
                         world.WorldArea.AreaColor[x, y] = Constants.newCellColor;
 
-                        mother.Energy -= Constants.cloneEnergyCost + mother.EnergyBank;
-                        father.Energy -= Constants.cloneEnergyCost + father.EnergyBank;
+                        mother.Energy -= Constants.cloneEnergyCost;
+                        father.Energy -= Constants.cloneEnergyCost;
                     }
 
                     newCellCoord.RemoveAt(randomIndex);
@@ -317,7 +319,7 @@ namespace СellEvolution.Cell
                 int randomIndex = GetRandomIndex(otherCellCoord.Count);
                 CellModel temp = world.GetCell(otherCellCoord[randomIndex].Item1, otherCellCoord[randomIndex].Item2);
 
-                if (temp != null && temp.IsCreatingChildren && temp.MaxClone != temp.AlreadyUseClone)
+                if (temp != null && temp.IsCreatingChildren && Constants.maxClone != temp.AlreadyUseClone)
                 {
                     partnerX = otherCellCoord[randomIndex].Item1;
                     partnerY = otherCellCoord[randomIndex].Item2;
@@ -337,7 +339,7 @@ namespace СellEvolution.Cell
         }
         private int GetRandomIndex(int count)
         {
-            return new Random().Next(0, count);
+            return random.Next(0, count);
         }
 
         public int CellGenomeSimilarity(CellModel cellA, CellModel cellB)
