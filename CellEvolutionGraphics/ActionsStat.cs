@@ -16,7 +16,9 @@ namespace CellEvolutionGraphics
 {
     public partial class ActionsStat : Form
     {
-        private List<StatModelAction> AllAction = new List<StatModelAction>();
+        private List<StatModelAction> AllActionNNTestChangeAdam = new List<StatModelAction>();
+        private List<StatModelAction> AllActionNN = new List<StatModelAction>();
+
         private System.Windows.Forms.Timer timer;
 
         public ActionsStat()
@@ -41,16 +43,24 @@ namespace CellEvolutionGraphics
 
         public void LoadData()
         {
-            AllAction = LoadStatsFromDatabase("AllAction");
+            AllActionNNTestChangeAdam = LoadStatsFromDatabase("AllActionNNTestChangeAdam");
+            AllActionNN = LoadStatsFromDatabase("AllActionNN");
 
-            var AllActionSeries = new LineSeries
+            var AllActionTrainSeries = new LineSeries
             {
-                Title = "AllAction", // Заголовок для второго графика
-                Values = new ChartValues<double>(AllAction.ConvertAll(s => s.Procent)),
+                Title = "AllActionTrain", // Заголовок для второго графика
+                Values = new ChartValues<double>(AllActionNNTestChangeAdam.ConvertAll(s => s.Procent)),
+            };
+            var AllActionNNSeries = new LineSeries
+            {
+                Title = "AllActionNN", // Заголовок для второго графика
+                Values = new ChartValues<double>(AllActionNN.ConvertAll(s => s.Procent)),
             };
 
             cartesianChart1.Series.Clear();
-            cartesianChart1.Series.Add(AllActionSeries);
+
+            cartesianChart1.Series.Add(AllActionTrainSeries);
+            cartesianChart1.Series.Add(AllActionNNSeries);
         }
 
         private List<StatModelAction> LoadStatsFromDatabase(string tableName)

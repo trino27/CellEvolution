@@ -8,7 +8,8 @@ namespace CellEvolutionGraphics
 {
     public partial class ErrorStat : Form
     {
-        private List<StatModelError> ErrorAdam = new List<StatModelError>();
+        private List<StatModelError> ErrorNN = new List<StatModelError>();
+        private List<StatModelError> ErrorChangeAdam = new List<StatModelError>();
 
         private System.Windows.Forms.Timer timer;
 
@@ -38,16 +39,23 @@ namespace CellEvolutionGraphics
 
         public void LoadData()
         {
-            ErrorAdam = LoadStatsFromDatabase("ErrorAdam");
+            ErrorNN = LoadStatsFromDatabase("ErrorNN");
+            ErrorChangeAdam = LoadStatsFromDatabase("ErrorNNTestChangeAdam");
 
-            var TableCellBrainStatNoGenRAdamTLSeries = new LineSeries
+            var ErrorNNSeries = new LineSeries
             {
                 Title = "Errors", // Заголовок для второго графика
-                Values = new ChartValues<double>(ErrorAdam.ConvertAll(s => s.ErrorPoint)),
+                Values = new ChartValues<double>(ErrorNN.ConvertAll(s => s.ErrorPoint)),
             };
-
+            var ErrorTrainSeries = new LineSeries
+            {
+                Title = "ErrorsTrain", // Заголовок для второго графика
+                Values = new ChartValues<double>(ErrorChangeAdam.ConvertAll(s => s.ErrorPoint)),
+            };
             cartesianChart1.Series.Clear();
-            cartesianChart1.Series.Add(TableCellBrainStatNoGenRAdamTLSeries);
+            
+            cartesianChart1.Series.Add(ErrorTrainSeries);
+            cartesianChart1.Series.Add(ErrorNNSeries);
         }
 
         private List<StatModelError> LoadStatsFromDatabase(string tableName)
