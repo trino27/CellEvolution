@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Cell\Новая папка1\**" />
-    <EmbeddedResource Remove="Cell\Новая папка1\**" />
-    <None Remove="Cell\Новая папка1\**" />
+    <Compile Remove="WorldResources\Cell\Новая папка1\**" />
+    <EmbeddedResource Remove="WorldResources\Cell\Новая папка1\**" />
+    <None Remove="WorldResources\Cell\Новая папка1\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Cell\eeb0nyuw.noe~" />
+    <None Remove="WorldResources\Cell\eeb0nyuw.noe~" />
     <None Remove="WorldResources\hozt4pjy.35z~" />
   </ItemGroup>
 

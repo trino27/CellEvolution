@@ -38,7 +38,6 @@ namespace СellEvolution.Simulation
             {
                 UpdateCellsTypeInfo();
                 UpdateDayErrorValue();
-                
 
                 ShowWorldInfo();
                 ShowTimeInfo(stopwatchCells);

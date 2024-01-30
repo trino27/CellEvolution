@@ -31,6 +31,7 @@
             NextGenIndex();
             RandomMutationDuringLive();
 
+            genAction = GenAction.All;
             return genAction;
         }
 

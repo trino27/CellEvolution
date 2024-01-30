@@ -1,4 +1,5 @@
 ﻿using СellEvolution.WorldResources;
+using СellEvolution.WorldResources.Cell.NN;
 using static CellEvolution.Cell.GenAlg.CellGen;
 
 namespace CellEvolution.Cell.NN
@@ -193,7 +194,6 @@ namespace CellEvolution.Cell.NN
             {
                 CellColor = Constants.errorCellColor;
             }
-
             brain.LearnWithTeacher();
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost;
@@ -203,9 +203,10 @@ namespace CellEvolution.Cell.NN
                 Energy -= Constants.poisonedDecEnergy;
             }
 
-            IsDead = IsNoEnergy();
+            if(IsNoEnergy()) IsDead = true;
 
             if (CurrentAge > Constants.maxLive) IsDead = true;
+            else CurrentAge++;
 
             if (IsDead)
             {

@@ -1,8 +1,9 @@
-﻿using CellEvolution.Cell.GenAlg;
-using СellEvolution.Cell.NN;
+﻿using CellEvolution;
+using CellEvolution.Cell.GenAlg;
+using CellEvolution.Cell.NN;
 using static CellEvolution.Cell.NN.CellModel;
 
-namespace CellEvolution.Cell.NN
+namespace СellEvolution.WorldResources.Cell.NN
 {
     public class NNCellBrain
     {
@@ -25,9 +26,8 @@ namespace CellEvolution.Cell.NN
                 127,
 
                 256,
+                256,
                 128,
-                128,
-                64,
 
                 32
             };
@@ -68,7 +68,7 @@ namespace CellEvolution.Cell.NN
         {
             for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)
             {
-                this.LastMovesDecidedActionsNum[i] = -1;
+                LastMovesDecidedActionsNum[i] = -1;
             }
         }
 
@@ -266,12 +266,12 @@ namespace CellEvolution.Cell.NN
                 inputsBrain[j] = areaInfo[i];
                 j++;
             }
-            inputsBrain[j] = (cell.Energy); //110
+            inputsBrain[j] = cell.Energy; //110
             j++;
-           
+
             for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //111 - 126
             {
-                inputsBrain[j] = LastMovesDecidedActionsNum[i] * Constants.brainLastMovePoweredK + 1;
+                inputsBrain[j] = (LastMovesDecidedActionsNum[i] + 1) * Constants.brainLastMovePoweredK;
                 j++;
             }
 
@@ -372,21 +372,22 @@ namespace CellEvolution.Cell.NN
 
         private void RandomCloneNoise()
         {
-            long NumOfAllWeights = 0;
             foreach (var l in layers)
             {
-                NumOfAllWeights += l.weights.LongLength;
-            }
-
-            int NumOfChanging = random.Next(0, Convert.ToInt32(NumOfAllWeights * Constants.cloneNoiseWeightsChangeProc));
-
-            for (int i = 0; i < NumOfChanging; i++)
-            {
-                int randLayer = random.Next(0, layers.Length - 1);
-                int randWeightD1 = random.Next(0, layers[randLayer].size);
-                int randWeightD2 = random.Next(0, layers[randLayer].nextSize);
-
-                layers[randLayer].weights[randWeightD1, randWeightD2] = random.NextDouble();
+                for (int i = 0; i < l.size; i++)
+                {
+                    for (int j = 0; j < l.nextSize; j++)
+                    {
+                        if (random.Next(2) == 0)
+                        {
+                            l.weights[i, j] += Constants.cloneNoiseWeightsRate;
+                        }
+                        else
+                        {
+                            l.weights[i, j] -= Constants.cloneNoiseWeightsRate;
+                        }
+                    }
+                }
             }
         }
     }

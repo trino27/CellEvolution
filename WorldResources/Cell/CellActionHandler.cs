@@ -2,7 +2,7 @@
 using CellEvolution.Cell.NN;
 using СellEvolution.WorldResources;
 
-namespace СellEvolution.Cell
+namespace СellEvolution.WorldResources.Cell
 {
     public class CellActionHandler
     {

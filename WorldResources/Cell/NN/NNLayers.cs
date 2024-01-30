@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CellEvolution.Cell.NN
+namespace СellEvolution.WorldResources.Cell.NN
 {
     public struct NNLayers
     {

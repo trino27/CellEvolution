@@ -1,6 +1,6 @@
 ﻿using CellEvolution;
 using CellEvolution.Cell.NN;
-using СellEvolution.Meteor;
+using СellEvolution.WorldResources.Meteor;
 
 namespace СellEvolution.WorldResources
 {

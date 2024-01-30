@@ -6,7 +6,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace СellEvolution.Meteor
+namespace СellEvolution.WorldResources.Meteor
 {
     public class MeteorBlock
     {

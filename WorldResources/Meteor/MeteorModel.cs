@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace СellEvolution.Meteor
+namespace СellEvolution.WorldResources.Meteor
 {
     public class MeteorModel
     {
@@ -34,14 +34,14 @@ namespace СellEvolution.Meteor
 
                 MeteorBlockDist = Constants.meteorHugeSizeDistance;
             }
-            else if(randomSize < Constants.meteorBigSizeProbability)
+            else if (randomSize < Constants.meteorBigSizeProbability)
             {
                 NightTurns = 3;
                 IsCreateMeteorBlocks = true;
 
                 MeteorBlockDist = Constants.meteorBigSizeDistance;
             }
-            else if(randomSize < Constants.meteorMidSizeProbability)
+            else if (randomSize < Constants.meteorMidSizeProbability)
             {
                 IsCreateMeteorBlocks = true;
 
@@ -56,7 +56,7 @@ namespace СellEvolution.Meteor
             CenterPositionX = random.Next(MeteorBlockDist + 1, Constants.areaSizeX - MeteorBlockDist - 1);
             CenterPositionY = random.Next(MeteorBlockDist + 1, Constants.areaSizeY - MeteorBlockDist - 1);
 
-            if(IsCreateMeteorBlocks) CreateMeteorBlocks();
+            if (IsCreateMeteorBlocks) CreateMeteorBlocks();
         }
 
         private void CreateMeteorBlocks()
@@ -65,7 +65,7 @@ namespace СellEvolution.Meteor
             {
                 for (int y = CenterPositionY - MeteorBlockDist; y <= CenterPositionY + MeteorBlockDist; y++)
                 {
-                    MeteorBlocks.Add(new MeteorBlock(x,y));
+                    MeteorBlocks.Add(new MeteorBlock(x, y));
                 }
             }
         }

@@ -14,7 +14,6 @@ namespace CellEvolution
 
         public const int energyAreaPoisonedCorner = 50;
         public const int poisonedDecEnergy = energyAreaPoisonedCorner;
-        
 
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
@@ -43,7 +42,7 @@ namespace CellEvolution
         public const int jumpDistance = 3;
 
         public const int numOfMemoryLastMoves = 16;
-        public const int genCycleSize = 64;
+        public const int genCycleSize = 32;
 
         public const int brainInputDayNightPoweredK = 100;
         public const int brainLastMovePoweredK = 5;
@@ -63,13 +62,14 @@ namespace CellEvolution
         public const double randomGenMutationProbability = 0.2;
         public const double randomGenMutationDuringLiveProbability = 0.02;
 
+        public const double l2RegularizationLambda = 0.01;
         public const double learningRate = 0.00001;
         public const double noiseIntensity = 0.01;
         public const double dropoutProbability = 0.1;
         public const double learnFromExpProbability = 0.9;
 
-        public const double cloneNoiseProbability = 0.2;
-        public const double cloneNoiseWeightsChangeProc = 0.05;
+        public const double cloneNoiseProbability = 0.15;
+        public const double cloneNoiseWeightsRate = 0.001;
 
         public const int visionDistance = 3;
         public const int voiceDistance = 5;
@@ -77,8 +77,8 @@ namespace CellEvolution
         public const int energyAreaAbsorbDistance = 1;
         public const int startCellCreationDistance = 2;
 
-        public const int areaSizeX = 105; //118 //105
-        public const int areaSizeY = 47; //60 // 47
+        public const int areaSizeX = 40; //118 //105
+        public const int areaSizeY = 40; //60 // 47
 
         public const char nullChar = '\0';
         public const char emptyChar = ' ';
