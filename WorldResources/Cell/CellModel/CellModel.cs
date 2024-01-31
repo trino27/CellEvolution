@@ -1,4 +1,5 @@
-﻿using СellEvolution.WorldResources;
+﻿using CellEvolution.WorldResources.Cell.NN;
+using СellEvolution.WorldResources;
 using СellEvolution.WorldResources.Cell.NN;
 using static CellEvolution.Cell.GenAlg.CellGen;
 
@@ -175,18 +176,12 @@ namespace CellEvolution.Cell.NN
         public void MakeAction()
         {
             IsSlip = false;
-            IsCreatingClone = false;
-            IsHide = false;
 
-            if (!IsCreatingChildren)
-            {
-                AlreadyUseClone = 0;
-            }
-            else if (AlreadyUseClone == Constants.maxClone)
-            {
-                IsCreatingChildren = false;
-                AlreadyUseClone = 0;
-            }
+            IsCreatingClone = false;
+            IsCreatingChildren = false;
+            AlreadyUseClone = 0;
+
+            IsHide = false;
 
             PerformAction(brain.ChooseAction());
 
@@ -224,12 +219,13 @@ namespace CellEvolution.Cell.NN
             return brain.GetGen().GenActionsCycle;
         }
 
-        private void PerformAction(CellAction decidedAction)
+        private void PerformAction(CellAction decidedAction)//DQN
         {
             if (actionDictionary.TryGetValue(decidedAction, out var action))
             {
                 action?.Invoke();
             }
+            //brain.RegisterActionResult();
         }
 
         private bool IsNoEnergy()

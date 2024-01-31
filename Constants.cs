@@ -38,10 +38,10 @@ namespace CellEvolution
         public const int availableCellNumAroundMax = 3;
         public const int availableCellNumAroundMin = 2;
 
-        public const int jumpEnergyCost = 5;
+        public const int jumpEnergyCost = 0;
         public const int jumpDistance = 3;
 
-        public const int numOfMemoryLastMoves = 16;
+        public const int maxMemoryCapacity = 16;
         public const int genCycleSize = 32;
 
         public const int brainInputDayNightPoweredK = 100;
@@ -62,7 +62,6 @@ namespace CellEvolution
         public const double randomGenMutationProbability = 0.2;
         public const double randomGenMutationDuringLiveProbability = 0.02;
 
-        public const double l2RegularizationLambda = 0.01;
         public const double learningRate = 0.00001;
         public const double noiseIntensity = 0.01;
         public const double dropoutProbability = 0.1;

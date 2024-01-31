@@ -15,6 +15,9 @@ namespace СellEvolution.WorldResources.Cell.NN
         private readonly double[][,] v;
         private int t = 0;
 
+        public NNTeacher()
+        {
+        }
         public NNTeacher(NNCellBrain brain)
         {
             this.brain = brain;
@@ -333,7 +336,7 @@ namespace СellEvolution.WorldResources.Cell.NN
                         gradient *= learningRate;
 
                         // L2-регуляризация
-                        LeftLayer.weights[i, j] -= gradient * RightLayer.neurons[j] + Constants.l2RegularizationLambda * LeftLayer.weights[i, j];
+                        LeftLayer.weights[i, j] -= gradient * RightLayer.neurons[j] * LeftLayer.weights[i, j];
 
                         // Обновление весов
                         double delta = gradient * RightLayer.neurons[j];

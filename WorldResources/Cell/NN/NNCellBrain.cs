@@ -66,7 +66,7 @@ namespace СellEvolution.WorldResources.Cell.NN
 
         private void InitMemory()
         {
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)
+            for (int i = 0; i < Constants.maxMemoryCapacity; i++)
             {
                 LastMovesDecidedActionsNum[i] = -1;
             }
@@ -269,7 +269,7 @@ namespace СellEvolution.WorldResources.Cell.NN
             inputsBrain[j] = cell.Energy; //110
             j++;
 
-            for (int i = 0; i < Constants.numOfMemoryLastMoves; i++)  //111 - 126
+            for (int i = 0; i < Constants.maxMemoryCapacity; i++)  //111 - 126
             {
                 inputsBrain[j] = (LastMovesDecidedActionsNum[i] + 1) * Constants.brainLastMovePoweredK;
                 j++;
