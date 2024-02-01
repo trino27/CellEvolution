@@ -5,14 +5,15 @@ using static CellEvolution.Cell.NN.CellModel;
 
 namespace CellEvolution.WorldResources.Cell.NN
 {
-    public class DQNCellBrain
+    public class DDQNCellBrain
     {
         private readonly Random random = new Random();
         private readonly CellModel cell;
         private CellGen gen;
 
         // Нейронная сеть
-        private NNLayers[] layers;
+        private NNLayers[] onlineLayers;
+        private NNLayers[] targetLayers;
         private readonly int[] layersSizes = { 127, 256, 256, 128, 32 };
 
         //Adam
@@ -25,18 +26,15 @@ namespace CellEvolution.WorldResources.Cell.NN
 
         private readonly double discountFactor = 0.9; // Коэффициент дисконтирования
 
-
-        NNTeacher teacher = new NNTeacher();
+        private NNTeacher teacher = new NNTeacher();
         public bool IsErrorMove = false;
-
-
 
         private double[] afterMoveState;
         private double[] beforeMoveState;
         private double energyBeforeMove;
         private int action;
 
-        public DQNCellBrain(CellModel cell)
+        public DDQNCellBrain(CellModel cell)
         {
             this.cell = cell;
             gen = new CellGen();
@@ -44,7 +42,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             InitNetwork();
         }
 
-        public DQNCellBrain(CellModel cell, DQNCellBrain original)
+        public DDQNCellBrain(CellModel cell, DDQNCellBrain original)
         {
             this.cell = cell;
             gen = new CellGen(original.gen);
@@ -53,7 +51,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             InitMemory(original);
         }
 
-        public DQNCellBrain(CellModel cell, DQNCellBrain mother, DQNCellBrain father)
+        public DDQNCellBrain(CellModel cell, DDQNCellBrain mother, DDQNCellBrain father)
         {
             this.cell = cell;
             gen = new CellGen(mother.gen, father.gen);
@@ -70,26 +68,43 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
         }
 
-        private void InitMemory(DQNCellBrain original)
+        private void InitMemory(DDQNCellBrain original)
         {
             memory = original.memory;
         }
         private void InitNetwork()
         {
-            layers = new NNLayers[layersSizes.Length];
+            onlineLayers = new NNLayers[layersSizes.Length];
             for (int i = 0; i < layersSizes.Length; i++)
             {
-                layers[i] = new NNLayers(layersSizes[i], i < layersSizes.Length - 1 ? layersSizes[i + 1] : 0);
+                onlineLayers[i] = new NNLayers(layersSizes[i], i < layersSizes.Length - 1 ? layersSizes[i + 1] : 0);
             }
-            m = new double[layers.Length][,];
-            v = new double[layers.Length][,];
 
-            for (int i = 0; i < layers.Length; i++)
+            targetLayers = new NNLayers[layersSizes.Length];
+            for (int i = 0; i < layersSizes.Length; i++)
             {
-                int rows = layers[i].weights.GetLength(0);
-                int cols = layers[i].weights.GetLength(1);
+                targetLayers[i] = new NNLayers(layersSizes[i], i < layersSizes.Length - 1 ? layersSizes[i + 1] : 0);
+            }
+            UpdateTargetNetwork();
+
+
+            m = new double[onlineLayers.Length][,];
+            v = new double[onlineLayers.Length][,];
+
+            for (int i = 0; i < onlineLayers.Length; i++)
+            {
+                int rows = onlineLayers[i].weights.GetLength(0);
+                int cols = onlineLayers[i].weights.GetLength(1);
                 m[i] = new double[rows, cols];
                 v[i] = new double[rows, cols];
+            }
+        }
+        private void UpdateTargetNetwork()
+        {
+            for (int i = 0; i < onlineLayers.Length; i++)
+            {
+                Array.Copy(onlineLayers[i].weights, targetLayers[i].weights, onlineLayers[i].weights.Length);
+                Array.Copy(onlineLayers[i].biases, targetLayers[i].biases, onlineLayers[i].biases.Length);
             }
         }
 
@@ -161,7 +176,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                     break;
             }
 
-            double[] qValuesOutput = FeedForwardWithNoise(beforeMoveState);
+            double[] qValuesOutput = FeedForwardWithNoise(beforeMoveState, onlineLayers);
             CellAction decidedAction = FindMaxIndexForFindAction(qValuesOutput, availableActions);
             action = (int)decidedAction;
 
@@ -186,10 +201,9 @@ namespace CellEvolution.WorldResources.Cell.NN
             return (CellAction)maxIndex;
         }
 
-
         private double[] CreateBrainInput()
         {
-            double[] inputsBrain = new double[layers[0].size];
+            double[] inputsBrain = new double[onlineLayers[0].size];
             List<int> areaInfo = cell.GetWorldAroundInfo();
             double[] inputsMemory = CreateMemoryInput();
 
@@ -231,7 +245,10 @@ namespace CellEvolution.WorldResources.Cell.NN
                 }
                 for (int i = 0; i < memory.Count; i++)  //111 - 126
                 {
-                    res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
+                    if (i < Constants.maxMemoryCapacity)
+                    {
+                        res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
+                    }
                 }
             }
 
@@ -248,50 +265,73 @@ namespace CellEvolution.WorldResources.Cell.NN
                 done = true;
             }
 
-            ActionHandler(cell.Energy - energyBeforeMove, true);
+            double reward = cell.Energy - energyBeforeMove;
+
+            if(!IsErrorMove)
+            {
+                reward += Constants.actionEnergyCost;
+            }
+
+            ActionHandler(reward, done);
+
+            if (done)
+            {
+                UpdateTargetNetwork(); 
+            }
         }
 
         private void ActionHandler(double reward, bool done)
         {
-            // Расчет целевых Q-значений
-            var targetQValues = FeedForward(beforeMoveState); // Предполагаемые Q-значения для текущего состояния
+            // Используем текущее значение action, установленное в ChooseAction
 
-            double target;
-            if (done)
+            // Получаем текущие Q-значения для начального состояния с использованием онлайн-сети
+            var currentQValuesOnline = FeedForwardWithNoise(beforeMoveState, onlineLayers);
+
+            double tdTarget;
+            if (!done)
             {
-                // Если эпизод завершен, то целевое Q-значение равно только полученной награде
-                target = reward;
+                // Получаем Q-значения для следующего состояния с использованием онлайн-сети для выбора действия
+                var nextQValuesOnline = FeedForwardWithNoise(afterMoveState, onlineLayers);
+                int nextAction = Array.IndexOf(nextQValuesOnline, nextQValuesOnline.Max()); // Выбор действия
+                // Используем целевую сеть для оценки Q-значения для действия, выбранного с помощью онлайн-сети
+                var nextQValuesTarget = FeedForward(afterMoveState, targetLayers);
+                tdTarget = reward + discountFactor * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
             }
             else
             {
-                // В противном случае, учитываем будущую награду и Q-значения следующего состояния
-                var nextQValues = FeedForward(afterMoveState);
-                target = reward + discountFactor * nextQValues.Max();
+                tdTarget = reward; // Если эпизод завершен, цель равна полученной награде
             }
 
-            // Обновляем целевое Q-значение только для выбранного действия
-            targetQValues[action] = target;
+            // Подготовка массива целевых Q-значений для обучения
+            var targetQValues = new double[currentQValuesOnline.Length];
+            Array.Copy(currentQValuesOnline, targetQValues, currentQValuesOnline.Length);
+            targetQValues[action] = tdTarget; // Обновляем Q-значение для выбранного действия
 
-            // Обучение модели
+            // Обучаем онлайн-сеть с обновленными Q-значениями
             TeachDQNModel(beforeMoveState, targetQValues);
 
-            // Добавляем опыт в список memory
+            // Обновляем память, добавляя новый опыт
+            UpdateMemory(beforeMoveState, action, reward, afterMoveState, done);
+        }
+
+        // Обновление памяти новым опытом и обеспечение ее ограниченного размера
+        private void UpdateMemory(double[] beforeMoveState, int action, double reward,  double[] afterMoveState, bool done)
+        {
             memory.Add(new DQNMemory(beforeMoveState, action, reward, afterMoveState, done));
-            // Убедитесь, что memory не превышает заданную емкость
             if (memory.Count > Constants.maxMemoryCapacity)
             {
-                memory.RemoveAt(0); // Удаляем самый старый опыт, если список переполнен
+                memory.RemoveAt(0); // Удаляем самый старый опыт, чтобы не превышать максимальную емкость
             }
         }
 
         private void TeachDQNModel(double[] stateInput, double[] targetQValues)
         {
-            double[] predictedQValues = FeedForward(stateInput); // Получаем предсказанные Q-значения
-            BackPropagation(predictedQValues, targetQValues); // Передаем и предсказанные, и целевые значения в BackPropagation
+            double[] predictedQValues = FeedForward(stateInput, onlineLayers); 
+            BackPropagationWithAdam(predictedQValues, targetQValues);
         }
-        private void BackPropagation(double[] predicted, double[] targets)
+        private void BackPropagationWithAdam(double[] predicted, double[] targets)
         {
-            int outputErrorSize = layers[^1].size;
+            int outputErrorSize = onlineLayers[^1].size;
             double[] outputErrors = new double[outputErrorSize];
 
             // Расчет ошибки на выходном слое
@@ -301,10 +341,10 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
 
             // Обратное распространение ошибки
-            for (int k = layers.Length - 2; k >= 0; k--)
+            for (int k = onlineLayers.Length - 2; k >= 0; k--)
             {
-                NNLayers RightLayer = layers[k + 1];
-                NNLayers LeftLayer = layers[k];
+                NNLayers RightLayer = onlineLayers[k + 1];
+                NNLayers LeftLayer = onlineLayers[k];
 
                 double[] errorsNext = new double[LeftLayer.size];
 
@@ -363,7 +403,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             weights[i, j] -= correction * m[layerIndex][i, j] / (Math.Sqrt(v[layerIndex][i, j]) + epsilon);
         }
 
-        public double[] FeedForward(double[] input)
+        public double[] FeedForward(double[] input, NNLayers[] layers)
         {
             layers[0].neurons = input;
 
@@ -385,7 +425,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
             return layers[layers.Length - 1].neurons;
         }
-        public double[] FeedForwardWithNoise(double[] input)
+        public double[] FeedForwardWithNoise(double[] input, NNLayers[] layers)
         {
             layers[0].neurons = input;
 
@@ -426,11 +466,10 @@ namespace CellEvolution.WorldResources.Cell.NN
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 
-
         public void RandomFillWeightsParallel()
         {
-            NNLayers[] layersTemp = layers;
-            Parallel.For(0, layers.Length, i =>
+            NNLayers[] layersTemp = onlineLayers;
+            Parallel.For(0, onlineLayers.Length, i =>
             {
                 ThreadLocal<Random> localRandom = new ThreadLocal<Random>(() => new Random());
 
@@ -448,9 +487,9 @@ namespace CellEvolution.WorldResources.Cell.NN
                 }
             });
 
-            layers = layersTemp;
+            onlineLayers = layersTemp;
         }
-        public void Clone(DQNCellBrain original)
+        public void Clone(DDQNCellBrain original)
         {
             double key = random.NextDouble();
 
@@ -461,7 +500,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                 RandomCloneNoise();
             }
         }
-        public void Clone(DQNCellBrain mainParent, DQNCellBrain secondParent)
+        public void Clone(DDQNCellBrain mainParent, DDQNCellBrain secondParent)
         {
             double key = random.NextDouble();
 
@@ -476,7 +515,7 @@ namespace CellEvolution.WorldResources.Cell.NN
         }
         private void RandomCloneNoise()
         {
-            foreach (var l in layers)
+            foreach (var l in onlineLayers)
             {
                 for (int i = 0; i < l.size; i++)
                 {
@@ -494,19 +533,18 @@ namespace CellEvolution.WorldResources.Cell.NN
                 }
             }
         }
-        private void CopyNNLayers(DQNCellBrain original)
+        private void CopyNNLayers(DDQNCellBrain original)
         {
-            for (int k = 0; k < layers.Length; k++)
+            for (int k = 0; k < onlineLayers.Length; k++)
             {
-                Array.Copy(original.layers[k].weights, layers[k].weights, original.layers[k].weights.Length);
-                Array.Copy(original.layers[k].neurons, layers[k].neurons, original.layers[k].neurons.Length);
-                Array.Copy(original.layers[k].biases, layers[k].biases, original.layers[k].biases.Length);
+                Array.Copy(original.onlineLayers[k].weights, onlineLayers[k].weights, original.onlineLayers[k].weights.Length);
+                Array.Copy(original.onlineLayers[k].neurons, onlineLayers[k].neurons, original.onlineLayers[k].neurons.Length);
+                Array.Copy(original.onlineLayers[k].biases, onlineLayers[k].biases, original.onlineLayers[k].biases.Length);
 
-                layers[k].size = original.layers[k].size;
-                layers[k].nextSize = original.layers[k].nextSize;
+                onlineLayers[k].size = original.onlineLayers[k].size;
+                onlineLayers[k].nextSize = original.onlineLayers[k].nextSize;
             }
         }
-
 
         public CellGen GetGen()
         {
@@ -514,7 +552,6 @@ namespace CellEvolution.WorldResources.Cell.NN
         }
 
         private double SigmoidFunc(double x) => 1.0 / (1.0 + Math.Exp(-x));
-
         private double DsigmoidFunc(double x) => x * (1.0 - x);
     }
 }

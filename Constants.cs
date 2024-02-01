@@ -8,7 +8,7 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int maxClone = 8;
+        public const int maxClone = 16;
         public const int maxLive = 256;
 
 
@@ -63,9 +63,8 @@ namespace CellEvolution
         public const double randomGenMutationDuringLiveProbability = 0.02;
 
         public const double learningRate = 0.00001;
-        public const double noiseIntensity = 0.01;
+        public const double noiseIntensity = 0.001;
         public const double dropoutProbability = 0.1;
-        public const double learnFromExpProbability = 0.9;
 
         public const double cloneNoiseProbability = 0.15;
         public const double cloneNoiseWeightsRate = 0.001;
@@ -76,8 +75,8 @@ namespace CellEvolution
         public const int energyAreaAbsorbDistance = 1;
         public const int startCellCreationDistance = 2;
 
-        public const int areaSizeX = 40; //118 //105
-        public const int areaSizeY = 40; //60 // 47
+        public const int areaSizeX = 20; //118 //105
+        public const int areaSizeY = 20; //60 // 47
 
         public const char nullChar = '\0';
         public const char emptyChar = ' ';

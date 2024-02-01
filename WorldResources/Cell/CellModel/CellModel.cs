@@ -9,7 +9,7 @@ namespace CellEvolution.Cell.NN
     {
         private Random random = new Random();
 
-        private readonly NNCellBrain brain;
+        private readonly DDQNCellBrain brain;
         private readonly World world;
 
         private readonly Guid id;
@@ -45,7 +45,7 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new NNCellBrain(this);
+            brain = new DDQNCellBrain(this);
             brain.RandomFillWeightsParallel();
 
             ActionDictionaryInit();
@@ -61,7 +61,7 @@ namespace CellEvolution.Cell.NN
 
             generationNum = original.generationNum + 1;
 
-            brain = new NNCellBrain(this, original.brain);
+            brain = new DDQNCellBrain(this, original.brain);
             brain.Clone(original.brain);
 
             ActionDictionaryInit();
@@ -89,7 +89,7 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new NNCellBrain(this, mother.brain, father.brain);
+            brain = new DDQNCellBrain(this, mother.brain, father.brain);
             brain.Clone(mainParent.brain, secondParent.brain);
 
             SpecieFromParentsInit(mother, father);
@@ -189,7 +189,6 @@ namespace CellEvolution.Cell.NN
             {
                 CellColor = Constants.errorCellColor;
             }
-            brain.LearnWithTeacher();
 
             Energy -= IsSlip ? Constants.slipEnergyCost : Constants.actionEnergyCost;
 
@@ -198,7 +197,9 @@ namespace CellEvolution.Cell.NN
                 Energy -= Constants.poisonedDecEnergy;
             }
 
-            if(IsNoEnergy()) IsDead = true;
+            brain.RegisterActionResult();
+
+            if (IsNoEnergy()) IsDead = true;
 
             if (CurrentAge > Constants.maxLive) IsDead = true;
             else CurrentAge++;
@@ -219,13 +220,13 @@ namespace CellEvolution.Cell.NN
             return brain.GetGen().GenActionsCycle;
         }
 
-        private void PerformAction(CellAction decidedAction)//DQN
+        private void PerformAction(CellAction decidedAction)
         {
             if (actionDictionary.TryGetValue(decidedAction, out var action))
             {
                 action?.Invoke();
             }
-            //brain.RegisterActionResult();
+           
         }
 
         private bool IsNoEnergy()
