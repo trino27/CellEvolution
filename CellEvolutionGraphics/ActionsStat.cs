@@ -71,7 +71,7 @@ namespace CellEvolutionGraphics
         private void InitTimer()
         {
             timer = new System.Windows.Forms.Timer();
-            timer.Interval = 60000; // Интервал в миллисекундах 
+            timer.Interval = 120000; // Интервал в миллисекундах 
             timer.Tick += Timer_Tick;
             timer.Start();
         }
