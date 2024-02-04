@@ -16,10 +16,6 @@ namespace CellEvolution.WorldResources.Cell.NN
         // Нейронная сеть
         private NNLayers[] onlineLayers;
         private NNLayers[] targetLayers;
-
-        private double[][,] eWeights; // Следы элигибилити для весов
-        private double[][] eBiases; // Следы элигибилити для смещений
-
         private readonly int[] layersSizes = { 128, 256, 256, 128, 128, 30 };
 
         //Adam
@@ -31,7 +27,6 @@ namespace CellEvolution.WorldResources.Cell.NN
         private List<DQNMemory> memory = new List<DQNMemory>();
 
         private readonly double discountFactor = 0.9; // Коэффициент дисконтирования
-        private double lambda = 0.9;
 
         private double totalReward = 0;
         private double totalMovesNum = 0;
@@ -96,28 +91,6 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
             UpdateTargetNetwork();
 
-            eWeights = new double[onlineLayers.Length][,];
-            eBiases = new double[onlineLayers.Length][];
-
-            for (int i = 0; i < onlineLayers.Length; i++)
-            {
-                int rows = onlineLayers[i].weights.GetLength(0);
-                int cols = onlineLayers[i].weights.GetLength(1);
-                eWeights[i] = new double[rows, cols];
-                eBiases[i] = new double[cols]; // Предполагая, что размер биасов равен количеству нейронов в слое
-
-                for (int row = 0; row < rows; row++)
-                {
-                    for (int col = 0; col < cols; col++)
-                    {
-                        eWeights[i][row, col] = 0; // Инициализация нулями
-                    }
-                }
-                for (int j = 0; j < cols; j++)
-                {
-                    eBiases[i][j] = 0; // Инициализация нулями
-                }
-            }
 
             m = new double[onlineLayers.Length][,];
             v = new double[onlineLayers.Length][,];
@@ -268,20 +241,20 @@ namespace CellEvolution.WorldResources.Cell.NN
 
             if (memory.Count == Constants.maxMemoryCapacity)
             {
-                for (int i = 0; i < Constants.maxMemoryCapacity; i++)  
+                for (int i = 0; i < Constants.maxMemoryCapacity; i++)
                 {
                     res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
                 }
             }
             else
             {
-                for (int i = 0; i < Constants.maxMemoryCapacity; i++)  
+                for (int i = 0; i < Constants.maxMemoryCapacity; i++)
                 {
                     res[i] = 0;
                 }
-                for (int i = 0; i < memory.Count; i++)  
+                for (int i = 0; i < memory.Count; i++)
                 {
-                        res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
+                    res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
                 }
             }
 
@@ -371,7 +344,7 @@ namespace CellEvolution.WorldResources.Cell.NN
         }
 
         // Обновление памяти новым опытом и обеспечение ее ограниченного размера
-        private void UpdateMemory(double[] beforeMoveState, int action, double reward,  double[] afterMoveState, bool done)
+        private void UpdateMemory(double[] beforeMoveState, int action, double reward, double[] afterMoveState, bool done)
         {
             memory.Add(new DQNMemory(beforeMoveState, action, reward, afterMoveState, done));
             if (memory.Count > Constants.maxMemoryCapacity)
@@ -382,7 +355,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
         private void TeachDQNModel(double[] stateInput, double[] targetQValues)
         {
-            double[] predictedQValues = FeedForward(stateInput, onlineLayers); 
+            double[] predictedQValues = FeedForward(stateInput, onlineLayers);
             BackPropagationWithAdam(predictedQValues, targetQValues);
         }
         private void BackPropagationWithAdam(double[] predicted, double[] targets)
@@ -423,6 +396,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                         double gradient = outputErrors[i] * DsigmoidFunc(LeftLayer.neurons[i]);
                         gradient *= Constants.learningRate;
 
+                        // L2-регуляризация
                         LeftLayer.weights[i, j] -= gradient * RightLayer.neurons[j] * LeftLayer.weights[i, j];
 
                         // Обновление весов
@@ -438,46 +412,6 @@ namespace CellEvolution.WorldResources.Cell.NN
                 for (int i = 0; i < LeftLayer.size; i++)
                 {
                     LeftLayer.biases[i] += outputErrors[i] * Constants.learningRate;
-                }
-            }
-
-            for (int layer = onlineLayers.Length - 1; layer >= 0; layer--)
-            {
-                int nextLayerSize = layer == onlineLayers.Length - 1 ? 0 : onlineLayers[layer + 1].neurons.Length;
-                for (int i = 0; i < onlineLayers[layer].neurons.Length; i++)
-                {
-                    double derivativeOfActivation = DsigmoidFunc(onlineLayers[layer].neurons[i]);
-
-                    for (int j = 0; j < nextLayerSize; j++)
-                    {
-                        double error = outputErrors[j]; // Это ошибка следующего (правого) слоя, должна быть рассчитана заранее
-
-                        // Обновление элигибилити трейсов
-                        eWeights[layer][i, j] = lambda * eWeights[layer][i, j] + error * derivativeOfActivation * onlineLayers[layer].neurons[i];
-
-                        // Обновление весов используя трейсы
-                        onlineLayers[layer].weights[i, j] -= Constants.learningRate * eWeights[layer][i, j];
-                    }
-
-                    // Обновление элигибилити трейсов для биасов (если применимо)
-                    eBiases[layer][i] = lambda * eBiases[layer][i] + outputErrors[i] * derivativeOfActivation; // Предполагая, что outputErrors[i] доступна для текущего слоя
-
-                    // Обновление биасов используя трейсы
-                    onlineLayers[layer].biases[i] -= Constants.learningRate * eBiases[layer][i];
-                }
-
-                // Пересчитать outputErrors для текущего слоя, используя веса и ошибки следующего слоя, если это не последний слой
-                if (layer > 0)
-                {
-                    for (int i = 0; i < onlineLayers[layer - 1].neurons.Length; i++)
-                    {
-                        double errorSum = 0;
-                        for (int j = 0; j < nextLayerSize; j++)
-                        {
-                            errorSum += onlineLayers[layer].weights[i, j] * outputErrors[j];
-                        }
-                        outputErrors[i] = errorSum * DsigmoidFunc(onlineLayers[layer - 1].neurons[i]);
-                    }
                 }
             }
         }

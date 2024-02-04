@@ -14,7 +14,7 @@ namespace СellEvolution.Simulation
     public class Simulation
     {
         private World world = new World();
-        private StatDatabase statDatabase = new StatDatabase();
+        //private StatDatabase statDatabase = new StatDatabase();
 
         public int PhotoCells = 0;
         public int BiteCells = 0;
@@ -129,7 +129,7 @@ namespace СellEvolution.Simulation
         {
             if(world.CurrentHours % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0 && world.CurrentHours != 0)
             {
-                statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
+                //statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
                 DayErrorValue = 0;
             }
             DayErrorValue += CurrentErrorProc;
