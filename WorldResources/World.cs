@@ -64,8 +64,6 @@ namespace СellEvolution.WorldResources
 
             cellActionHandler.CellStartReproduction();
             cellActionHandler.CellStartCreatingClones();
-
-            WorldArea.ClearAreaVoiceParallel();
         }
 
         private void MeteorFalling()

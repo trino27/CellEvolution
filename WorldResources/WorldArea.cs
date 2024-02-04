@@ -12,7 +12,6 @@ namespace СellEvolution.WorldResources
 
         public char[,] AreaChar;
         public ConsoleColor[,] AreaColor;
-        public int[,] AreaVoice;
         public int[,] AreaEnergy;
 
         public List<MeteorBlock> MeteorBlocks = new List<MeteorBlock>();
@@ -24,7 +23,6 @@ namespace СellEvolution.WorldResources
             AreaChar = new char[Constants.areaSizeX, Constants.areaSizeY];
             AreaColor = new ConsoleColor[Constants.areaSizeX, Constants.areaSizeY];
             AreaEnergy = new int[Constants.areaSizeX, Constants.areaSizeY];
-            AreaVoice = new int[Constants.areaSizeX, Constants.areaSizeY];
 
             Console.WriteLine("Creating World!");
             CreateAreasParallel();
@@ -268,9 +266,11 @@ namespace СellEvolution.WorldResources
         {
             lock (lockObject)
             {
-                List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1);
-                List<int> cellGenArea = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1);
-                List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1));
+                List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) -1); //48
+                List<int> cellGenArea = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+                List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
+
+                bool IsPoisonedArea = false;
 
                 for (int x = positionX - Constants.visionDistance; x <= positionX + Constants.visionDistance; x++)
                 {
@@ -282,12 +282,16 @@ namespace СellEvolution.WorldResources
                             x >= positionX - Constants.energyAreaVisionDistance && x <= positionX + Constants.energyAreaVisionDistance)
                             {
                                 energyAreaInfo.Add(AreaEnergy[x, y]);
+                                if (AreaEnergy[x, y] > Constants.energyAreaPoisonedCorner)
+                                {
+                                    IsPoisonedArea = true;
+                                }
                             }
 
                             if (!(x == positionX && y == positionY))
                             {
                                 int k = 0;
-                                bool isGenWrited = false;
+                                bool isGenWrite = false;
                                 switch (AreaChar[x, y])
                                 {
                                     case Constants.borderChar: k = Constants.Kborder; break;
@@ -310,11 +314,11 @@ namespace СellEvolution.WorldResources
                                             }
 
                                             cellGenArea.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(x, y), world.GetCell(positionX, positionY)) + 1);
-                                            isGenWrited = true;
+                                            isGenWrite = true;
                                         }
                                         break;
                                 }
-                                if (!isGenWrited)
+                                if (!isGenWrite)
                                 {
                                     cellGenArea.Add(0);
                                 }
@@ -331,36 +335,16 @@ namespace СellEvolution.WorldResources
 
                 area.AddRange(cellGenArea);
                 area.AddRange(energyAreaInfo);
-                area.AddRange(GetAreaVoiceInfo(positionX, positionY));
                 area.Add(Convert.ToInt16(world.CurrentDayTime) * Constants.brainInputDayNightPoweredK);
-
-                return area;
-            }
-        }
-
-        public List<int> GetAreaVoiceInfo(int positionX, int positionY)
-        {
-            lock (lockObject)
-            {
-                List<int> res = new List<int>(7);
-
-                if (AreaVoice[positionX, positionY] != 0)
+                if(IsPoisonedArea)
                 {
-                    res.Add(positionX - world.Cells[AreaVoice[positionX, positionY] - 1].PositionX);
-                    res.Add(positionY - world.Cells[AreaVoice[positionX, positionY] - 1].PositionY);
-
-                    res.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(positionX, positionY), world.Cells[AreaVoice[positionX, positionY] - 1]));
-                    res.Add(world.Cells[AreaVoice[positionX, positionY] - 1].Energy);
+                    area.Add(1 * Constants.brainInputIsPoisonedPoweredK);
                 }
                 else
                 {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        res.Add(0);
-                    }
+                    area.Add(0);
                 }
-
-                return res;
+                return area;
             }
         }
 
@@ -407,17 +391,6 @@ namespace СellEvolution.WorldResources
 
 
             return area;
-        }
-
-        public void ClearAreaVoiceParallel()
-        {
-            Parallel.For(0, Constants.areaSizeX, x =>
-            {
-                for (int y = 0; y < Constants.areaSizeY; y++)
-                {
-                    AreaVoice[x, y] = 0;
-                }
-            });
         }
 
         public void CreatePoisonArea(int x, int y)

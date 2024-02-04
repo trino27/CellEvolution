@@ -8,13 +8,19 @@ namespace CellEvolution.WorldResources.Cell.NN
     public class DDQNCellBrain
     {
         private readonly Random random = new Random();
+
+        private readonly DQNStaticCritic teacher = new DQNStaticCritic();
         private readonly CellModel cell;
         private CellGen gen;
 
         // Нейронная сеть
         private NNLayers[] onlineLayers;
         private NNLayers[] targetLayers;
-        private readonly int[] layersSizes = { 127, 256, 256, 128, 32 };
+
+        private double[][,] eWeights; // Следы элигибилити для весов
+        private double[][] eBiases; // Следы элигибилити для смещений
+
+        private readonly int[] layersSizes = { 128, 256, 256, 128, 128, 30 };
 
         //Adam
         private double[][,] m;
@@ -25,8 +31,11 @@ namespace CellEvolution.WorldResources.Cell.NN
         private List<DQNMemory> memory = new List<DQNMemory>();
 
         private readonly double discountFactor = 0.9; // Коэффициент дисконтирования
+        private double lambda = 0.9;
 
-        private NNTeacher teacher = new NNTeacher();
+        private double totalReward = 0;
+        private double totalMovesNum = 0;
+
         public bool IsErrorMove = false;
 
         private double[] afterMoveState;
@@ -70,7 +79,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
         private void InitMemory(DDQNCellBrain original)
         {
-            memory = original.memory;
+            memory = original.memory.Select(m => (DQNMemory)m.Clone()).ToList();
         }
         private void InitNetwork()
         {
@@ -87,6 +96,28 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
             UpdateTargetNetwork();
 
+            eWeights = new double[onlineLayers.Length][,];
+            eBiases = new double[onlineLayers.Length][];
+
+            for (int i = 0; i < onlineLayers.Length; i++)
+            {
+                int rows = onlineLayers[i].weights.GetLength(0);
+                int cols = onlineLayers[i].weights.GetLength(1);
+                eWeights[i] = new double[rows, cols];
+                eBiases[i] = new double[cols]; // Предполагая, что размер биасов равен количеству нейронов в слое
+
+                for (int row = 0; row < rows; row++)
+                {
+                    for (int col = 0; col < cols; col++)
+                    {
+                        eWeights[i][row, col] = 0; // Инициализация нулями
+                    }
+                }
+                for (int j = 0; j < cols; j++)
+                {
+                    eBiases[i][j] = 0; // Инициализация нулями
+                }
+            }
 
             m = new double[onlineLayers.Length][,];
             v = new double[onlineLayers.Length][,];
@@ -112,6 +143,7 @@ namespace CellEvolution.WorldResources.Cell.NN
         {
             energyBeforeMove = cell.Energy;
             beforeMoveState = CreateBrainInput();
+            totalMovesNum++;
 
             List<CellAction> availableActions = new List<CellAction>();
 
@@ -153,7 +185,6 @@ namespace CellEvolution.WorldResources.Cell.NN
                 case CellGen.GenAction.Actions:
                     {
                         availableActions.Add(CellAction.Slip);
-                        availableActions.Add(CellAction.Shout);
                         availableActions.Add(CellAction.Hide);
                     }
                     break;
@@ -168,7 +199,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
                 case CellGen.GenAction.All:
                     {
-                        for (int i = 0; i < 32; i++)
+                        for (int i = 0; i < 30; i++)
                         {
                             availableActions.Add((CellAction)i);
                         }
@@ -206,23 +237,28 @@ namespace CellEvolution.WorldResources.Cell.NN
             double[] inputsBrain = new double[onlineLayers[0].size];
             List<int> areaInfo = cell.GetWorldAroundInfo();
             double[] inputsMemory = CreateMemoryInput();
-
+            double[] inputsFuture = gen.FutureGenActions(Constants.futureActionsInputLength);
             int j = 0;
-            for (int i = 0; i < areaInfo.Count; i++) //48+48+9+4+1 = 0-47 48-95 96-104 105-108 109
+            for (int i = 0; i < areaInfo.Count; i++) //48+48+9+1+1 = 0-47 48-95 96-104 105 106 
             {
                 inputsBrain[j] = areaInfo[i];
                 j++;
             }
 
-            inputsBrain[j] = cell.Energy; //110
+            inputsBrain[j] = cell.Energy; //107
             j++;
 
-            for (int i = 0; i < Constants.maxMemoryCapacity; i++) //111 - 126
+            for (int i = 0; i < Constants.maxMemoryCapacity; i++) //108 - 123
             {
                 inputsBrain[j] = inputsMemory[i];
                 j++;
             }
 
+            for (int i = 0; i < Constants.futureActionsInputLength; i++) //124 - 127
+            {
+                inputsBrain[j] = inputsFuture[i];
+                j++;
+            }
 
             return inputsBrain.ToArray();
         }
@@ -232,30 +268,27 @@ namespace CellEvolution.WorldResources.Cell.NN
 
             if (memory.Count == Constants.maxMemoryCapacity)
             {
-                for (int i = 0; i < Constants.maxMemoryCapacity; i++)  //111 - 126
+                for (int i = 0; i < Constants.maxMemoryCapacity; i++)  
                 {
                     res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
                 }
             }
             else
             {
-                for (int i = 0; i < Constants.maxMemoryCapacity; i++)  //111 - 126
+                for (int i = 0; i < Constants.maxMemoryCapacity; i++)  
                 {
                     res[i] = 0;
                 }
-                for (int i = 0; i < memory.Count; i++)  //111 - 126
+                for (int i = 0; i < memory.Count; i++)  
                 {
-                    if (i < Constants.maxMemoryCapacity)
-                    {
                         res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
-                    }
                 }
             }
 
             return res;
         }
 
-        public void RegisterActionResult()
+        public void RegisterLastActionResult(int alreadyUseClones)
         {
             afterMoveState = CreateBrainInput();
 
@@ -265,21 +298,44 @@ namespace CellEvolution.WorldResources.Cell.NN
                 done = true;
             }
 
-            double reward = cell.Energy - energyBeforeMove;
-
-            if(!IsErrorMove)
-            {
-                reward += Constants.actionEnergyCost;
-            }
-
-            ActionHandler(reward, done);
-
             if (done)
             {
-                UpdateTargetNetwork(); 
+                ActionHandler(CulcReward(done, alreadyUseClones), done);
+                UpdateTargetNetwork();
+
+            }
+            else
+            {
+                ActionHandler(CulcReward(done, 0), done);
             }
         }
 
+        private double CulcReward(bool done, int numOfClones)
+        {
+            double reward = 0;
+            if (done)
+            {
+                reward = (totalReward / totalMovesNum) * numOfClones;
+
+                totalReward = 0;
+            }
+            else
+            {
+                reward = cell.Energy - energyBeforeMove;
+
+                if (IsErrorMove)
+                {
+
+                    reward -= Constants.errorCost;
+                }
+                else
+                {
+                    reward += Constants.actionEnergyCost;
+                }
+                totalReward += reward;
+            }
+            return reward;
+        }
         private void ActionHandler(double reward, bool done)
         {
             // Используем текущее значение action, установленное в ChooseAction
@@ -367,7 +423,6 @@ namespace CellEvolution.WorldResources.Cell.NN
                         double gradient = outputErrors[i] * DsigmoidFunc(LeftLayer.neurons[i]);
                         gradient *= Constants.learningRate;
 
-                        // L2-регуляризация
                         LeftLayer.weights[i, j] -= gradient * RightLayer.neurons[j] * LeftLayer.weights[i, j];
 
                         // Обновление весов
@@ -383,6 +438,46 @@ namespace CellEvolution.WorldResources.Cell.NN
                 for (int i = 0; i < LeftLayer.size; i++)
                 {
                     LeftLayer.biases[i] += outputErrors[i] * Constants.learningRate;
+                }
+            }
+
+            for (int layer = onlineLayers.Length - 1; layer >= 0; layer--)
+            {
+                int nextLayerSize = layer == onlineLayers.Length - 1 ? 0 : onlineLayers[layer + 1].neurons.Length;
+                for (int i = 0; i < onlineLayers[layer].neurons.Length; i++)
+                {
+                    double derivativeOfActivation = DsigmoidFunc(onlineLayers[layer].neurons[i]);
+
+                    for (int j = 0; j < nextLayerSize; j++)
+                    {
+                        double error = outputErrors[j]; // Это ошибка следующего (правого) слоя, должна быть рассчитана заранее
+
+                        // Обновление элигибилити трейсов
+                        eWeights[layer][i, j] = lambda * eWeights[layer][i, j] + error * derivativeOfActivation * onlineLayers[layer].neurons[i];
+
+                        // Обновление весов используя трейсы
+                        onlineLayers[layer].weights[i, j] -= Constants.learningRate * eWeights[layer][i, j];
+                    }
+
+                    // Обновление элигибилити трейсов для биасов (если применимо)
+                    eBiases[layer][i] = lambda * eBiases[layer][i] + outputErrors[i] * derivativeOfActivation; // Предполагая, что outputErrors[i] доступна для текущего слоя
+
+                    // Обновление биасов используя трейсы
+                    onlineLayers[layer].biases[i] -= Constants.learningRate * eBiases[layer][i];
+                }
+
+                // Пересчитать outputErrors для текущего слоя, используя веса и ошибки следующего слоя, если это не последний слой
+                if (layer > 0)
+                {
+                    for (int i = 0; i < onlineLayers[layer - 1].neurons.Length; i++)
+                    {
+                        double errorSum = 0;
+                        for (int j = 0; j < nextLayerSize; j++)
+                        {
+                            errorSum += onlineLayers[layer].weights[i, j] * outputErrors[j];
+                        }
+                        outputErrors[i] = errorSum * DsigmoidFunc(onlineLayers[layer - 1].neurons[i]);
+                    }
                 }
             }
         }

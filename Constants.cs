@@ -8,12 +8,16 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int maxClone = 16;
+        public const int maxClone = 8;
         public const int maxLive = 256;
 
 
         public const int energyAreaPoisonedCorner = 50;
         public const int poisonedDecEnergy = energyAreaPoisonedCorner;
+
+        public const int futureActionsInputLength = 4;
+
+        public const int errorCost = 10;
 
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
@@ -44,8 +48,10 @@ namespace CellEvolution
         public const int maxMemoryCapacity = 16;
         public const int genCycleSize = 32;
 
+        public const int brainInputIsPoisonedPoweredK = 100;
         public const int brainInputDayNightPoweredK = 100;
         public const int brainLastMovePoweredK = 5;
+        public const int brainFutureMovePoweredK = 5;
 
         public const int meteorBlockOrbNumMin = 100;
         public const int meteorBlockOrbNumMax = 1000;

@@ -34,6 +34,31 @@
             return genAction;
         }
 
+        public double[] FutureGenActions(int n)
+        {
+            double[] result = new double[n];
+
+            int j = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (CurrentGenIndex + i < GenActionsCycle.Length)
+                {
+                    result[i] = (double)GenActionsCycle[CurrentGenIndex + i] * Constants.brainFutureMovePoweredK;
+                }
+                else
+                {
+                    result[i] = (double)GenActionsCycle[j] * Constants.brainFutureMovePoweredK;
+                    j++;
+
+                    if(j > GenActionsCycle.Length)
+                    {
+                        j = 0;
+                    }
+                }
+            }
+            return result;
+        }
+
         private void NextGenIndex()
         {
             CurrentGenIndex++;

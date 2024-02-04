@@ -1,6 +1,5 @@
 ﻿using CellEvolution.WorldResources.Cell.NN;
 using СellEvolution.WorldResources;
-using СellEvolution.WorldResources.Cell.NN;
 using static CellEvolution.Cell.GenAlg.CellGen;
 
 namespace CellEvolution.Cell.NN
@@ -33,6 +32,7 @@ namespace CellEvolution.Cell.NN
         public bool IsDead = false;
         public bool IsSlip = false;
         public bool IsHide = false;
+        public bool IsMadeAction = false;
 
         public bool IsCreatingChildren = false;
         public bool IsCreatingClone = false;
@@ -163,18 +163,22 @@ namespace CellEvolution.Cell.NN
             { CellAction.Clone, Clone },
             { CellAction.Reproduction, Reproduction },
             { CellAction.Slip, Slip },
-            { CellAction.Shout, Shout },
             { CellAction.Hide, Hide },
             { CellAction.MineTop, MineTop },
             { CellAction.MineRightSide, MineRightSide },
             { CellAction.MineBottom, MineBottom },
             { CellAction.MineLeftSide, MineLeftSide },
-            { CellAction.DecEnergyBank, null }
         };
         }
 
         public void MakeAction()
         {
+            if (IsMadeAction)
+            {
+                brain.RegisterLastActionResult(AlreadyUseClone);
+                IsMadeAction = false;
+            }
+
             IsSlip = false;
 
             IsCreatingClone = false;
@@ -184,6 +188,7 @@ namespace CellEvolution.Cell.NN
             IsHide = false;
 
             PerformAction(brain.ChooseAction());
+            IsMadeAction = true;
 
             if (brain.IsErrorMove)
             {
@@ -197,7 +202,7 @@ namespace CellEvolution.Cell.NN
                 Energy -= Constants.poisonedDecEnergy;
             }
 
-            brain.RegisterActionResult();
+
 
             if (IsNoEnergy()) IsDead = true;
 
@@ -226,7 +231,7 @@ namespace CellEvolution.Cell.NN
             {
                 action?.Invoke();
             }
-           
+
         }
 
         private bool IsNoEnergy()
@@ -452,10 +457,6 @@ namespace CellEvolution.Cell.NN
         {
             IsSlip = true;
             CellColor = Constants.slipCellColor;
-        }
-        private void Shout()
-        {
-            world.cellActionHandler.CellShout(this);
         }
         private void Hide()
         {

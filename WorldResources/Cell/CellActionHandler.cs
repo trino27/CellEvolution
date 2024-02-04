@@ -143,34 +143,6 @@ namespace СellEvolution.WorldResources.Cell
                 }
             }
         }
-        public void CellShout(CellModel cell)
-        {
-            int index = -1;
-            for (int i = 0; i < world.Cells.Count; i++)
-            {
-                if (world.Cells[i] == cell)
-                {
-                    index = i; break;
-                }
-            }
-
-            if (index != -1)
-            {
-                for (int x = cell.PositionX - Constants.voiceDistance; x < cell.PositionX + Constants.voiceDistance + 1; x++)
-                {
-                    for (int y = cell.PositionY - Constants.voiceDistance; y < cell.PositionY + Constants.voiceDistance + 1; y++)
-                    {
-                        if (y >= 0 && y < Constants.areaSizeY &&
-                            x >= 0 && x < Constants.areaSizeX &&
-                             world.WorldArea.AreaVoice[x, y] != 0 &&
-                             random.Next(0, 2) == 0)
-                        {
-                            world.WorldArea.AreaVoice[x, y] = index + 1;
-                        }
-                    }
-                }
-            }
-        }
 
         public void CellMineTop(CellModel miner)
         {
@@ -308,6 +280,7 @@ namespace СellEvolution.WorldResources.Cell
                     if (cell.IsCreatingClone)
                     {
                         CreateClonesForCell(cell);
+                        cell.Energy = Constants.startCellEnergy;
                     }
                 }
 
@@ -323,7 +296,7 @@ namespace СellEvolution.WorldResources.Cell
                 (int x, int y) = newCellCoord[randomIndex];
 
                 if (world.WorldArea.AreaChar[x, y] == Constants.emptyChar &&
-                    cell.Energy > Constants.cloneEnergyCost * 2)
+                    cell.Energy >= Constants.cloneEnergyCost + Constants.startCellEnergy)
                 {
                     world.Cells.Add(new CellModel(x, y, world, cell));
 
@@ -352,6 +325,7 @@ namespace СellEvolution.WorldResources.Cell
                     if (cell.IsCreatingChildren)
                     {
                         ReproduceCell(cell);
+                        cell.Energy = Constants.startCellEnergy;
                     }
                 }
 
@@ -385,8 +359,8 @@ namespace СellEvolution.WorldResources.Cell
                     (int x, int y) = newCellCoord[randomIndex];
 
                     if (world.WorldArea.AreaChar[x, y] == Constants.emptyChar &&
-                        mother.Energy > Constants.cloneEnergyCost * 2 &&
-                        father.Energy > Constants.cloneEnergyCost * 2)
+                        mother.Energy >= Constants.cloneEnergyCost + Constants.startCellEnergy &&
+                        father.Energy >= Constants.cloneEnergyCost + Constants.startCellEnergy)
                     {
                         world.Cells.Add(new CellModel(x, y, world, mother, father));
 

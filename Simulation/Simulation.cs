@@ -37,7 +37,7 @@ namespace СellEvolution.Simulation
             do
             {
                 UpdateCellsTypeInfo();
-                UpdateDayErrorValue();
+                //UpdateDataBaseDayErrorValue();
 
                 ShowWorldInfo();
                 ShowTimeInfo(stopwatchCells);
@@ -125,7 +125,7 @@ namespace СellEvolution.Simulation
             
         }
         
-        private void UpdateDayErrorValue()
+        private void UpdateDataBaseDayErrorValue()
         {
             if(world.CurrentHours % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0 && world.CurrentHours != 0)
             {

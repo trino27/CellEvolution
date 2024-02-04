@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace СellEvolution.WorldResources.Cell.NN
 {
-    public struct DQNMemory
+    public struct DQNMemory : ICloneable
     {
         public double[] BeforeMoveState;
         public int DecidedAction;
@@ -21,6 +21,17 @@ namespace СellEvolution.WorldResources.Cell.NN
             Reward = reward;
             AfterMoveState = afterMoveState;
             Done = done;
+        }
+
+        public object Clone()
+        {
+            double[] beforeMoveStateCopy = new double[BeforeMoveState.Length];
+            Array.Copy(BeforeMoveState, beforeMoveStateCopy, BeforeMoveState.Length);
+
+            double[] afterMoveStateCopy = new double[AfterMoveState.Length];
+            Array.Copy(AfterMoveState, afterMoveStateCopy, AfterMoveState.Length);
+
+            return new DQNMemory(beforeMoveStateCopy, DecidedAction, Reward, afterMoveStateCopy, Done);
         }
     }
 }

@@ -41,7 +41,6 @@
 
             //Action
             Slip, 
-            Shout, 
             Hide,
             
             //Mine
@@ -49,8 +48,6 @@
             MineRightSide,
             MineBottom, 
             MineLeftSide,
-            
-            DecEnergyBank
         }
     }
 }
