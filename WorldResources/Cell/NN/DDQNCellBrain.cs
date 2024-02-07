@@ -16,17 +16,14 @@ namespace CellEvolution.WorldResources.Cell.NN
         // Нейронная сеть
         private NNLayers[] onlineLayers;
         private NNLayers[] targetLayers;
-        private readonly int[] layersSizes = { 128, 256, 256, 128, 128, 30 };
+        private readonly int[] layersSizes = { 177, 256, 256, 128, 128, 30 };
 
-        //Adam
-        private double[][,] m;
-        private double[][,] v;
-        private int t = 0;
+        //SGDMomentum
+        private double[][][] velocitiesWeights;
+        private double[][] velocitiesBiases;
 
         // Воспроизведение опыта
         private List<DQNMemory> memory = new List<DQNMemory>();
-
-        private readonly double discountFactor = 0.9; // Коэффициент дисконтирования
 
         private double totalReward = 0;
         private double totalMovesNum = 0;
@@ -44,6 +41,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             gen = new CellGen();
 
             InitNetwork();
+            InitVelocities();
         }
 
         public DDQNCellBrain(CellModel cell, DDQNCellBrain original)
@@ -53,6 +51,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
             InitNetwork();
             InitMemory(original);
+            InitVelocities(original);
         }
 
         public DDQNCellBrain(CellModel cell, DDQNCellBrain mother, DDQNCellBrain father)
@@ -65,11 +64,14 @@ namespace CellEvolution.WorldResources.Cell.NN
             if (random.Next(0, 2) == 0)
             {
                 InitMemory(mother);
+                InitVelocities(mother);
             }
             else
             {
                 InitMemory(father);
+                InitVelocities(father);
             }
+            
         }
 
         private void InitMemory(DDQNCellBrain original)
@@ -90,19 +92,57 @@ namespace CellEvolution.WorldResources.Cell.NN
                 targetLayers[i] = new NNLayers(layersSizes[i], i < layersSizes.Length - 1 ? layersSizes[i + 1] : 0);
             }
             UpdateTargetNetwork();
+        }
 
 
-            m = new double[onlineLayers.Length][,];
-            v = new double[onlineLayers.Length][,];
+        private void InitVelocities()
+        {
+            velocitiesWeights = new double[onlineLayers.Length - 1][][];
+            velocitiesBiases = new double[onlineLayers.Length][];
 
             for (int i = 0; i < onlineLayers.Length; i++)
             {
-                int rows = onlineLayers[i].weights.GetLength(0);
-                int cols = onlineLayers[i].weights.GetLength(1);
-                m[i] = new double[rows, cols];
-                v[i] = new double[rows, cols];
+                if (i < onlineLayers.Length - 1)
+                {
+                    velocitiesWeights[i] = new double[layersSizes[i]][];
+                    for (int j = 0; j < layersSizes[i]; j++)
+                    {
+                        velocitiesWeights[i][j] = new double[layersSizes[i + 1]];
+                        for (int k = 0; k < layersSizes[i + 1]; k++)
+                        {
+                            velocitiesWeights[i][j][k] = 0; // Инициализация нулями
+                        }
+                    }
+                }
+
+                velocitiesBiases[i] = new double[layersSizes[i]];
+                for (int j = 0; j < layersSizes[i]; j++)
+                {
+                    velocitiesBiases[i][j] = 0; // Инициализация нулями
+                }
             }
         }
+        private void InitVelocities(DDQNCellBrain original)
+        {
+            velocitiesWeights = new double[original.velocitiesWeights.Length][][];
+            for (int layer = 0; layer < original.velocitiesWeights.Length; layer++)
+            {
+                velocitiesWeights[layer] = new double[original.velocitiesWeights[layer].Length][];
+                for (int neuron = 0; neuron < original.velocitiesWeights[layer].Length; neuron++)
+                {
+                    velocitiesWeights[layer][neuron] = new double[original.velocitiesWeights[layer][neuron].Length];
+                    Array.Copy(original.velocitiesWeights[layer][neuron], velocitiesWeights[layer][neuron], original.velocitiesWeights[layer][neuron].Length);
+                }
+            }
+
+            velocitiesBiases = new double[original.velocitiesBiases.Length][];
+            for (int layer = 0; layer < original.velocitiesBiases.Length; layer++)
+            {
+                velocitiesBiases[layer] = new double[original.velocitiesBiases[layer].Length];
+                Array.Copy(original.velocitiesBiases[layer], velocitiesBiases[layer], original.velocitiesBiases[layer].Length);
+            }
+        }
+
         private void UpdateTargetNetwork()
         {
             for (int i = 0; i < onlineLayers.Length; i++)
@@ -180,8 +220,18 @@ namespace CellEvolution.WorldResources.Cell.NN
                     break;
             }
 
-            double[] qValuesOutput = FeedForwardWithNoise(beforeMoveState, onlineLayers);
-            CellAction decidedAction = FindMaxIndexForFindAction(qValuesOutput, availableActions);
+            CellAction decidedAction;
+            //// Эпсилон-жадный выбор
+            if (random.NextDouble() < gen.HyperparameterChromosome[CellGen.GenHyperparameter.epsilon]) // Исследование: случайный выбор действия
+            {
+                int randomIndex = random.Next(availableActions.Count);
+                decidedAction = availableActions[randomIndex];
+            }
+            else
+            {
+                double[] qValuesOutput = FeedForwardWithNoise(beforeMoveState, onlineLayers);
+                decidedAction = FindMaxIndexForFindAction(qValuesOutput, availableActions);
+            }
             action = (int)decidedAction;
 
             IsErrorMove = teacher.IsDecidedMoveError(decidedAction, beforeMoveState);
@@ -195,7 +245,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
             for (int i = 0; i < array.Length; i++)
             {
-                if (array[i] > maxWeight && availableActions.Contains((CellAction)i))
+                if ((array[i] > maxWeight) && availableActions.Contains((CellAction)i))
                 {
                     maxWeight = array[i];
                     maxIndex = i;
@@ -212,22 +262,22 @@ namespace CellEvolution.WorldResources.Cell.NN
             double[] inputsMemory = CreateMemoryInput();
             double[] inputsFuture = gen.FutureGenActions(Constants.futureActionsInputLength);
             int j = 0;
-            for (int i = 0; i < areaInfo.Count; i++) //48+48+9+1+1 = 0-47 48-95 96-104 105 106 
+            for (int i = 0; i < areaInfo.Count; i++) //0-47(-48)(areaChar) 48-95(-48)(cellsGen) 96-143(-48)(cellsEnergy) 144-152(-9)(energyArea) 153(-1)(DayTime) 154(-1)(Photosynthesis) 155(-1)(IsPoison)     
             {
                 inputsBrain[j] = areaInfo[i];
                 j++;
             }
 
-            inputsBrain[j] = cell.Energy; //107
+            inputsBrain[j] = cell.Energy; //156
             j++;
 
-            for (int i = 0; i < Constants.maxMemoryCapacity; i++) //108 - 123
+            for (int i = 0; i < Constants.maxMemoryCapacity; i++) //157 - 172
             {
                 inputsBrain[j] = inputsMemory[i];
                 j++;
             }
 
-            for (int i = 0; i < Constants.futureActionsInputLength; i++) //124 - 127
+            for (int i = 0; i < Constants.futureActionsInputLength; i++) //173 - 176
             {
                 inputsBrain[j] = inputsFuture[i];
                 j++;
@@ -266,7 +316,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             afterMoveState = CreateBrainInput();
 
             bool done = false;
-            if (cell.IsCreatingClone || cell.IsCreatingChildren)
+            if (cell.IsCreatingClone || cell.IsCreatingChildren && alreadyUseClones > 0)
             {
                 done = true;
             }
@@ -288,8 +338,20 @@ namespace CellEvolution.WorldResources.Cell.NN
             double reward = 0;
             if (done)
             {
-                reward = (totalReward / totalMovesNum) * numOfClones;
-
+                reward = (totalReward / totalMovesNum);
+                if(reward > 0)
+                {
+                    double bonus = 0;
+                    for(int i = 0; i < numOfClones; i++)
+                    {
+                        bonus +=  reward * gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusA] / Math.Pow(gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusB], i);
+                    }
+                    reward = bonus;
+                }
+                else
+                {
+                    reward = 0;
+                }
                 totalReward = 0;
             }
             else
@@ -299,7 +361,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                 if (IsErrorMove)
                 {
 
-                    reward -= Constants.errorCost;
+                    reward -= gen.HyperparameterChromosome[CellGen.GenHyperparameter.errorCost];
                 }
                 else
                 {
@@ -314,17 +376,17 @@ namespace CellEvolution.WorldResources.Cell.NN
             // Используем текущее значение action, установленное в ChooseAction
 
             // Получаем текущие Q-значения для начального состояния с использованием онлайн-сети
-            var currentQValuesOnline = FeedForwardWithNoise(beforeMoveState, onlineLayers);
+            double[] currentQValuesOnline = FeedForwardWithNoise(beforeMoveState, onlineLayers);
 
             double tdTarget;
             if (!done)
             {
                 // Получаем Q-значения для следующего состояния с использованием онлайн-сети для выбора действия
-                var nextQValuesOnline = FeedForwardWithNoise(afterMoveState, onlineLayers);
+                double[] nextQValuesOnline = FeedForwardWithNoise(afterMoveState, onlineLayers);
                 int nextAction = Array.IndexOf(nextQValuesOnline, nextQValuesOnline.Max()); // Выбор действия
                 // Используем целевую сеть для оценки Q-значения для действия, выбранного с помощью онлайн-сети
-                var nextQValuesTarget = FeedForward(afterMoveState, targetLayers);
-                tdTarget = reward + discountFactor * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
+                double[] nextQValuesTarget = FeedForward(afterMoveState, targetLayers);
+                tdTarget = reward + gen.HyperparameterChromosome[CellGen.GenHyperparameter.discountFactor] * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
             }
             else
             {
@@ -332,7 +394,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
 
             // Подготовка массива целевых Q-значений для обучения
-            var targetQValues = new double[currentQValuesOnline.Length];
+            double[] targetQValues = new double[currentQValuesOnline.Length];
             Array.Copy(currentQValuesOnline, targetQValues, currentQValuesOnline.Length);
             targetQValues[action] = tdTarget; // Обновляем Q-значение для выбранного действия
 
@@ -356,80 +418,129 @@ namespace CellEvolution.WorldResources.Cell.NN
         private void TeachDQNModel(double[] stateInput, double[] targetQValues)
         {
             double[] predictedQValues = FeedForward(stateInput, onlineLayers);
-            BackPropagationWithAdam(predictedQValues, targetQValues);
+            BackPropagationSGD(predictedQValues, targetQValues);
         }
-        private void BackPropagationWithAdam(double[] predicted, double[] targets)
+
+        protected void BackPropagationSGD(double[] predicted, double[] targets)
         {
-            int outputErrorSize = onlineLayers[^1].size;
+            int outputErrorSize = onlineLayers[onlineLayers.Length - 1].size;
             double[] outputErrors = new double[outputErrorSize];
 
-            // Расчет ошибки на выходном слое
             for (int i = 0; i < outputErrorSize; i++)
             {
                 outputErrors[i] = targets[i] - predicted[i];
             }
 
-            // Обратное распространение ошибки
             for (int k = onlineLayers.Length - 2; k >= 0; k--)
             {
-                NNLayers RightLayer = onlineLayers[k + 1];
-                NNLayers LeftLayer = onlineLayers[k];
+                NNLayers currentL = onlineLayers[k];
+                NNLayers nextL = onlineLayers[k + 1];
 
-                double[] errorsNext = new double[LeftLayer.size];
-
-                for (int i = 0; i < LeftLayer.size; i++)
+                double[] errorsNext = new double[currentL.size];
+                for (int i = 0; i < currentL.size; i++)
                 {
                     double errorSum = 0;
-                    for (int j = 0; j < RightLayer.size; j++)
+                    for (int j = 0; j < nextL.size; j++)
                     {
-                        errorSum += LeftLayer.weights[i, j] * outputErrors[j];
+                        errorSum += currentL.weights[i, j] * outputErrors[j];
                     }
-                    errorsNext[i] = errorSum * DsigmoidFunc(LeftLayer.neurons[i]);
+                    errorsNext[i] = errorSum;
                 }
+
+                double[] gradients = new double[nextL.size];
+                for (int i = 0; i < nextL.size; i++)
+                {
+                    gradients[i] = outputErrors[i] * DsigmoidFunc(nextL.neurons[i]);
+                    gradients[i] *= gen.HyperparameterChromosome[CellGen.GenHyperparameter.learningRate];
+
+                    // L2 regularization for biases is not typically applied, so biases are updated as before
+                    velocitiesBiases[k + 1][i] = gen.HyperparameterChromosome[CellGen.GenHyperparameter.momentumCoefficient] * velocitiesBiases[k + 1][i] + gradients[i];
+                    nextL.biases[i] += velocitiesBiases[k + 1][i];
+                }
+
+                for (int i = 0; i < currentL.size; i++)
+                {
+                    for (int j = 0; j < nextL.size; j++)
+                    {
+                        double weightGradient = gradients[j] * currentL.neurons[i];
+
+                        // Applying L2 regularization to the weight update
+                        weightGradient -= gen.HyperparameterChromosome[CellGen.GenHyperparameter.lambdaL2] * currentL.weights[i, j];  // Subtract the regularization term
+
+                        // Update velocities with L2 regularization
+                        velocitiesWeights[k][i][j] = gen.HyperparameterChromosome[CellGen.GenHyperparameter.momentumCoefficient] * velocitiesWeights[k][i][j] + weightGradient;
+                        currentL.weights[i, j] += velocitiesWeights[k][i][j];
+                    }
+                }
+
                 outputErrors = errorsNext;
-
-                // Градиенты и обновление весов
-                for (int i = 0; i < LeftLayer.size; i++)
-                {
-                    for (int j = 0; j < RightLayer.size; j++)
-                    {
-                        double gradient = outputErrors[i] * DsigmoidFunc(LeftLayer.neurons[i]);
-                        gradient *= Constants.learningRate;
-
-                        // L2-регуляризация
-                        LeftLayer.weights[i, j] -= gradient * RightLayer.neurons[j] * LeftLayer.weights[i, j];
-
-                        // Обновление весов
-                        double delta = gradient * RightLayer.neurons[j];
-                        LeftLayer.weights[i, j] -= delta;
-
-                        // Обновление для AdamOptimizer
-                        UpdateAdamOptimizer(k, LeftLayer.weights, i, j, delta);
-                    }
-                }
-
-                // Обновление смещений (biases)
-                for (int i = 0; i < LeftLayer.size; i++)
-                {
-                    LeftLayer.biases[i] += outputErrors[i] * Constants.learningRate;
-                }
             }
         }
-        private void UpdateAdamOptimizer(int layerIndex, double[,] weights, int i, int j, double delta)
+
+        protected void BackPropagation(double[] predicted, double[] targets)
         {
-            double beta1 = 0.9;
-            double beta2 = 0.999;
-            double epsilon = 1e-8;
+            int outputErrorSize = onlineLayers[onlineLayers.Length - 1].size;
 
-            m[layerIndex][i, j] = beta1 * m[layerIndex][i, j] + (1.0 - beta1) * delta;
-            v[layerIndex][i, j] = beta2 * v[layerIndex][i, j] + (1.0 - beta2) * Math.Pow(delta, 2);
+            double[] outputErrors = new double[outputErrorSize];
 
-            t++;
-            double beta1t = Math.Pow(beta1, t);
-            double beta2t = Math.Pow(beta2, t);
+            for (int i = 0; i < outputErrorSize; i++)
+            {
+                outputErrors[i] = targets[i] - predicted[i];
+            }
 
-            double correction = Constants.learningRate * Math.Sqrt(1.0 - beta2t) / (1.0 - beta1t);
-            weights[i, j] -= correction * m[layerIndex][i, j] / (Math.Sqrt(v[layerIndex][i, j]) + epsilon);
+            for (int k = onlineLayers.Length - 2; k >= 0; k--)
+            {
+                NNLayers currentL = onlineLayers[k];
+                NNLayers nextL = onlineLayers[k + 1];
+
+                double[] errorsNext = new double[currentL.size];
+                // Обновим веса текущего слоя
+                for (int i = 0; i < currentL.size; i++)
+                {
+                    double errorSum = 0;
+                    for (int j = 0; j < nextL.size; j++)
+                    {
+                        errorSum += currentL.weights[i, j] * outputErrors[j];
+                    }
+                    errorsNext[i] = errorSum;
+                }
+
+                double[] gradients = new double[nextL.size];
+                for (int i = 0; i < nextL.size; i++)
+                {
+                    gradients[i] = outputErrors[i] * DsigmoidFunc(onlineLayers[k + 1].neurons[i]);
+                    gradients[i] *= gen.HyperparameterChromosome[CellGen.GenHyperparameter.learningRate];
+                }
+
+                double[,] deltas = new double[currentL.size, nextL.size];
+                for (int i = 0; i < currentL.size; i++)
+                {
+                    for (int j = 0; j < nextL.size; j++)
+                    {
+                        deltas[i, j] = gradients[j] * currentL.neurons[i];
+                    }
+
+                }
+
+                // Обновим смещения (biases) следующего слоя
+                for (int i = 0; i < nextL.size; i++)
+                {
+                    nextL.biases[i] += gradients[i];
+                }
+
+
+                // Обновим ошибку для следующей итерации
+                outputErrors = errorsNext;
+
+                for (int i = 0; i < currentL.size; i++)
+                {
+                    for (int j = 0; j < nextL.size; j++)
+                    {
+                        currentL.weights[i, j] += deltas[i, j];
+                    }
+                }
+
+            }
         }
 
         public double[] FeedForward(double[] input, NNLayers[] layers)
@@ -454,7 +565,8 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
             return layers[layers.Length - 1].neurons;
         }
-        public double[] FeedForwardWithNoise(double[] input, NNLayers[] layers)
+
+        public double[] FeedForwardWithNoise(double[] input, NNLayers[] layers) //!!
         {
             layers[0].neurons = input;
 
@@ -473,17 +585,9 @@ namespace CellEvolution.WorldResources.Cell.NN
                     l1.neurons[j] += l1.biases[j];
 
                     // Добавление шума
-                    l1.neurons[j] += GenerateRandomNoise() * Constants.noiseIntensity;
+                    l1.neurons[j] += GenerateRandomNoise() * gen.HyperparameterChromosome[CellGen.GenHyperparameter.noiseIntensity];
 
-                    // Применение дропаута
-                    if (random.NextDouble() < Constants.dropoutProbability)
-                    {
-                        l1.neurons[j] = 0;
-                    }
-                    else
-                    {
-                        l1.neurons[j] = SigmoidFunc(l1.neurons[j]);
-                    }
+                    l1.neurons[j] = SigmoidFunc(l1.neurons[j]);
                 }
             }
             return layers[layers.Length - 1].neurons;
@@ -524,7 +628,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
             CopyNNLayers(original);
 
-            if (key < Constants.cloneNoiseProbability)
+            if (key < gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseProbability])
             {
                 RandomCloneNoise();
             }
@@ -535,7 +639,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
             CopyNNLayers(mainParent);
 
-            if (key < Constants.cloneNoiseProbability)
+            if (key < gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseProbability])
             {
                 RandomCloneNoise();
             }
@@ -552,11 +656,11 @@ namespace CellEvolution.WorldResources.Cell.NN
                     {
                         if (random.Next(2) == 0)
                         {
-                            l.weights[i, j] += Constants.cloneNoiseWeightsRate;
+                            l.weights[i, j] += gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseWeightsRate];
                         }
                         else
                         {
-                            l.weights[i, j] -= Constants.cloneNoiseWeightsRate;
+                            l.weights[i, j] -= gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseWeightsRate];
                         }
                     }
                 }

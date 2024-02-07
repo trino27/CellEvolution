@@ -14,7 +14,7 @@ namespace СellEvolution.Simulation
     public class Simulation
     {
         private World world = new World();
-        //private StatDatabase statDatabase = new StatDatabase();
+        private StatDatabase statDatabase = new StatDatabase();
 
         public int PhotoCells = 0;
         public int BiteCells = 0;
@@ -37,7 +37,7 @@ namespace СellEvolution.Simulation
             do
             {
                 UpdateCellsTypeInfo();
-                //UpdateDataBaseDayErrorValue();
+                UpdateDataBaseDayErrorValue();
 
                 ShowWorldInfo();
                 ShowTimeInfo(stopwatchCells);
@@ -65,7 +65,7 @@ namespace СellEvolution.Simulation
 
             int EnergyNight = (int)(Constants.minNightPhotosynthesisFine + Constants.maxNightPhotosynthesisFine / 100.0 * proc);
 
-            Console.Write($"Turn: {world.CurrentTurn}  Years: {world.CurrentYear} Days: {world.CurrentDay}/{Constants.numOfDaysInYear} DayTime: {world.CurrentDayTime} Hours: {world.CurrentHours}/{Constants.numOfTurnsInDayTime}/{Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime}    PhotosintMax: {Energy} Photosint4Around: {Energy4Cell} Photosint8Around: {Energy8Cell}  Photosint1Around: {Energy1Cell} Photosint0Around: {Energy0Cell}  LoseEnergyAtNight:{EnergyNight}                        ");
+            Console.Write($"Turn: {world.CurrentTurn}  Years: {world.CurrentYear} HoursInYear: {world.CurrentTurn % Constants.numOfTurnInYear}/{Constants.numOfTurnInYear} DayTime: {world.CurrentDayTime} Hours: {world.CurrentHours}/{world.NumOfTurnInDay}/{world.NumOfTurnInDay + world.NumOfTurnInNight}    PhotosintMax: {Energy} Photosint4Around: {Energy4Cell} Photosint8Around: {Energy8Cell}  Photosint1Around: {Energy1Cell} Photosint0Around: {Energy0Cell}  LoseEnergyAtNight:{EnergyNight}                        ");
             Console.SetCursorPosition(20, Constants.areaSizeY + 1);
         }
         private void ShowCellsNumInfo()
@@ -127,9 +127,9 @@ namespace СellEvolution.Simulation
         
         private void UpdateDataBaseDayErrorValue()
         {
-            if(world.CurrentHours % (Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime) == 0 && world.CurrentHours != 0)
+            if(world.CurrentTurn % (16) == 0 && world.CurrentTurn != 0)
             {
-                //statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
+                statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
                 DayErrorValue = 0;
             }
             DayErrorValue += CurrentErrorProc;

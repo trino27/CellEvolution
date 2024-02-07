@@ -8,16 +8,36 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const int maxClone = 8;
-        public const int maxLive = 256;
+        public const double actionChromosomeMutationProbabilityStart = 0.1;
+        public const double actionChromosomeMutationDuringLiveProbabilityStart = 0.02;
 
+        public const double hyperparameterChromosomeMutationProbabilityStart = 0.9;
+        public const double hyperparameterChromosomeMutationDuringLiveProbabilityStart = 0.09;
+
+        public const double errorCostStart = 10;
+        public const double learningRateStart = 0.001;
+        public const double noiseIntensityStart = 0.01;
+
+        public const double cloneNoiseProbabilityStart = 0.15;
+        public const double cloneNoiseWeightsRateStart = 0.1;
+
+        public const double discountFactorStart = 0.9;
+        public const double epsilonStart = 0.05;
+        public const double momentumCoefficientStart = 0.9;
+        public const double lambdaL2Start = 0.001;
+
+        public const double genDoneBonusStartA = 2;
+        public const double genDoneBonusStartB = 2;
+
+        public const double genHyperparametrChangePower = 0.05;
+
+        public const int maxClone = 16;
+        public const int maxLive = 128;
 
         public const int energyAreaPoisonedCorner = 50;
         public const int poisonedDecEnergy = energyAreaPoisonedCorner;
 
         public const int futureActionsInputLength = 4;
-
-        public const int errorCost = 10;
 
         public const int cloneEnergyCost = 45;
         public const int startCellEnergy = 40;
@@ -25,10 +45,10 @@ namespace CellEvolution
         public const int areaEnergyStartVal = 15;
         public const int minEnergyFromDeadCell = cloneEnergyCost - startCellEnergy;
         
-        public const int numOfDaysInYear = 30;
+        public const int numOfTurnInYear = 256;
         public const int eachYearEnergyCostGain = 0;
-        public const int numOfTurnsInDayTime = 9;
-        public const int numOfTurnsInNightTime = 7;
+        public const int numOfTurnsInDayTimeMin = 3;
+        public const int numOfTurnsInDayTimeMax = 16;
 
         public const int actionEnergyCost = 5;
         public const int slipEnergyCost = 2;
@@ -61,19 +81,9 @@ namespace CellEvolution
         public const int meteorHugeSizeDistance = 3;
 
         public const double meteorSmallSizeProbability = 0.30;
-        public const double meteorMidSizeProbability = 0.05;
-        public const double meteorBigSizeProbability = 0.005;
-        public const double meteorHugeSizeProbability = 0.0008;
-
-        public const double randomGenMutationProbability = 0.2;
-        public const double randomGenMutationDuringLiveProbability = 0.02;
-
-        public const double learningRate = 0.00001;
-        public const double noiseIntensity = 0.001;
-        public const double dropoutProbability = 0.1;
-
-        public const double cloneNoiseProbability = 0.15;
-        public const double cloneNoiseWeightsRate = 0.001;
+        public const double meteorMidSizeProbability = 0.05; // 0.05
+        public const double meteorBigSizeProbability = 0.005; // 0.005
+        public const double meteorHugeSizeProbability = 0.0008; //0.0008
 
         public const int visionDistance = 3;
         public const int voiceDistance = 5;

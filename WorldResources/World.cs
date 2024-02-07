@@ -17,6 +17,9 @@ namespace СellEvolution.WorldResources
 
         public Renderer worldRenderer;
 
+        private int numOfTurnInDay = 0;
+        private int numOfTurnInNight = 0;
+
         private long currentTurn = 0;
         private int currentYear = 0;
         private int currentDay = 1;
@@ -26,6 +29,10 @@ namespace СellEvolution.WorldResources
 
         private DayTime currentDayTime = DayTime.Day;
         private int totalDays = 0;
+
+        public int NumOfTurnInDay => numOfTurnInDay;
+        public int NumOfTurnInNight => numOfTurnInNight;
+
 
         public long CurrentTurn => currentTurn;
         public int CurrentYear => currentYear;
@@ -41,6 +48,7 @@ namespace СellEvolution.WorldResources
         {
             cellActionHandler = new CellActionHandler(this);
             WorldArea = new WorldArea(this);
+            CreateNewDayTime();
         }
 
         public CellModel GetCell(int x, int y)
@@ -60,10 +68,10 @@ namespace СellEvolution.WorldResources
 
             WorldArea.ClearDeadCells();
 
-            MeteorFalling();
-
             cellActionHandler.CellStartReproduction();
             cellActionHandler.CellStartCreatingClones();
+
+            MeteorFalling();
         }
 
         private void MeteorFalling()
@@ -142,6 +150,11 @@ namespace СellEvolution.WorldResources
         }
         public void StopRenderer() => IsRenderAllow = false;
 
+        private void CreateNewDayTime()
+        {
+            numOfTurnInNight = random.Next(Constants.numOfTurnsInDayTimeMin, Constants.numOfTurnsInDayTimeMax + 1);
+            numOfTurnInDay = random.Next(numOfTurnInNight, Constants.numOfTurnsInDayTimeMax+1);
+        }
         private void UpdateTimeAndSeason()
         {
             Console.CursorVisible = false;
@@ -150,7 +163,7 @@ namespace СellEvolution.WorldResources
 
             if (MeteorNight == 0)
             {
-                if (CurrentHours > Constants.numOfTurnsInDayTime)
+                if (CurrentHours > numOfTurnInDay)
                 {
                     currentDayTime = DayTime.Night;
 
@@ -166,15 +179,16 @@ namespace СellEvolution.WorldResources
                 MeteorNight--;
             }
 
-            if (CurrentHours > Constants.numOfTurnsInDayTime + Constants.numOfTurnsInNightTime)
+            if (CurrentHours > numOfTurnInDay + numOfTurnInNight)
             {
                 currentHours = 1;
                 currentDay++;
                 totalDays++;
             }
-            if (CurrentDay > Constants.numOfDaysInYear)
+            if (CurrentTurn % Constants.numOfTurnInYear == 0 && CurrentTurn != 0)
             {
                 currentYear++;
+                CreateNewDayTime();
                 currentDay = 1;
             }
         }

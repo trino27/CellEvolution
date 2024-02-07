@@ -267,7 +267,8 @@ namespace СellEvolution.WorldResources
             lock (lockObject)
             {
                 List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) -1); //48
-                List<int> cellGenArea = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+                List<int> cellsGen = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+                List<int> cellsEnergy = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
                 List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
 
                 bool IsPoisonedArea = false;
@@ -291,7 +292,7 @@ namespace СellEvolution.WorldResources
                             if (!(x == positionX && y == positionY))
                             {
                                 int k = 0;
-                                bool isGenWrite = false;
+                                bool IsCell = false;
                                 switch (AreaChar[x, y])
                                 {
                                     case Constants.borderChar: k = Constants.Kborder; break;
@@ -302,25 +303,35 @@ namespace СellEvolution.WorldResources
                                         {
                                             switch (AreaColor[x, y])
                                             {
-                                                case Constants.newCellColor: k = Constants.KnewCell; break; // new
-                                                case Constants.biteCellColor: k = Constants.KbiteCell; break; // hunter
-                                                case Constants.photoCellColor: k = Constants.KphotoCell; break; // plant
-                                                case Constants.absorbCellColor: k = Constants.KabsorbCell; break; // mushroom
-                                                case Constants.slipCellColor: k = Constants.KslipCell; break; // slip
-                                                case Constants.mineCellColor: k = Constants.KmineCell; break; // mine
-                                                case Constants.hideCellColor: k = Constants.KhideCell; break; // hide
-                                                case Constants.errorCellColor: k = Constants.KerrorCell; break; // error
-                                                case Constants.deadCellColor: k = Constants.KdeadCell; break; // dead
+                                                case Constants.newCellColor: k = Constants.KnewCell; break; 
+                                                case Constants.biteCellColor: k = Constants.KbiteCell; break; 
+                                                case Constants.photoCellColor: k = Constants.KphotoCell; break; 
+                                                case Constants.absorbCellColor: k = Constants.KabsorbCell; break;
+                                                case Constants.slipCellColor: k = Constants.KslipCell; break; 
+                                                case Constants.mineCellColor: k = Constants.KmineCell; break; 
+                                                case Constants.hideCellColor: k = Constants.KhideCell; break; 
+                                                case Constants.errorCellColor: k = Constants.KerrorCell; break; 
+                                                case Constants.deadCellColor: k = Constants.KdeadCell; break;
                                             }
 
-                                            cellGenArea.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(x, y), world.GetCell(positionX, positionY)) + 1);
-                                            isGenWrite = true;
+                                            cellsGen.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(x, y), world.GetCell(positionX, positionY)) + 1);
+
+                                            if (world.GetCell(x, y) != null)
+                                            {
+                                                cellsEnergy.Add(world.GetCell(x, y).Energy);
+                                            }
+                                            else 
+                                            {
+                                                cellsEnergy.Add(0);
+                                            }
+                                            IsCell = true;
                                         }
                                         break;
                                 }
-                                if (!isGenWrite)
+                                if (!IsCell)
                                 {
-                                    cellGenArea.Add(0);
+                                    cellsGen.Add(0);
+                                    cellsEnergy.Add(0);
                                 }
                                 area.Add(k);
                             }
@@ -328,15 +339,20 @@ namespace СellEvolution.WorldResources
                         else
                         {
                             area.Add(Constants.Kborder);
-                            cellGenArea.Add(0);
+                            cellsGen.Add(0);
+                            cellsEnergy.Add(0);
                         }
                     }
                 }
 
-                area.AddRange(cellGenArea);
+                area.AddRange(cellsGen);
+                area.AddRange(cellsEnergy);
                 area.AddRange(energyAreaInfo);
+
                 area.Add(Convert.ToInt16(world.CurrentDayTime) * Constants.brainInputDayNightPoweredK);
-                if(IsPoisonedArea)
+                area.Add((int)CulcPhotosyntesisEnergy(positionX, positionY));
+
+                if (IsPoisonedArea)
                 {
                     area.Add(1 * Constants.brainInputIsPoisonedPoweredK);
                 }
@@ -348,6 +364,23 @@ namespace СellEvolution.WorldResources
             }
         }
 
+        public double CulcPhotosyntesisEnergy(int PositionX, int PositionY)
+        {
+            double proc = (double)world.Cells.Count * 100 / (double)((Constants.areaSizeX - 2) * (Constants.areaSizeY - 2));
+            double addEnergy = Constants.minPhotosynthesis + Constants.maxPhotosynthesis / 100.0 * (100 - proc);
+
+            int numOfCellsAround = world.WorldArea.GetNumOfLiveCellsAround(PositionX, PositionY);
+            if (numOfCellsAround > Constants.availableCellNumAroundMax)
+            {
+                addEnergy = addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMax) * (numOfCellsAround + 1 - Constants.availableCellNumAroundMax));
+            }
+            else if (numOfCellsAround < Constants.availableCellNumAroundMin)
+            {
+                addEnergy += addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMin) * (numOfCellsAround - 1 - Constants.availableCellNumAroundMin));
+            }
+
+            return addEnergy;
+        }
         public List<(int, int)> FindAllEmptyCharNearCellCoord(int positionX, int positionY)
         {
 

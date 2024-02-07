@@ -222,7 +222,7 @@ namespace CellEvolution.Cell.NN
 
         public GenAction[] GetGenomeCycle()
         {
-            return brain.GetGen().GenActionsCycle;
+            return brain.GetGen().ActionsChromosome;
         }
 
         private void PerformAction(CellAction decidedAction)
@@ -403,19 +403,8 @@ namespace CellEvolution.Cell.NN
         {
             if (world.CurrentDayTime == World.DayTime.Day)
             {
-                double proc = (double)world.Cells.Count * 100 / (double)((Constants.areaSizeX - 2) * (Constants.areaSizeY - 2));
-                double addEnergy = Constants.minPhotosynthesis + Constants.maxPhotosynthesis / 100.0 * (100 - proc);
-
-                int numOfCellsAround = world.WorldArea.GetNumOfLiveCellsAround(PositionX, PositionY);
-                if (numOfCellsAround > Constants.availableCellNumAroundMax)
-                {
-                    addEnergy = addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMax) * (numOfCellsAround + 1 - Constants.availableCellNumAroundMax));
-                }
-                else if (numOfCellsAround < Constants.availableCellNumAroundMin)
-                {
-                    addEnergy += addEnergy / ((numOfCellsAround - Constants.availableCellNumAroundMin) * (numOfCellsAround - 1 - Constants.availableCellNumAroundMin));
-                }
-                Energy += (int)addEnergy;
+               
+                Energy += (int)world.WorldArea.CulcPhotosyntesisEnergy(PositionX, PositionY);
                 CellColor = Constants.photoCellColor;
 
             }

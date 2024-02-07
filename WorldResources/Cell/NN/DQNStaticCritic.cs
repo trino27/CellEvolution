@@ -20,12 +20,12 @@ namespace СellEvolution.WorldResources.Cell.NN
             if (LastMovesInputs != null)
             {
                 //Reproduction
-                if (LastMovesInputs[107] < Constants.cloneEnergyCost)
+                if (LastMovesInputs[156] < Constants.cloneEnergyCost)
                 {
                     AllErrorMoves.Add(CellAction.Clone);
                     AllErrorMoves.Add(CellAction.Reproduction);
 
-                    if (LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                    if (LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                     {
                         //Actions
                         AllErrorMoves.Add(CellAction.Slip);
@@ -34,14 +34,14 @@ namespace СellEvolution.WorldResources.Cell.NN
                 }
 
                 //Photo
-                if (LastMovesInputs[105] != 1 * Constants.brainInputDayNightPoweredK)
+                if (LastMovesInputs[153] != 1 * Constants.brainInputDayNightPoweredK)
                 {
                     AllErrorMoves.Add(CellAction.Photosynthesis);
                 }
 
                 //Absorb
                 double energyVal = 0;
-                for (int i = 96; i < 105; i++)
+                for (int i = 144; i < 153; i++)
                 {
                     energyVal += LastMovesInputs[i];
                 }
@@ -85,53 +85,53 @@ namespace СellEvolution.WorldResources.Cell.NN
                 }
 
                 //Move
-                if (LastMovesInputs[16] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[16] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveLeftUp);
                 }
-                if (LastMovesInputs[23] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[23] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveUp);
                 }
-                if (LastMovesInputs[29] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[29] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveRightUp);
                 }
-                if (LastMovesInputs[30] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[30] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveRight);
                 }
-                if (LastMovesInputs[31] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[31] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveRightDown);
                 }
-                if (LastMovesInputs[24] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[24] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveDown);
                 }
-                if (LastMovesInputs[18] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[18] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveLeftDown);
                 }
-                if (LastMovesInputs[17] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2)
+                if (LastMovesInputs[17] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2)
                 {
                     AllErrorMoves.Add(CellAction.MoveLeft);
                 }
 
                 //Jump
-                if (LastMovesInputs[21] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
+                if (LastMovesInputs[21] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
                     AllErrorMoves.Add(CellAction.JumpUp);
                 }
-                if (LastMovesInputs[44] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
+                if (LastMovesInputs[44] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
                     AllErrorMoves.Add(CellAction.JumpRight);
                 }
-                if (LastMovesInputs[26] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
+                if (LastMovesInputs[26] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
                     AllErrorMoves.Add(CellAction.JumpDown);
                 }
-                if (LastMovesInputs[3] != Constants.Kempty || LastMovesInputs[107] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
+                if (LastMovesInputs[3] != Constants.Kempty || LastMovesInputs[156] < Constants.actionEnergyCost * 2 + Constants.jumpEnergyCost)
                 {
                     AllErrorMoves.Add(CellAction.JumpLeft);
                 }

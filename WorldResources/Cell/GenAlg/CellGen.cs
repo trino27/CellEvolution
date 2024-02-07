@@ -3,30 +3,71 @@
     public partial struct CellGen
     {
         private Random random = new Random();
-        public GenAction[] GenActionsCycle { get; }
+        public GenAction[] ActionsChromosome { get; }
+        public Dictionary<GenHyperparameter, double> HyperparameterChromosome = new Dictionary<GenHyperparameter, double>();
         private int CurrentGenIndex = 0;
 
         public CellGen()
         {
-            GenActionsCycle = new GenAction[Constants.genCycleSize];
+            ActionsChromosome = new GenAction[Constants.genCycleSize];
             FillRandomGens();
+            HyperparametersInit();
         }
         public CellGen(CellGen original)
         {
-            GenActionsCycle = new GenAction[Constants.genCycleSize];
-            Array.Copy(original.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
+            ActionsChromosome = new GenAction[Constants.genCycleSize];
+
+            Array.Copy(original.ActionsChromosome, ActionsChromosome, Constants.genCycleSize);
+
+            HyperparametersCopy(original);
             RandomMutation();
         }
         public CellGen(CellGen mother, CellGen father)
         {
-            GenActionsCycle = new GenAction[Constants.genCycleSize];
+            ActionsChromosome = new GenAction[Constants.genCycleSize];
             ConnectGens(mother, father);
             RandomMutation();
         }
 
+        public void HyperparametersInit()
+        {
+            HyperparameterChromosome = new Dictionary<GenHyperparameter, double>
+            {
+            { GenHyperparameter.actionChromosomeMutationProbability,  Constants.actionChromosomeMutationProbabilityStart},
+            { GenHyperparameter.actionChromosomeMutationDuringLiveProbability, Constants.actionChromosomeMutationDuringLiveProbabilityStart },
+
+            { GenHyperparameter.hyperparameterChromosomeMutationProbability, Constants.hyperparameterChromosomeMutationProbabilityStart },
+            { GenHyperparameter.hyperparameterChromosomeMutationDuringLiveProbability, Constants.hyperparameterChromosomeMutationDuringLiveProbabilityStart },
+
+            { GenHyperparameter.errorCost, Constants.errorCostStart},
+            { GenHyperparameter.genDoneBonusA, Constants.genDoneBonusStartA },
+            { GenHyperparameter.genDoneBonusB, Constants.genDoneBonusStartB },
+
+            { GenHyperparameter.genHyperparameterChangePower, Constants.genHyperparametrChangePower },
+            { GenHyperparameter.learningRate, Constants.learningRateStart },
+
+            { GenHyperparameter.noiseIntensity, Constants.noiseIntensityStart },
+            { GenHyperparameter.cloneNoiseProbability, Constants.cloneNoiseProbabilityStart },
+            { GenHyperparameter.cloneNoiseWeightsRate, Constants.cloneNoiseWeightsRateStart },
+
+            { GenHyperparameter.discountFactor, Constants.discountFactorStart },
+            { GenHyperparameter.epsilon, Constants.epsilonStart },
+            { GenHyperparameter.momentumCoefficient, Constants.momentumCoefficientStart },
+            { GenHyperparameter.lambdaL2, Constants.lambdaL2Start }
+            };
+
+
+        }
+        public void HyperparametersCopy(CellGen original)
+        {
+            foreach (KeyValuePair<GenHyperparameter, double> gen in original.HyperparameterChromosome)
+            {
+                HyperparameterChromosome.Add(gen.Key, gen.Value);
+            }
+        }
         public GenAction GetCurrentGenAction()
         {
-            GenAction genAction = GenActionsCycle[CurrentGenIndex];
+            GenAction genAction = ActionsChromosome[CurrentGenIndex];
 
             NextGenIndex();
             RandomMutationDuringLive();
@@ -41,16 +82,16 @@
             int j = 0;
             for (int i = 0; i < n; i++)
             {
-                if (CurrentGenIndex + i < GenActionsCycle.Length)
+                if (CurrentGenIndex + i < ActionsChromosome.Length)
                 {
-                    result[i] = (double)GenActionsCycle[CurrentGenIndex + i] * Constants.brainFutureMovePoweredK;
+                    result[i] = (double)ActionsChromosome[CurrentGenIndex + i] * Constants.brainFutureMovePoweredK;
                 }
                 else
                 {
-                    result[i] = (double)GenActionsCycle[j] * Constants.brainFutureMovePoweredK;
+                    result[i] = (double)ActionsChromosome[j] * Constants.brainFutureMovePoweredK;
                     j++;
 
-                    if(j > GenActionsCycle.Length)
+                    if (j > ActionsChromosome.Length)
                     {
                         j = 0;
                     }
@@ -69,55 +110,97 @@
         }
         private void ConnectGens(CellGen mother, CellGen father)
         {
-            Array.Copy(father.GenActionsCycle, GenActionsCycle, Constants.genCycleSize);
-
+            Array.Copy(father.ActionsChromosome, ActionsChromosome, Constants.genCycleSize);
+            HyperparametersCopy(father);
             do
             {
-                int startGen = random.Next(0, GenActionsCycle.Length);
-                int endGen = random.Next(startGen, GenActionsCycle.Length);
+                int startGenAction = random.Next(0, ActionsChromosome.Length);
+                int endGenAction = random.Next(startGenAction, ActionsChromosome.Length);
 
-                for(int i = startGen; i < endGen+1; i++)
+                for (int i = startGenAction; i < endGenAction + 1; i++)
                 {
-                    GenActionsCycle[i] = mother.GenActionsCycle[i];
+                    ActionsChromosome[i] = mother.ActionsChromosome[i];
                 }
 
-            }while(random.Next(0, 2) == 0);
+                for (int i = 0; i < HyperparameterChromosome.Count; i++)
+                {
+                    if (random.Next(0, 2) == 0)
+                    {
+                        HyperparameterChromosome[(GenHyperparameter)i] = mother.HyperparameterChromosome[(GenHyperparameter)i];
+                    }
+                }
+
+            } while (random.Next(0, 2) == 0);
         }
         private void RandomMutation()
         {
-            bool stopMutation = true;
-            do
+            if (random.NextDouble() < HyperparameterChromosome[GenHyperparameter.actionChromosomeMutationProbability])
             {
-                if (random.NextDouble() < Constants.randomGenMutationProbability)
+                ActionsChromosome[random.Next(0, ActionsChromosome.Length)] = (GenAction)random.Next(0, 8);
+            }
+
+
+            if (random.NextDouble() < HyperparameterChromosome[GenHyperparameter.hyperparameterChromosomeMutationProbability])
+            {
+                int hyperInd = random.Next(0, HyperparameterChromosome.Count);
+                double value = 0;
+                if (random.Next(0, 2) == 0)
                 {
-                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 8);
+                    value +=
+                        HyperparameterChromosome[(GenHyperparameter)hyperInd] *
+                        HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
                 }
                 else
                 {
-                    stopMutation = false;
+                    value -=
+                        HyperparameterChromosome[(GenHyperparameter)hyperInd] *
+                        HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
                 }
-            } while (stopMutation);
+
+
+                if (HyperparameterChromosome[(GenHyperparameter)hyperInd] + value > 0)
+                {
+                    HyperparameterChromosome[(GenHyperparameter)hyperInd] += value;
+                }
+            }
         }
         private void RandomMutationDuringLive()
         {
-            bool stopMutation = true;
-            do
+
+            if (random.NextDouble() < HyperparameterChromosome[GenHyperparameter.actionChromosomeMutationDuringLiveProbability])
             {
-                if (random.NextDouble() < Constants.randomGenMutationDuringLiveProbability)
+                ActionsChromosome[random.Next(0, ActionsChromosome.Length)] = (GenAction)random.Next(0, 8);
+            }
+
+            if (random.NextDouble() < HyperparameterChromosome[GenHyperparameter.hyperparameterChromosomeMutationDuringLiveProbability])
+            {
+                int hyperInd = random.Next(0, HyperparameterChromosome.Count);
+                double value = 0;
+                if (random.Next(0, 2) == 0)
                 {
-                    GenActionsCycle[random.Next(0, GenActionsCycle.Length)] = (GenAction)random.Next(0, 8);
+                    value +=
+                        HyperparameterChromosome[(GenHyperparameter)hyperInd] *
+                        HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
                 }
                 else
                 {
-                    stopMutation = false;
+                    value -=
+                        HyperparameterChromosome[(GenHyperparameter)hyperInd] *
+                        HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
                 }
-            } while (stopMutation);
+
+
+                if (HyperparameterChromosome[(GenHyperparameter)hyperInd] + value > 0)
+                {
+                    HyperparameterChromosome[(GenHyperparameter)hyperInd] += value;
+                }
+            }
         }
         private void FillRandomGens()
         {
-            for (int i = 0; i < GenActionsCycle.Length; i++)
+            for (int i = 0; i < ActionsChromosome.Length; i++)
             {
-                GenActionsCycle[i] = (GenAction)random.Next(0, 8);
+                ActionsChromosome[i] = (GenAction)random.Next(0, 8);
             }
         }
     }
