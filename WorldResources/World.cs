@@ -68,10 +68,12 @@ namespace СellEvolution.WorldResources
 
             WorldArea.ClearDeadCells();
 
+            MeteorFalling();
+
             cellActionHandler.CellStartReproduction();
             cellActionHandler.CellStartCreatingClones();
 
-            MeteorFalling();
+            
         }
 
         private void MeteorFalling()
@@ -98,9 +100,8 @@ namespace СellEvolution.WorldResources
             if (GetCell(x, y) != null)
             {
                 CellModel targetCell = GetCell(x, y);
-                Cells.Remove(targetCell);
-
                 targetCell.IsDead = true;
+                Cells.Remove(targetCell);
 
                 WorldArea.DeadCellToAreaEnergy(targetCell);
                 WorldArea.ClearAreaFromDeadCell(targetCell.PositionX, targetCell.PositionY);

@@ -431,6 +431,15 @@ namespace СellEvolution.WorldResources.Cell
 
             return (int)temp;
         }
+        public int GetCellEnergy(CellModel cellA)
+        {
+            if (cellA == null)
+            {
+                return 0;
+            }
+
+            return cellA.Energy;
+        }
 
         public bool IsVictimExists(int positionX, int positionY)
         {

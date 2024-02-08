@@ -266,7 +266,7 @@ namespace СellEvolution.WorldResources
         {
             lock (lockObject)
             {
-                List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) -1); //48
+                List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
                 List<int> cellsGen = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
                 List<int> cellsEnergy = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
                 List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
@@ -303,27 +303,21 @@ namespace СellEvolution.WorldResources
                                         {
                                             switch (AreaColor[x, y])
                                             {
-                                                case Constants.newCellColor: k = Constants.KnewCell; break; 
-                                                case Constants.biteCellColor: k = Constants.KbiteCell; break; 
-                                                case Constants.photoCellColor: k = Constants.KphotoCell; break; 
+                                                case Constants.newCellColor: k = Constants.KnewCell; break;
+                                                case Constants.biteCellColor: k = Constants.KbiteCell; break;
+                                                case Constants.photoCellColor: k = Constants.KphotoCell; break;
                                                 case Constants.absorbCellColor: k = Constants.KabsorbCell; break;
-                                                case Constants.slipCellColor: k = Constants.KslipCell; break; 
-                                                case Constants.mineCellColor: k = Constants.KmineCell; break; 
-                                                case Constants.hideCellColor: k = Constants.KhideCell; break; 
-                                                case Constants.errorCellColor: k = Constants.KerrorCell; break; 
+                                                case Constants.slipCellColor: k = Constants.KslipCell; break;
+                                                case Constants.mineCellColor: k = Constants.KmineCell; break;
+                                                case Constants.hideCellColor: k = Constants.KhideCell; break;
+                                                case Constants.errorCellColor: k = Constants.KerrorCell; break;
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break;
                                             }
 
                                             cellsGen.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(x, y), world.GetCell(positionX, positionY)) + 1);
 
-                                            if (world.GetCell(x, y) != null)
-                                            {
-                                                cellsEnergy.Add(world.GetCell(x, y).Energy);
-                                            }
-                                            else 
-                                            {
-                                                cellsEnergy.Add(0);
-                                            }
+                                            cellsEnergy.Add(world.cellActionHandler.GetCellEnergy(world.GetCell(x, y)));
+
                                             IsCell = true;
                                         }
                                         break;

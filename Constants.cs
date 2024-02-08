@@ -56,9 +56,9 @@ namespace CellEvolution
         public const int mineAmount = 50;
 
         public const int maxPhotosynthesis = 35; //+ min 
-        public const int maxNightPhotosynthesisFine = 100; //+ min
+        public const int maxNightPhotosynthesisFine = 80; //+ min
         public const int minPhotosynthesis = 10; 
-        public const int minNightPhotosynthesisFine = 20; //20
+        public const int minNightPhotosynthesisFine = 5; 
         public const int availableCellNumAroundMax = 3;
         public const int availableCellNumAroundMin = 2;
 
@@ -70,8 +70,6 @@ namespace CellEvolution
 
         public const int brainInputIsPoisonedPoweredK = 100;
         public const int brainInputDayNightPoweredK = 100;
-        public const int brainLastMovePoweredK = 5;
-        public const int brainFutureMovePoweredK = 5;
 
         public const int meteorBlockOrbNumMin = 100;
         public const int meteorBlockOrbNumMax = 1000;
@@ -91,8 +89,8 @@ namespace CellEvolution
         public const int energyAreaAbsorbDistance = 1;
         public const int startCellCreationDistance = 2;
 
-        public const int areaSizeX = 20; //118 //105
-        public const int areaSizeY = 20; //60 // 47
+        public const int areaSizeX = 35; //118 //105
+        public const int areaSizeY = 35; //60 // 47
 
         public const char nullChar = '\0';
         public const char emptyChar = ' ';
@@ -107,9 +105,9 @@ namespace CellEvolution
         public const ConsoleColor meteorColor = ConsoleColor.White;
 
         public const int Kempty = 0;
-        public const int Kborder = 10;
-        public const int Kpoison = 20;
-        public const int Kmeteor = 20;
+        public const int Kborder = 1;
+        public const int Kpoison = 2;
+        public const int Kmeteor = 3;
 
         public const ConsoleColor newCellColor = ConsoleColor.Yellow;
         public const ConsoleColor biteCellColor = ConsoleColor.DarkRed;
@@ -121,14 +119,14 @@ namespace CellEvolution
         public const ConsoleColor deadCellColor = ConsoleColor.Gray;
         public const ConsoleColor errorCellColor = ConsoleColor.Red;
 
-        public const int KnewCell = 30;
-        public const int KbiteCell = 40;
-        public const int KphotoCell = 50;
-        public const int KabsorbCell = 60;
-        public const int KslipCell = 70;
-        public const int KhideCell = 90;
-        public const int KmineCell = 100;
-        public const int KerrorCell = 110;
-        public const int KdeadCell = 120;
+        public const int KnewCell = 4;
+        public const int KbiteCell = 5;
+        public const int KphotoCell = 6;
+        public const int KabsorbCell = 7;
+        public const int KslipCell = 8;
+        public const int KhideCell = 9;
+        public const int KmineCell = 10;
+        public const int KerrorCell = 11;
+        public const int KdeadCell = 12;
     }
 }

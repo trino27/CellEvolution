@@ -1,6 +1,7 @@
 ﻿using CellEvolution.Cell.GenAlg;
 using CellEvolution.Cell.NN;
 using СellEvolution.WorldResources.Cell.NN;
+using СellEvolution.WorldResources.NN;
 using static CellEvolution.Cell.NN.CellModel;
 
 namespace CellEvolution.WorldResources.Cell.NN
@@ -264,22 +265,22 @@ namespace CellEvolution.WorldResources.Cell.NN
             int j = 0;
             for (int i = 0; i < areaInfo.Count; i++) //0-47(-48)(areaChar) 48-95(-48)(cellsGen) 96-143(-48)(cellsEnergy) 144-152(-9)(energyArea) 153(-1)(DayTime) 154(-1)(Photosynthesis) 155(-1)(IsPoison)     
             {
-                inputsBrain[j] = areaInfo[i];
+                inputsBrain[j] = Normalizer.LogNormalize(areaInfo[i]);
                 j++;
             }
 
-            inputsBrain[j] = cell.Energy; //156
+            inputsBrain[j] = Normalizer.LogNormalize(cell.Energy); //156
             j++;
 
             for (int i = 0; i < Constants.maxMemoryCapacity; i++) //157 - 172
             {
-                inputsBrain[j] = inputsMemory[i];
+                inputsBrain[j] = Normalizer.LogNormalize(inputsMemory[i]);
                 j++;
             }
 
             for (int i = 0; i < Constants.futureActionsInputLength; i++) //173 - 176
             {
-                inputsBrain[j] = inputsFuture[i];
+                inputsBrain[j] = Normalizer.LogNormalize(inputsFuture[i]);
                 j++;
             }
 
@@ -293,7 +294,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             {
                 for (int i = 0; i < Constants.maxMemoryCapacity; i++)
                 {
-                    res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
+                    res[i] = (memory[i].DecidedAction + 1);
                 }
             }
             else
@@ -304,7 +305,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                 }
                 for (int i = 0; i < memory.Count; i++)
                 {
-                    res[i] = (memory[i].DecidedAction + 1) * Constants.brainLastMovePoweredK;
+                    res[i] = (memory[i].DecidedAction + 1);
                 }
             }
 
