@@ -8,14 +8,18 @@ namespace CellEvolutionGraphics
 {
     public partial class ErrorStat : Form
     {
-        private List<StatModelError> ErrorNN = new List<StatModelError>();
-        private List<StatModelError> ErrorDQN = new List<StatModelError>();
+        private List<StatModelError> ErrorNoGenSwish = new List<StatModelError>();
+        //private List<StatModelError> ErrorNoGenTg = new List<StatModelError>();
+        //private List<StatModelError> ErrorNoGenMish = new List<StatModelError>();
+        //private List<StatModelError> ErrorNoGenSigmoid = new List<StatModelError>();
+        //private List<StatModelError> ErrorNoGenLeakyReLU = new List<StatModelError>();
+
 
         private System.Windows.Forms.Timer timer;
 
         public ErrorStat()
         {
-            Thread.Sleep(5000);
+            Thread.Sleep(25000);
             InitializeComponent();
             InitChart();
             InitTimer();
@@ -39,23 +43,45 @@ namespace CellEvolutionGraphics
 
         public void LoadData()
         {
-            ErrorNN = LoadStatsFromDatabase("ErrorNN");
-            ErrorDQN = LoadStatsFromDatabase("ErrorDQN");
+            //ErrorNoGenSigmoid = LoadStatsFromDatabase("ErrorNoGenSigmoid");
+            //ErrorNoGenTg = LoadStatsFromDatabase("ErrorNoGenTg");
+            ErrorNoGenSwish = LoadStatsFromDatabase("ErrorSwish");
+            //ErrorNoGenMish = LoadStatsFromDatabase("ErrorNoGenMish");
+            //ErrorNoGenLeakyReLU = LoadStatsFromDatabase("ErrorNoGenLeakyReLU");
 
-            var ErrorNNSeries = new LineSeries
+            //var ErrorNoGenLeakyReLUSeries = new LineSeries
+            //{
+            //    Title = "ErrorNoGenLeakyReLU", // Заголовок для второго графика
+            //    Values = new ChartValues<double>(ErrorNoGenLeakyReLU.ConvertAll(s => s.ErrorPoint)),
+            //};
+            ////var ErrorNoGenSigmoidSeries = new LineSeries
+            ////{
+            ////    Title = "ErrorNoGenSigmoid", // Заголовок для второго графика
+            ////    Values = new ChartValues<double>(ErrorNoGenSigmoid.ConvertAll(s => s.ErrorPoint)),
+            ////};
+            //var ErrorNoGenMishSeries = new LineSeries
+            //{
+            //    Title = "ErrorNoGenMish", // Заголовок для второго графика
+            //    Values = new ChartValues<double>(ErrorNoGenMish.ConvertAll(s => s.ErrorPoint)),
+            //};
+            //var ErrorNoGenTgSeries = new LineSeries
+            //{
+            //    Title = "ErrorNoGenTg", // Заголовок для второго графика
+            //    Values = new ChartValues<double>(ErrorNoGenTg.ConvertAll(s => s.ErrorPoint)),
+            //};
+            var ErrorNoGenSwishSeries = new LineSeries
             {
-                Title = "Errors", // Заголовок для второго графика
-                Values = new ChartValues<double>(ErrorNN.ConvertAll(s => s.ErrorPoint)),
-            };
-            var ErrorDQNSeries = new LineSeries
-            {
-                Title = "ErrorDQN", // Заголовок для второго графика
-                Values = new ChartValues<double>(ErrorDQN.ConvertAll(s => s.ErrorPoint)),
+                Title = "ErrorSwish", // Заголовок для второго графика
+                Values = new ChartValues<double>(ErrorNoGenSwish.ConvertAll(s => s.ErrorPoint)),
             };
             cartesianChart1.Series.Clear();
+
             
-            cartesianChart1.Series.Add(ErrorDQNSeries);
-            cartesianChart1.Series.Add(ErrorNNSeries);
+            cartesianChart1.Series.Add(ErrorNoGenSwishSeries);
+            //cartesianChart1.Series.Add(ErrorNoGenTgSeries);
+            //cartesianChart1.Series.Add(ErrorNoGenLeakyReLUSeries);
+            //cartesianChart1.Series.Add(ErrorNoGenSigmoidSeries);
+            //cartesianChart1.Series.Add(ErrorNoGenMishSeries);
         }
 
         private List<StatModelError> LoadStatsFromDatabase(string tableName)

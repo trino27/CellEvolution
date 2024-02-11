@@ -16,7 +16,7 @@ namespace CellEvolutionGraphics
 {
     public partial class ActionsStat : Form
     {
-        private List<StatModelAction> AllActionDQN = new List<StatModelAction>();
+        private List<StatModelAction> AllActionSwish = new List<StatModelAction>();
         private List<StatModelAction> AllActionNN = new List<StatModelAction>();
 
         private System.Windows.Forms.Timer timer;
@@ -43,24 +43,24 @@ namespace CellEvolutionGraphics
 
         public void LoadData()
         {
-            AllActionDQN = LoadStatsFromDatabase("AllActionDQN");
-            AllActionNN = LoadStatsFromDatabase("AllActionNN");
+            AllActionSwish = LoadStatsFromDatabase("AllActionSwish");
+            //AllActionNN = LoadStatsFromDatabase("AllActionNN");
 
-            var AllActionDQNSeries = new LineSeries
+            var AllActionSwishSeries = new LineSeries
             {
-                Title = "AllActionDQN", // Заголовок для второго графика
-                Values = new ChartValues<double>(AllActionDQN.ConvertAll(s => s.Procent)),
+                Title = "AllActionSwish", // Заголовок для второго графика
+                Values = new ChartValues<double>(AllActionSwish.ConvertAll(s => s.Procent)),
             };
-            var AllActionNNSeries = new LineSeries
-            {
-                Title = "AllActionNN", // Заголовок для второго графика
-                Values = new ChartValues<double>(AllActionNN.ConvertAll(s => s.Procent)),
-            };
+            //var AllActionNNSeries = new LineSeries
+            //{
+            //    Title = "AllActionNN", // Заголовок для второго графика
+            //    Values = new ChartValues<double>(AllActionNN.ConvertAll(s => s.Procent)),
+            //};
 
             cartesianChart1.Series.Clear();
 
-            cartesianChart1.Series.Add(AllActionDQNSeries);
-            cartesianChart1.Series.Add(AllActionNNSeries);
+            cartesianChart1.Series.Add(AllActionSwishSeries);
+            //cartesianChart1.Series.Add(AllActionNNSeries);
         }
 
         private List<StatModelAction> LoadStatsFromDatabase(string tableName)
