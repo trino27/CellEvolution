@@ -8,8 +8,8 @@ namespace СellEvolution
         private readonly ILog log = LogManager.GetLogger(typeof(StatDatabase));
 
         private string connectionString = "Data Source=DESKTOP-C4JUPMT;Initial Catalog=CellEvolution;Encrypt=False;Integrated Security=True"; // Подставьте свою строку подключения к MS SQL
-        private string tableErrorMoves = "ErrorNN";
-        private string tableGenAll = "AllActionNN";
+        private string tableErrorMoves = "ErrorSwish";
+        private string tableGenAll = "AllActionSwish";
 
         public StatDatabase()
         {

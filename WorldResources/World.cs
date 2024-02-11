@@ -73,7 +73,7 @@ namespace СellEvolution.WorldResources
             cellActionHandler.CellStartReproduction();
             cellActionHandler.CellStartCreatingClones();
 
-            
+
         }
 
         private void MeteorFalling()
@@ -154,7 +154,7 @@ namespace СellEvolution.WorldResources
         private void CreateNewDayTime()
         {
             numOfTurnInNight = random.Next(Constants.numOfTurnsInDayTimeMin, Constants.numOfTurnsInDayTimeMax + 1);
-            numOfTurnInDay = random.Next(numOfTurnInNight, Constants.numOfTurnsInDayTimeMax+1);
+            numOfTurnInDay = random.Next(numOfTurnInNight, Constants.numOfTurnsInDayTimeMax + 1);
         }
         private void UpdateTimeAndSeason()
         {
@@ -174,7 +174,8 @@ namespace СellEvolution.WorldResources
                     currentDayTime = DayTime.Day;
                 }
 
-            }else
+            }
+            else
             {
                 currentDayTime = DayTime.Night;
                 MeteorNight--;

@@ -8,31 +8,35 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const double actionChromosomeMutationProbabilityStart = 0.1;
-        public const double actionChromosomeMutationDuringLiveProbabilityStart = 0.02;
+        public const double actionChromosomeMutationProbabilityStart = 0.2;
+        public const double actionChromosomeMutationDuringLiveProbabilityStart = 0.03;
 
         public const double hyperparameterChromosomeMutationProbabilityStart = 0.9;
-        public const double hyperparameterChromosomeMutationDuringLiveProbabilityStart = 0.09;
+        public const double hyperparameterChromosomeMutationDuringLiveProbabilityStart = 0.06;
 
-        public const double errorCostStart = 10;
-        public const double learningRateStart = 0.001;
+        public const double errorCostStart = 14;
+        public const double learningRateStart = 0.0005;
         public const double noiseIntensityStart = 0.01;
 
-        public const double cloneNoiseProbabilityStart = 0.15;
-        public const double cloneNoiseWeightsRateStart = 0.1;
+        public const double cloneNoiseProbabilityStart = 0.2;
+        public const double cloneNoiseWeightsRateStart = 1;
 
         public const double discountFactorStart = 0.9;
-        public const double epsilonStart = 0.05;
+        public const double epsilonStart = 0.1;
         public const double momentumCoefficientStart = 0.9;
         public const double lambdaL2Start = 0.001;
+        public const double betaStart = 0.01;
+        public const double dropoutRateStart = 0.3;
 
         public const double genDoneBonusStartA = 2;
         public const double genDoneBonusStartB = 2;
 
-        public const double genHyperparametrChangePower = 0.05;
+        public const double genHyperparametrChangePower = 0.03;
 
         public const int maxClone = 16;
         public const int maxLive = 128;
+
+        public const int bitePower = 80;
 
         public const int energyAreaPoisonedCorner = 50;
         public const int poisonedDecEnergy = energyAreaPoisonedCorner;
@@ -47,8 +51,8 @@ namespace CellEvolution
         
         public const int numOfTurnInYear = 256;
         public const int eachYearEnergyCostGain = 0;
-        public const int numOfTurnsInDayTimeMin = 3;
-        public const int numOfTurnsInDayTimeMax = 16;
+        public const int numOfTurnsInDayTimeMin = 8;
+        public const int numOfTurnsInDayTimeMax = 8;
 
         public const int actionEnergyCost = 5;
         public const int slipEnergyCost = 2;
@@ -68,9 +72,6 @@ namespace CellEvolution
         public const int maxMemoryCapacity = 16;
         public const int genCycleSize = 32;
 
-        public const int brainInputIsPoisonedPoweredK = 100;
-        public const int brainInputDayNightPoweredK = 100;
-
         public const int meteorBlockOrbNumMin = 100;
         public const int meteorBlockOrbNumMax = 1000;
 
@@ -89,8 +90,8 @@ namespace CellEvolution
         public const int energyAreaAbsorbDistance = 1;
         public const int startCellCreationDistance = 2;
 
-        public const int areaSizeX = 35; //118 //105
-        public const int areaSizeY = 35; //60 // 47
+        public const int areaSizeX = 45; //118 //105
+        public const int areaSizeY = 45; //60 // 47
 
         public const char nullChar = '\0';
         public const char emptyChar = ' ';

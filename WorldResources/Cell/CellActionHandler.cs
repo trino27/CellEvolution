@@ -105,14 +105,25 @@ namespace СellEvolution.WorldResources.Cell
                     }
                     else
                     {
-                        victim.IsDead = true;
-                        hunter.Energy += (int)(victim.Energy * 2.0 / 3.0);
-
-                        victim.CellColor = Constants.deadCellColor;
-
-                        if (world.IsRenderAllow)
+                        if (victim.Energy > Constants.bitePower)
                         {
-                            world.worldRenderer.VisualChange(victim.PositionX, victim.PositionY, Constants.cellChar, victim.CellColor);
+                            hunter.Energy += Constants.bitePower;
+                            victim.Energy -= Constants.bitePower;
+                        }
+                        else
+                        {
+                            hunter.Energy += victim.Energy;
+
+                            victim.Energy = 0;
+                            victim.IsDead = true;
+
+
+                            victim.CellColor = Constants.deadCellColor;
+
+                            if (world.IsRenderAllow)
+                            {
+                                world.worldRenderer.VisualChange(victim.PositionX, victim.PositionY, Constants.cellChar, victim.CellColor);
+                            }
                         }
                     }
                 }
@@ -412,33 +423,37 @@ namespace СellEvolution.WorldResources.Cell
 
         public int CellGenomeSimilarity(CellModel cellA, CellModel cellB)
         {
-            double simK = 0;
+            
+                double simK = 0;
 
-            if (cellA == null || cellB == null)
-            {
-                return 0;
-            }
-
-            for (int i = 0; i < cellA.GetGenomeCycle().Length; i++)
-            {
-                if (cellA.GetGenomeCycle()[i] == cellB.GetGenomeCycle()[i])
+                if (cellA == null || cellB == null)
                 {
-                    simK++;
+                    return 0;
                 }
-            }
 
-            double temp = simK * 100.0 / cellA.GetGenomeCycle().Length;
+                for (int i = 0; i < cellA.GetGenomeCycle().Length; i++)
+                {
+                    if (cellA.GetGenomeCycle()[i] == cellB.GetGenomeCycle()[i])
+                    {
+                        simK++;
+                    }
+                }
 
-            return (int)temp;
+                double temp = simK * 100.0 / cellA.GetGenomeCycle().Length;
+
+                return (int)temp;
+            
         }
         public int GetCellEnergy(CellModel cellA)
         {
-            if (cellA == null)
-            {
-                return 0;
-            }
+           
+                if (cellA == null)
+                {
+                    return 0;
+                }
 
-            return cellA.Energy;
+                return cellA.Energy;
+           
         }
 
         public bool IsVictimExists(int positionX, int positionY)

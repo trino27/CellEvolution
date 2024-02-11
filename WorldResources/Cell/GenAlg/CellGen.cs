@@ -6,6 +6,7 @@
         public GenAction[] ActionsChromosome { get; }
         public Dictionary<GenHyperparameter, double> HyperparameterChromosome = new Dictionary<GenHyperparameter, double>();
         private int CurrentGenIndex = 0;
+        int turns = 0;
 
         public CellGen()
         {
@@ -15,6 +16,8 @@
         }
         public CellGen(CellGen original)
         {
+            turns = original.turns;
+
             ActionsChromosome = new GenAction[Constants.genCycleSize];
 
             Array.Copy(original.ActionsChromosome, ActionsChromosome, Constants.genCycleSize);
@@ -24,6 +27,8 @@
         }
         public CellGen(CellGen mother, CellGen father)
         {
+            turns = mother.turns;
+
             ActionsChromosome = new GenAction[Constants.genCycleSize];
             ConnectGens(mother, father);
             RandomMutation();
@@ -53,7 +58,9 @@
             { GenHyperparameter.discountFactor, Constants.discountFactorStart },
             { GenHyperparameter.epsilon, Constants.epsilonStart },
             { GenHyperparameter.momentumCoefficient, Constants.momentumCoefficientStart },
-            { GenHyperparameter.lambdaL2, Constants.lambdaL2Start }
+            { GenHyperparameter.lambdaL2, Constants.lambdaL2Start },
+            { GenHyperparameter.beta, Constants.betaStart },
+            { GenHyperparameter.dropoutRate, Constants.dropoutRateStart }
             };
 
 
@@ -72,6 +79,7 @@
             NextGenIndex();
             RandomMutationDuringLive();
 
+            genAction = GenAction.All;
             return genAction;
         }
 
@@ -84,11 +92,11 @@
             {
                 if (CurrentGenIndex + i < ActionsChromosome.Length)
                 {
-                    result[i] = (double)ActionsChromosome[CurrentGenIndex + i] * Constants.brainFutureMovePoweredK;
+                    result[i] = (double)ActionsChromosome[CurrentGenIndex + i];
                 }
                 else
                 {
-                    result[i] = (double)ActionsChromosome[j] * Constants.brainFutureMovePoweredK;
+                    result[i] = (double)ActionsChromosome[j];
                     j++;
 
                     if (j > ActionsChromosome.Length)

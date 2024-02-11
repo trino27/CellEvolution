@@ -24,7 +24,9 @@
             discountFactor,
             epsilon,
             momentumCoefficient,
-            lambdaL2
+            lambdaL2,
+            beta,
+            dropoutRate
         }
     }
 }

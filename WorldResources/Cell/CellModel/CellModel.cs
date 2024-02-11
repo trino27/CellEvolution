@@ -46,7 +46,6 @@ namespace CellEvolution.Cell.NN
             this.world = world;
 
             brain = new DDQNCellBrain(this);
-            brain.RandomFillWeightsParallel();
 
             ActionDictionaryInit();
             CellInit(positionX, positionY);
@@ -62,7 +61,6 @@ namespace CellEvolution.Cell.NN
             generationNum = original.generationNum + 1;
 
             brain = new DDQNCellBrain(this, original.brain);
-            brain.Clone(original.brain);
 
             ActionDictionaryInit();
             CellInit(positionX, positionY);
@@ -71,26 +69,18 @@ namespace CellEvolution.Cell.NN
         {
             id = Guid.NewGuid();
 
-            CellModel mainParent;
-            CellModel secondParent;
-
             if (random.Next(0, 2) == 0)
             {
-                mainParent = mother;
-                secondParent = father;
+                generationNum = mother.generationNum + 1;
             }
             else
             {
-                mainParent = father;
-                secondParent = mother;
+                generationNum = father.generationNum + 1;
             }
-
-            generationNum = mainParent.generationNum + 1;
 
             this.world = world;
 
             brain = new DDQNCellBrain(this, mother.brain, father.brain);
-            brain.Clone(mainParent.brain, secondParent.brain);
 
             SpecieFromParentsInit(mother, father);
             ActionDictionaryInit();

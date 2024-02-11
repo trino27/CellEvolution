@@ -1,10 +1,4 @@
 ﻿using CellEvolution;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace СellEvolution.WorldResources.Meteor
 {
@@ -53,10 +47,21 @@ namespace СellEvolution.WorldResources.Meteor
                 IsCreateMeteorBlocks = true;
             }
 
-            CenterPositionX = random.Next(MeteorBlockDist + 1, Constants.areaSizeX - MeteorBlockDist - 1);
-            CenterPositionY = random.Next(MeteorBlockDist + 1, Constants.areaSizeY - MeteorBlockDist - 1);
+            bool IsEnoughtArea = false;
+            if (MeteorBlockDist < Constants.areaSizeX - MeteorBlockDist - 1)
+            {
+                CenterPositionX = random.Next(MeteorBlockDist + 1, Constants.areaSizeX - MeteorBlockDist - 1);
+                IsEnoughtArea = true;
+            }
+            else IsEnoughtArea = false;
+            if (IsEnoughtArea && MeteorBlockDist < Constants.areaSizeY - MeteorBlockDist - 1)
+            {
+                CenterPositionY = random.Next(MeteorBlockDist + 1, Constants.areaSizeY - MeteorBlockDist - 1);
+                IsEnoughtArea = true;
+            }
+            else IsEnoughtArea = false;
 
-            if (IsCreateMeteorBlocks) CreateMeteorBlocks();
+            if (IsCreateMeteorBlocks && IsEnoughtArea) CreateMeteorBlocks();
         }
 
         private void CreateMeteorBlocks()

@@ -264,15 +264,16 @@ namespace СellEvolution.WorldResources
         }
         public List<int> GetInfoFromAreaToCellBrainInput(int positionX, int positionY)
         {
+
+            List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+            List<int> cellsGen = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+            List<int> cellsEnergy = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+            List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
+
+            bool IsPoisonedArea = false;
+
             lock (lockObject)
             {
-                List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
-                List<int> cellsGen = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
-                List<int> cellsEnergy = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
-                List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
-
-                bool IsPoisonedArea = false;
-
                 for (int x = positionX - Constants.visionDistance; x <= positionX + Constants.visionDistance; x++)
                 {
                     for (int y = positionY - Constants.visionDistance; y <= positionY + Constants.visionDistance; y++)
@@ -289,10 +290,11 @@ namespace СellEvolution.WorldResources
                                 }
                             }
 
+                            bool IsCell = false;
                             if (!(x == positionX && y == positionY))
                             {
                                 int k = 0;
-                                bool IsCell = false;
+
                                 switch (AreaChar[x, y])
                                 {
                                     case Constants.borderChar: k = Constants.Kborder; break;
@@ -313,11 +315,11 @@ namespace СellEvolution.WorldResources
                                                 case Constants.errorCellColor: k = Constants.KerrorCell; break;
                                                 case Constants.deadCellColor: k = Constants.KdeadCell; break;
                                             }
+                                            CellModel otherCell = world.GetCell(x, y);
 
-                                            cellsGen.Add(world.cellActionHandler.CellGenomeSimilarity(world.GetCell(x, y), world.GetCell(positionX, positionY)) + 1);
+                                            cellsGen.Add(world.cellActionHandler.CellGenomeSimilarity(otherCell, world.GetCell(positionX, positionY)) + 1);
 
-                                            cellsEnergy.Add(world.cellActionHandler.GetCellEnergy(world.GetCell(x, y)));
-
+                                            cellsEnergy.Add(world.cellActionHandler.GetCellEnergy(otherCell));
                                             IsCell = true;
                                         }
                                         break;
@@ -343,12 +345,20 @@ namespace СellEvolution.WorldResources
                 area.AddRange(cellsEnergy);
                 area.AddRange(energyAreaInfo);
 
-                area.Add(Convert.ToInt16(world.CurrentDayTime) * Constants.brainInputDayNightPoweredK);
+                if (world.CurrentDayTime == World.DayTime.Day)
+                {
+                    area.Add(1);
+                }
+                else
+                {
+                    area.Add(0);
+                }
+
                 area.Add((int)CulcPhotosyntesisEnergy(positionX, positionY));
 
                 if (IsPoisonedArea)
                 {
-                    area.Add(1 * Constants.brainInputIsPoisonedPoweredK);
+                    area.Add(1);
                 }
                 else
                 {
