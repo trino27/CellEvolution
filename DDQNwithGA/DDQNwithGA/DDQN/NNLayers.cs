@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CellEvolution.NN
+namespace EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN
 {
     public struct NNLayers
     {

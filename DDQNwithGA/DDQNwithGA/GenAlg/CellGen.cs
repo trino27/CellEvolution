@@ -1,6 +1,6 @@
-﻿namespace CellEvolution.Cell.GenAlg
+﻿namespace EvolutionNetwork.GenAlg
 {
-    public partial struct CellGen
+    public partial struct HyperparameterGen
     {
         public const double hyperparameterChromosomeMutationProbabilityStart = 0.9;
         public const double hyperparameterChromosomeMutationDuringLiveProbabilityStart = 0.06;
@@ -27,22 +27,22 @@
         private Random random = new Random();
         public Dictionary<GenHyperparameter, double> HyperparameterChromosome = new Dictionary<GenHyperparameter, double>();
 
-        public CellGen()
+        public HyperparameterGen()
         {
             HyperparametersInit();
         }
-        public CellGen(CellGen original)
+        public HyperparameterGen(HyperparameterGen original)
         {
             HyperparametersCopy(original);
             RandomMutation();
         }
-        public CellGen(CellGen mother, CellGen father)
+        public HyperparameterGen(HyperparameterGen mother, HyperparameterGen father)
         {
             ConnectGens(mother, father);
             RandomMutation();
         }
 
-        public void HyperparametersCopy(CellGen original)
+        public void HyperparametersCopy(HyperparameterGen original)
         {
             foreach (KeyValuePair<GenHyperparameter, double> gen in original.HyperparameterChromosome)
             {
@@ -78,7 +78,7 @@
 
         }
 
-        private void ConnectGens(CellGen mother, CellGen father)
+        private void ConnectGens(HyperparameterGen mother, HyperparameterGen father)
         {
             HyperparametersCopy(father);
             do

@@ -1,6 +1,6 @@
-﻿namespace CellEvolution.Cell.GenAlg
+﻿namespace EvolutionNetwork.GenAlg
 {
-    public partial struct CellGen
+    public partial struct HyperparameterGen
     {
         public enum GenHyperparameter : byte
         {

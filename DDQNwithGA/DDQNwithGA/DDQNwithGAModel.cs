@@ -1,21 +1,21 @@
-﻿using CellEvolution;
-using CellEvolution.Cell.GenAlg;
+﻿using EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN;
+using EvolutionNetwork.GenAlg;
 using System;
 
 
-namespace CellEvolution.NN
+namespace EvolutionNetwork.DDQNwithGA
 {
-    public class DDQNwithGA
+    public class DDQNwithGAModel
     {
         private readonly Random random = new Random();
 
-        private readonly NNStaticCritic teacher = new NNStaticCritic();
-        public CellGen gen;
+        //private readonly NNStaticCritic teacher = new NNStaticCritic();
+        public HyperparameterGen gen;
 
         // NN
         private NNLayers[] onlineLayers;
         private NNLayers[] targetLayers;
-        private  int[] layersSizes;
+        private int[] layersSizes;
 
         //SGDMomentum
         private double[][][] velocitiesWeights;
@@ -34,29 +34,29 @@ namespace CellEvolution.NN
         private double targetValueBeforeAction;
         private int action;
 
-        public uint maxMemoryCapacity; 
+        public uint maxMemoryCapacity;
 
-        public DDQNwithGA(int[] layerSizes, uint maxMemoryCapacity)
+        public DDQNwithGAModel(int[] layerSizes, uint maxMemoryCapacity)
         {
-            this.layersSizes = new int[layerSizes.Length];
-            Array.Copy(layerSizes, this.layersSizes, layersSizes.Length);
-            if (this.layersSizes.Length < 2)
+            layersSizes = new int[layerSizes.Length];
+            Array.Copy(layerSizes, layersSizes, layersSizes.Length);
+            if (layersSizes.Length < 2)
             {
                 throw new ArgumentException("You should have at least input and output layers");
             }
-            gen = new CellGen();
+            gen = new HyperparameterGen();
 
             InitNetworkLayers();
             InitVelocities();
             this.maxMemoryCapacity = maxMemoryCapacity;
         }
 
-        public DDQNwithGA(DDQNwithGA original)
+        public DDQNwithGAModel(DDQNwithGAModel original)
         {
-            this.layersSizes = new int[original.layersSizes.Length];
-            Array.Copy(original.layersSizes, this.layersSizes, layersSizes.Length);
+            layersSizes = new int[original.layersSizes.Length];
+            Array.Copy(original.layersSizes, layersSizes, layersSizes.Length);
 
-            gen = new CellGen(original.gen);
+            gen = new HyperparameterGen(original.gen);
 
             maxMemoryCapacity = original.maxMemoryCapacity;
 
@@ -66,14 +66,14 @@ namespace CellEvolution.NN
             Clone(original);
         }
 
-        public DDQNwithGA(DDQNwithGA mother, DDQNwithGA father)
+        public DDQNwithGAModel(DDQNwithGAModel mother, DDQNwithGAModel father)
         {
-            gen = new CellGen(mother.gen, father.gen);
+            gen = new HyperparameterGen(mother.gen, father.gen);
 
             if (random.Next(0, 2) == 0)
             {
-                this.layersSizes = new int[mother.layersSizes.Length];
-                Array.Copy(mother.layersSizes, this.layersSizes, layersSizes.Length);
+                layersSizes = new int[mother.layersSizes.Length];
+                Array.Copy(mother.layersSizes, layersSizes, layersSizes.Length);
                 InitNetworkLayers();
 
                 maxMemoryCapacity = mother.maxMemoryCapacity;
@@ -84,8 +84,8 @@ namespace CellEvolution.NN
             }
             else
             {
-                this.layersSizes = new int[father.layersSizes.Length];
-                Array.Copy(father.layersSizes, this.layersSizes, layersSizes.Length);
+                layersSizes = new int[father.layersSizes.Length];
+                Array.Copy(father.layersSizes, layersSizes, layersSizes.Length);
                 InitNetworkLayers();
 
                 maxMemoryCapacity = father.maxMemoryCapacity;
@@ -97,7 +97,7 @@ namespace CellEvolution.NN
 
         }
 
-        private void InitMemory(DDQNwithGA original)
+        private void InitMemory(DDQNwithGAModel original)
         {
             memory = original.memory.Select(m => (DQNMemory)m.Clone()).ToList();
         }
@@ -145,7 +145,7 @@ namespace CellEvolution.NN
                 }
             }
         }
-        private void InitVelocities(DDQNwithGA original)
+        private void InitVelocities(DDQNwithGAModel original)
         {
             velocitiesWeights = new double[original.velocitiesWeights.Length][][];
             for (int layer = 0; layer < original.velocitiesWeights.Length; layer++)
@@ -184,7 +184,7 @@ namespace CellEvolution.NN
             int decidedAction;
             //// Эпсилон-жадный выбор
 
-            if (random.NextDouble() < gen.HyperparameterChromosome[CellGen.GenHyperparameter.epsilon]) // Исследование: случайный выбор действия
+            if (random.NextDouble() < gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.epsilon]) // Исследование: случайный выбор действия
             {
                 int randomIndex = random.Next(layersSizes[^1]);
                 decidedAction = randomIndex;
@@ -197,7 +197,7 @@ namespace CellEvolution.NN
             }
             action = decidedAction;
 
-            IsErrorMove = teacher.IsDecidedMoveError(decidedAction, beforeActionState);
+            //IsErrorMove = teacher.IsDecidedMoveError(decidedAction, beforeActionState);
 
             return decidedAction;
         }
@@ -218,20 +218,20 @@ namespace CellEvolution.NN
             return maxIndex;
         }
 
-        public double[] CreateMemoryInput(int memoryCapacity)
+        public double[] CreateMemoryInput()
         {
-            double[] res = new double[memoryCapacity];
+            double[] res = new double[maxMemoryCapacity];
 
-            if (memory.Count == memoryCapacity)
+            if (memory.Count == maxMemoryCapacity)
             {
-                for (int i = 0; i < memoryCapacity; i++)
+                for (int i = 0; i < maxMemoryCapacity; i++)
                 {
                     res[i] = memory[i].DecidedAction + 1;
                 }
             }
             else
             {
-                for (int i = 0; i < memoryCapacity; i++)
+                for (int i = 0; i < maxMemoryCapacity; i++)
                 {
                     res[i] = 0;
                 }
@@ -281,7 +281,7 @@ namespace CellEvolution.NN
                     double bonus = 0;
                     for (int i = 0; i < episodeSuccessValue; i++)
                     {
-                        bonus += reward * gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusA] / Math.Pow(gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusB], i);
+                        bonus += reward * gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.genDoneBonusA] / Math.Pow(gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.genDoneBonusB], i);
                     }
                     reward = bonus;
                 }
@@ -298,13 +298,13 @@ namespace CellEvolution.NN
                 if (IsErrorMove)
                 {
 
-                    reward -= gen.HyperparameterChromosome[CellGen.GenHyperparameter.errorCost];
+                    reward -= gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.errorCost];
                 }
                 else
                 {
                     reward += correctActionBonus;
                 }
-               
+
                 totalReward += reward;
             }
             return reward;
@@ -324,7 +324,7 @@ namespace CellEvolution.NN
                 int nextAction = Array.IndexOf(nextQValuesOnline, nextQValuesOnline.Max()); // Выбор действия
 
                 double[] nextQValuesTarget = FeedForward(afterActionState, targetLayers);
-                tdTarget = reward + gen.HyperparameterChromosome[CellGen.GenHyperparameter.discountFactor] * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
+                tdTarget = reward + gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.discountFactor] * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
             }
             else
             {
@@ -361,9 +361,9 @@ namespace CellEvolution.NN
 
         private void BackPropagationSGDM(double[] predicted, double[] targets)
         {
-            double learningRate = gen.HyperparameterChromosome[CellGen.GenHyperparameter.learningRate];
-            double lambdaL2 = gen.HyperparameterChromosome[CellGen.GenHyperparameter.lambdaL2]; // Коэффициент L2 регуляризации
-            double momentum = gen.HyperparameterChromosome[CellGen.GenHyperparameter.momentumCoefficient]; // Коэффициент момента
+            double learningRate = gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.learningRate];
+            double lambdaL2 = gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.lambdaL2]; // Коэффициент L2 регуляризации
+            double momentum = gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.momentumCoefficient]; // Коэффициент момента
 
             double[] errors = new double[predicted.Length];
             for (int i = 0; i < predicted.Length; i++)
@@ -440,7 +440,7 @@ namespace CellEvolution.NN
                     }
                     double activation = SwishActivation(sum + layers[i].biases[j]);
                     // Добавление шума к результату активации
-                    layers[i].neurons[j] = activation + GenerateRandomNoise() * gen.HyperparameterChromosome[CellGen.GenHyperparameter.noiseIntensity];
+                    layers[i].neurons[j] = activation + GenerateRandomNoise() * gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.noiseIntensity];
                 }
 
                 layers[i].neurons = ApplyDropout(layers[i].neurons, i);
@@ -456,7 +456,7 @@ namespace CellEvolution.NN
             {
                 for (int i = 0; i < activations.Length; i++)
                 {
-                    if (random.NextDouble() < gen.HyperparameterChromosome[CellGen.GenHyperparameter.dropoutRate])
+                    if (random.NextDouble() < gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.dropoutRate])
                     {
                         activations[i] = 0;
                     }
@@ -471,29 +471,29 @@ namespace CellEvolution.NN
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 
-        public void Clone(DDQNwithGA original)
+        public void Clone(DDQNwithGAModel original)
         {
             double key = random.NextDouble();
 
             CopyNNLayers(original);
 
-            if (key < gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseProbability])
+            if (key < gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.cloneNoiseProbability])
             {
                 RandomCloneNoise();
             }
         }
-        public void Clone(DDQNwithGA mainParent, DDQNwithGA secondParent)
+        public void Clone(DDQNwithGAModel mainParent, DDQNwithGAModel secondParent)
         {
             double key = random.NextDouble();
 
             CopyNNLayers(mainParent);
 
-            if (key < gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseProbability])
+            if (key < gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.cloneNoiseProbability])
             {
                 RandomCloneNoise();
             }
 
-            gen = new CellGen(mainParent.gen, secondParent.gen);
+            gen = new HyperparameterGen(mainParent.gen, secondParent.gen);
         }
 
         private void RandomCloneNoise()
@@ -506,18 +506,18 @@ namespace CellEvolution.NN
                     {
                         if (random.Next(2) == 0)
                         {
-                            l.weights[i, j] += gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseWeightsRate];
+                            l.weights[i, j] += gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.cloneNoiseWeightsRate];
                         }
                         else
                         {
-                            l.weights[i, j] -= gen.HyperparameterChromosome[CellGen.GenHyperparameter.cloneNoiseWeightsRate];
+                            l.weights[i, j] -= gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.cloneNoiseWeightsRate];
                         }
                     }
                 }
             }
         }
 
-        private void CopyNNLayers(DDQNwithGA original)
+        private void CopyNNLayers(DDQNwithGAModel original)
         {
             for (int k = 0; k < onlineLayers.Length; k++)
             {
@@ -542,14 +542,14 @@ namespace CellEvolution.NN
 
         private double DSwishActivation(double x)
         {
-            double beta = gen.HyperparameterChromosome[CellGen.GenHyperparameter.beta];
+            double beta = gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.beta];
             double sigmoid = 1.0 / (1.0 + Math.Exp(-beta * x));
             return sigmoid + beta * x * sigmoid * (1 - sigmoid);
         }
 
         private double SwishActivation(double x)
         {
-            double beta = gen.HyperparameterChromosome[CellGen.GenHyperparameter.beta];
+            double beta = gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.beta];
             return x / (1.0 + Math.Exp(-beta * x));
         }
 
