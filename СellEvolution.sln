@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "СellEvolution", "СellEvol
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CellEvolutionGraphics", "CellEvolutionGraphics\CellEvolutionGraphics.csproj", "{9E4D1F44-9073-41EF-AD91-660680076F77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDQNwithGA", "DDQNwithGA\DDQNwithGA.csproj", "{EA2EAB7F-BA16-4930-AD27-93D3CB7FBEAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9E4D1F44-9073-41EF-AD91-660680076F77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E4D1F44-9073-41EF-AD91-660680076F77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E4D1F44-9073-41EF-AD91-660680076F77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA2EAB7F-BA16-4930-AD27-93D3CB7FBEAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA2EAB7F-BA16-4930-AD27-93D3CB7FBEAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA2EAB7F-BA16-4930-AD27-93D3CB7FBEAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA2EAB7F-BA16-4930-AD27-93D3CB7FBEAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

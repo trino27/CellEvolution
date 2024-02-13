@@ -23,9 +23,6 @@ namespace CellEvolutionGraphics
             InitializeComponent();
             InitChart();
             InitTimer();
-
-            ActionsStat actionsStat = new ActionsStat();
-            actionsStat.Show();
         }
 
         public void InitChart()
