@@ -1,4 +1,4 @@
-﻿namespace СellEvolution.WorldResources
+﻿namespace CellEvolution.WorldResources
 {
     public partial class World
     {

@@ -1,9 +1,9 @@
 ﻿using CellEvolution;
 using CellEvolution.Cell.NN;
-using СellEvolution.WorldResources.Cell;
-using СellEvolution.WorldResources.Meteor;
+using CellEvolution.WorldResources.Cell;
+using CellEvolution.WorldResources.Meteor;
 
-namespace СellEvolution.WorldResources
+namespace CellEvolution.WorldResources
 {
     public partial class World
     {

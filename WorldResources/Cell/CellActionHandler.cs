@@ -1,8 +1,8 @@
 ﻿using CellEvolution;
 using CellEvolution.Cell.NN;
-using СellEvolution.WorldResources;
+using CellEvolution.WorldResources;
 
-namespace СellEvolution.WorldResources.Cell
+namespace CellEvolution.WorldResources.Cell
 {
     public class CellActionHandler
     {
@@ -42,7 +42,104 @@ namespace СellEvolution.WorldResources.Cell
                 }
             }
         }
+        public List<int> GetInfoFromAreaToCellBrainInput(int positionX, int positionY)
+        {
+            List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+            List<int> cellsEnergy = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
+            List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
 
+            bool IsPoisonedArea = false;
+
+            lock (lockObject)
+            {
+                for (int x = positionX - Constants.visionDistance; x <= positionX + Constants.visionDistance; x++)
+                {
+                    for (int y = positionY - Constants.visionDistance; y <= positionY + Constants.visionDistance; y++)
+                    {
+                        if (y >= 0 && y < Constants.areaSizeY && x >= 0 && x < Constants.areaSizeX)
+                        {
+                            if (y >= positionY - Constants.energyAreaVisionDistance && y <= positionY + Constants.energyAreaVisionDistance &&
+                            x >= positionX - Constants.energyAreaVisionDistance && x <= positionX + Constants.energyAreaVisionDistance)
+                            {
+                                energyAreaInfo.Add(world.WorldArea.AreaEnergy[x, y]);
+                                if (world.WorldArea.AreaEnergy[x, y] > Constants.energyAreaPoisonedCorner)
+                                {
+                                    IsPoisonedArea = true;
+                                }
+                            }
+
+                            bool IsCell = false;
+                            if (!(x == positionX && y == positionY))
+                            {
+                                int k = 0;
+
+                                switch (world.WorldArea.AreaChar[x, y])
+                                {
+                                    case Constants.borderChar: k = Constants.Kborder; break;
+                                    case Constants.emptyChar: k = Constants.Kempty; break;
+                                    case Constants.poisonChar: k = Constants.Kpoison; break;
+                                    case Constants.meteorChar: k = Constants.Kmeteor; break;
+                                    case Constants.cellChar:
+                                        {
+                                            switch (world.WorldArea.AreaColor[x, y])
+                                            {
+                                                case Constants.newCellColor: k = Constants.KnewCell; break;
+                                                case Constants.biteCellColor: k = Constants.KbiteCell; break;
+                                                case Constants.photoCellColor: k = Constants.KphotoCell; break;
+                                                case Constants.absorbCellColor: k = Constants.KabsorbCell; break;
+                                                case Constants.slipCellColor: k = Constants.KslipCell; break;
+                                                case Constants.mineCellColor: k = Constants.KmineCell; break;
+                                                case Constants.hideCellColor: k = Constants.KhideCell; break;
+                                                case Constants.errorCellColor: k = Constants.KerrorCell; break;
+                                                case Constants.deadCellColor: k = Constants.KdeadCell; break;
+                                            }
+                                            CellModel otherCell = world.GetCell(x, y);
+
+                                            cellsEnergy.Add(world.cellActionHandler.GetCellEnergy(otherCell));
+                                            IsCell = true;
+                                        }
+                                        break;
+                                }
+                                if (!IsCell)
+                                {
+                                    cellsEnergy.Add(0);
+                                }
+                                area.Add(k);
+                            }
+                        }
+                        else
+                        {
+                            area.Add(Constants.Kborder);
+                            cellsEnergy.Add(0);
+                        }
+                    }
+                }
+
+                area.AddRange(cellsEnergy);
+                area.AddRange(energyAreaInfo);
+
+                if (world.CurrentDayTime == World.DayTime.Day)
+                {
+                    area.Add(1);
+                }
+                else
+                {
+                    area.Add(0);
+                }
+
+                area.Add((int)world.WorldArea.CulcPhotosyntesisEnergy(positionX, positionY));
+
+                if (IsPoisonedArea)
+                {
+                    area.Add(1);
+                }
+                else
+                {
+                    area.Add(0);
+                }
+                return area;
+            }
+        }
         private void UpdateAreaAfterMove(CellModel cell)
         {
             lock (lockObject)
@@ -421,29 +518,6 @@ namespace СellEvolution.WorldResources.Cell
             return random.Next(0, count);
         }
 
-        public int CellGenomeSimilarity(CellModel cellA, CellModel cellB)
-        {
-            
-                double simK = 0;
-
-                if (cellA == null || cellB == null)
-                {
-                    return 0;
-                }
-
-                for (int i = 0; i < cellA.GetGenomeCycle().Length; i++)
-                {
-                    if (cellA.GetGenomeCycle()[i] == cellB.GetGenomeCycle()[i])
-                    {
-                        simK++;
-                    }
-                }
-
-                double temp = simK * 100.0 / cellA.GetGenomeCycle().Length;
-
-                return (int)temp;
-            
-        }
         public int GetCellEnergy(CellModel cellA)
         {
            

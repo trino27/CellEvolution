@@ -1,24 +1,22 @@
-﻿using CellEvolution.Cell.GenAlg;
+﻿using CellEvolution;
+using CellEvolution.Cell.GenAlg;
 using CellEvolution.Cell.NN;
 using System;
-using СellEvolution.WorldResources.Cell.NN;
-using СellEvolution.WorldResources.NN;
-using static CellEvolution.Cell.NN.CellModel;
 
-namespace CellEvolution.WorldResources.Cell.NN
+
+namespace CellEvolution.NN
 {
-    public class DDQNCellBrain
+    public class DDQNwithGA
     {
         private readonly Random random = new Random();
 
         private readonly NNStaticCritic teacher = new NNStaticCritic();
-        private readonly CellModel cell;
-        private CellGen gen;
+        public CellGen gen;
 
         // NN
         private NNLayers[] onlineLayers;
         private NNLayers[] targetLayers;
-        private readonly int[] layersSizes = { 177, 256, 256, 128, 30 };
+        private  int[] layersSizes;
 
         //SGDMomentum
         private double[][][] velocitiesWeights;
@@ -28,27 +26,33 @@ namespace CellEvolution.WorldResources.Cell.NN
         private List<DQNMemory> memory = new List<DQNMemory>();
 
         private double totalReward = 0;
-        private double totalMovesNum = 0;
+        private double totalActionsNum = 0;
 
         public bool IsErrorMove = false;
 
-        private double[] afterMoveState;
-        private double[] beforeMoveState;
-        private double energyBeforeMove;
+        private double[] afterActionState;
+        private double[] beforeActionState;
+        private double targetValueBeforeAction;
         private int action;
 
-        public DDQNCellBrain(CellModel cell)
+        public DDQNwithGA(int[] layerSizes)
         {
-            this.cell = cell;
+            this.layersSizes = new int[layerSizes.Length];
+            Array.Copy(layerSizes, this.layersSizes, layersSizes.Length);
+            if(this.layersSizes.Length < 2)
+            {
+                throw new ArgumentException("You should have at least input and output layers");
+            }
             gen = new CellGen();
 
             InitNetworkLayers();
             InitVelocities();
         }
 
-        public DDQNCellBrain(CellModel cell, DDQNCellBrain original)
+        public DDQNwithGA(DDQNwithGA original)
         {
-            this.cell = cell;
+            this.layersSizes = new int[original.layersSizes.Length];
+            Array.Copy(original.layersSizes, this.layersSizes, layersSizes.Length);
             gen = new CellGen(original.gen);
 
             InitNetworkLayers();
@@ -57,29 +61,34 @@ namespace CellEvolution.WorldResources.Cell.NN
             Clone(original);
         }
 
-        public DDQNCellBrain(CellModel cell, DDQNCellBrain mother, DDQNCellBrain father)
+        public DDQNwithGA(DDQNwithGA mother, DDQNwithGA father)
         {
-            this.cell = cell;
             gen = new CellGen(mother.gen, father.gen);
-
-            InitNetworkLayers();
 
             if (random.Next(0, 2) == 0)
             {
+                this.layersSizes = new int[mother.layersSizes.Length];
+                Array.Copy(mother.layersSizes, this.layersSizes, layersSizes.Length);
+                InitNetworkLayers();
+
                 InitMemory(mother);
                 InitVelocities(mother);
                 Clone(mother, father);
             }
             else
             {
+                this.layersSizes = new int[father.layersSizes.Length];
+                Array.Copy(father.layersSizes, this.layersSizes, layersSizes.Length);
+                InitNetworkLayers();
+
                 InitMemory(father);
                 InitVelocities(father);
                 Clone(father, mother);
             }
-            
+
         }
 
-        private void InitMemory(DDQNCellBrain original)
+        private void InitMemory(DDQNwithGA original)
         {
             memory = original.memory.Select(m => (DQNMemory)m.Clone()).ToList();
         }
@@ -102,12 +111,12 @@ namespace CellEvolution.WorldResources.Cell.NN
 
         private void InitVelocities()
         {
-            velocitiesWeights = new double[onlineLayers.Length - 1][][]; 
+            velocitiesWeights = new double[onlineLayers.Length - 1][][];
             velocitiesBiases = new double[onlineLayers.Length][];
 
             for (int i = 0; i < onlineLayers.Length; i++)
             {
-                if (i < onlineLayers.Length - 1) 
+                if (i < onlineLayers.Length - 1)
                 {
                     velocitiesWeights[i] = new double[onlineLayers[i].size][];
                     for (int j = 0; j < onlineLayers[i].size; j++)
@@ -120,14 +129,14 @@ namespace CellEvolution.WorldResources.Cell.NN
                     }
                 }
 
-                velocitiesBiases[i] = new double[onlineLayers[i].size]; 
+                velocitiesBiases[i] = new double[onlineLayers[i].size];
                 for (int j = 0; j < onlineLayers[i].size; j++)
                 {
-                    velocitiesBiases[i][j] = 0; 
+                    velocitiesBiases[i][j] = 0;
                 }
             }
         }
-        private void InitVelocities(DDQNCellBrain original)
+        private void InitVelocities(DDQNwithGA original)
         {
             velocitiesWeights = new double[original.velocitiesWeights.Length][][];
             for (int layer = 0; layer < original.velocitiesWeights.Length; layer++)
@@ -157,161 +166,50 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
         }
 
-        public CellAction ChooseAction()
+        public int ChooseAction(double[] currentState, double targetValue)
         {
-            energyBeforeMove = cell.Energy;
-            beforeMoveState = CreateBrainInput();
-            totalMovesNum++;
+            targetValueBeforeAction = targetValue;
+            beforeActionState = currentState;
+            totalActionsNum++;
 
-            List<CellAction> availableActions = new List<CellAction>();
-
-            switch (gen.GetCurrentGenAction())
-            {
-                case CellGen.GenAction.Move:
-                    {
-                        for (int i = (int)CellAction.MoveLeftUp; i <= (int)CellAction.JumpLeft; i++)
-                        {
-                            availableActions.Add((CellAction)i);
-                        }
-                    }
-                    break;
-                case CellGen.GenAction.Hunt:
-                    {
-                        for (int i = (int)CellAction.BiteLeftUp; i <= (int)CellAction.BiteLeft; i++)
-                        {
-                            availableActions.Add((CellAction)i);
-                        }
-                    }
-                    break;
-                case CellGen.GenAction.Photosynthesis:
-                    {
-                        availableActions.Add(CellAction.Photosynthesis);
-                    }
-                    break;
-                case CellGen.GenAction.Absorption:
-                    {
-                        availableActions.Add(CellAction.Absorption);
-                    }
-                    break;
-                case CellGen.GenAction.Reproduction:
-                    {
-                        availableActions.Add(CellAction.Reproduction);
-                        availableActions.Add(CellAction.Clone);
-                    }
-                    break;
-
-                case CellGen.GenAction.Actions:
-                    {
-                        availableActions.Add(CellAction.Slip);
-                        availableActions.Add(CellAction.Hide);
-                    }
-                    break;
-                case CellGen.GenAction.Mine:
-                    {
-                        availableActions.Add(CellAction.MineTop);
-                        availableActions.Add(CellAction.MineRightSide);
-                        availableActions.Add(CellAction.MineBottom);
-                        availableActions.Add(CellAction.MineLeftSide);
-                    }
-                    break;
-
-                case CellGen.GenAction.All:
-                    {
-                        for (int i = 0; i < 30; i++)
-                        {
-                            availableActions.Add((CellAction)i);
-                        }
-                    }
-                    break;
-            }
-
-            CellAction decidedAction;
+            int decidedAction;
             //// Эпсилон-жадный выбор
-            
+
             if (random.NextDouble() < gen.HyperparameterChromosome[CellGen.GenHyperparameter.epsilon]) // Исследование: случайный выбор действия
             {
-                int randomIndex = random.Next(availableActions.Count);
-                decidedAction = availableActions[randomIndex];
+                int randomIndex = random.Next(layersSizes[^1]);
+                decidedAction = randomIndex;
             }
             else
             {
-                double[] qValuesOutput = FeedForward(beforeMoveState, onlineLayers);
-                decidedAction = FindMaxIndexForFindAction(qValuesOutput, availableActions);
-                
-            }
-            action = (int)decidedAction;
+                double[] qValuesOutput = FeedForward(beforeActionState, onlineLayers);
+                decidedAction = FindMaxIndexForFindAction(qValuesOutput);
 
-            IsErrorMove = teacher.IsDecidedMoveError(decidedAction, beforeMoveState);
+            }
+            action = decidedAction;
+
+            IsErrorMove = teacher.IsDecidedMoveError(decidedAction, beforeActionState);
 
             return decidedAction;
         }
-        private CellAction FindMaxIndexForFindAction(double[] array, List<CellAction> availableActions)
+        private int FindMaxIndexForFindAction(double[] array)
         {
-            int maxIndex = (int)availableActions[random.Next(0, availableActions.Count)];
+            int maxIndex = random.Next(0, layersSizes[^1]);
             double maxWeight = array[maxIndex];
 
             for (int i = 0; i < array.Length; i++)
             {
-                if ((array[i] > maxWeight) && availableActions.Contains((CellAction)i))
+                if (array[i] > maxWeight)
                 {
                     maxWeight = array[i];
                     maxIndex = i;
                 }
             }
 
-            return (CellAction)maxIndex;
+            return maxIndex;
         }
 
-        private double[] CreateBrainInput()
-        {
-            double[] inputsBrain = new double[onlineLayers[0].size];
-            List<int> areaInfo = cell.GetWorldAroundInfo();
-            double[] inputsMemory = CreateMemoryInput();
-            double[] inputsFuture = gen.FutureGenActions(Constants.futureActionsInputLength);
-            int j = 0;
-            for (int i = 0; i < areaInfo.Count; i++) //0-47(-48)(areaChar) 48-95(-48)(cellsGen) 96-143(-48)(cellsEnergy) 144-152(-9)(energyArea) 153(-1)(DayTime) 154(-1)(Photosynthesis) 155(-1)(IsPoison)     
-            {
-                if (i < 48)
-                {
-                    inputsBrain[j] = Normalizer.CharNormalize(areaInfo[i]);
-                }
-                else if (i >= 48 && i < 96)
-                {
-                    inputsBrain[j] = Normalizer.GenNormalize(areaInfo[i]);
-                }
-                else if (i >= 96 && i < 153)
-                {
-                    inputsBrain[j] = Normalizer.EnergyNormalize(areaInfo[i]);
-                }
-                else if(i == 154)
-                {
-                    inputsBrain[j] = Normalizer.PhotosyntesNormalize(areaInfo[i]);
-                }
-                else
-                {
-                    inputsBrain[j] = areaInfo[i];
-                }
-                j++;
-            }
-
-            inputsBrain[j] = Normalizer.EnergyNormalize(cell.Energy); //156
-            j++;
-
-            for (int i = 0; i < Constants.maxMemoryCapacity; i++) //157 - 172
-            {
-                inputsBrain[j] = Normalizer.ActionNormalize(inputsMemory[i]);
-                j++;
-            }
-
-            for (int i = 0; i < Constants.futureActionsInputLength; i++) //173 - 176
-            {
-                inputsBrain[j] = Normalizer.FutureGenNormalize(inputsFuture[i]);
-                j++;
-            }
-
-            return inputsBrain.ToArray();
-        }
-        private double[] CreateMemoryInput()
+        public double[] CreateMemoryInput()
         {
             double[] res = new double[Constants.maxMemoryCapacity];
 
@@ -319,7 +217,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             {
                 for (int i = 0; i < Constants.maxMemoryCapacity; i++)
                 {
-                    res[i] = (memory[i].DecidedAction + 1);
+                    res[i] = memory[i].DecidedAction + 1;
                 }
             }
             else
@@ -330,26 +228,26 @@ namespace CellEvolution.WorldResources.Cell.NN
                 }
                 for (int i = 0; i < memory.Count; i++)
                 {
-                    res[i] = (memory[i].DecidedAction + 1);
+                    res[i] = memory[i].DecidedAction + 1;
                 }
             }
 
             return res;
         }
 
-        public void RegisterLastActionResult(int alreadyUseClones)
+        public void RegisterLastActionResult(double[] afterActionState, double episodeSuccessValue, double targetValue, double correctActionBonus = 0)
         {
-            afterMoveState = CreateBrainInput();
+            this.afterActionState = afterActionState;
 
             bool done = false;
-            if (cell.IsCreatingClone || cell.IsCreatingChildren && alreadyUseClones > 0)
+            if (episodeSuccessValue > 0)
             {
                 done = true;
             }
 
             // Применение нормализации награды
-            double reward = CulcReward(done, alreadyUseClones);
-            reward = Normalizer.NormalizeReward(reward);
+            double reward = CulcReward(done, episodeSuccessValue, targetValue, correctActionBonus);
+            reward = NormalizeReward(reward);
 
             if (done)
             {
@@ -363,18 +261,18 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
         }
 
-        private double CulcReward(bool done, int numOfClones)
+        private double CulcReward(bool done, double episodeSuccessValue, double targetValue, double correctActionBonus = 0)
         {
             double reward = 0;
             if (done)
             {
-                reward = (totalReward / totalMovesNum);
-                if(reward > 0)
+                reward = totalReward / totalActionsNum;
+                if (reward > 0)
                 {
                     double bonus = 0;
-                    for(int i = 0; i < numOfClones; i++)
+                    for (int i = 0; i < episodeSuccessValue; i++)
                     {
-                        bonus +=  reward * gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusA] / Math.Pow(gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusB], i);
+                        bonus += reward * gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusA] / Math.Pow(gen.HyperparameterChromosome[CellGen.GenHyperparameter.genDoneBonusB], i);
                     }
                     reward = bonus;
                 }
@@ -386,7 +284,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
             else
             {
-                reward = cell.Energy - energyBeforeMove;
+                reward = targetValue - targetValueBeforeAction;
 
                 if (IsErrorMove)
                 {
@@ -395,8 +293,9 @@ namespace CellEvolution.WorldResources.Cell.NN
                 }
                 else
                 {
-                    reward += Constants.actionEnergyCost;
+                    reward += correctActionBonus;
                 }
+               
                 totalReward += reward;
             }
             return reward;
@@ -406,16 +305,16 @@ namespace CellEvolution.WorldResources.Cell.NN
             // Используем текущее значение action, установленное в ChooseAction
 
             // Получаем текущие Q-значения для начального состояния с использованием онлайн-сети
-            double[] currentQValuesOnline = FeedForwardWithNoise(beforeMoveState, onlineLayers);
+            double[] currentQValuesOnline = FeedForwardWithNoise(beforeActionState, onlineLayers);
 
             double tdTarget;
             if (!done)
             {
                 // Получаем Q-значения для следующего состояния с использованием онлайн-сети для выбора действия
-                double[] nextQValuesOnline = FeedForward(afterMoveState, onlineLayers);
+                double[] nextQValuesOnline = FeedForward(afterActionState, onlineLayers);
                 int nextAction = Array.IndexOf(nextQValuesOnline, nextQValuesOnline.Max()); // Выбор действия
-               
-                double[] nextQValuesTarget = FeedForward(afterMoveState, targetLayers);
+
+                double[] nextQValuesTarget = FeedForward(afterActionState, targetLayers);
                 tdTarget = reward + gen.HyperparameterChromosome[CellGen.GenHyperparameter.discountFactor] * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
             }
             else
@@ -429,10 +328,10 @@ namespace CellEvolution.WorldResources.Cell.NN
             targetQValues[action] = tdTarget; // Обновляем Q-значение для выбранного действия
 
             // Обучаем онлайн-сеть с обновленными Q-значениями
-            TeachDQNModel(beforeMoveState, targetQValues);
+            TeachDQNModel(beforeActionState, targetQValues);
 
             // Обновляем память, добавляя новый опыт
-            UpdateMemory(beforeMoveState, action, reward, afterMoveState, done);
+            UpdateMemory(beforeActionState, action, reward, afterActionState, done);
         }
 
         // Обновление памяти новым опытом и обеспечение ее ограниченного размера
@@ -471,7 +370,7 @@ namespace CellEvolution.WorldResources.Cell.NN
 
                 for (int i = 0; i < nextLayer.size; i++)
                 {
-                    double gradient = errors[i] * DSwish(nextLayer.neurons[i]);
+                    double gradient = errors[i] * DSwishActivation(nextLayer.neurons[i]);
 
                     for (int j = 0; j < currentLayer.size; j++)
                     {
@@ -497,7 +396,6 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
         }
 
-
         private double[] FeedForward(double[] input, NNLayers[] layers)
         {
             layers[0].neurons = input; // Инициализация входного слоя
@@ -511,7 +409,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                     {
                         sum += layers[i - 1].neurons[k] * layers[i - 1].weights[k, j];
                     }
-                    layers[i].neurons[j] = Swish(sum + layers[i].biases[j]);
+                    layers[i].neurons[j] = SwishActivation(sum + layers[i].biases[j]);
                 }
             }
 
@@ -531,7 +429,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                     {
                         sum += layers[i - 1].neurons[k] * layers[i - 1].weights[k, j];
                     }
-                    double activation = Swish(sum + layers[i].biases[j]);
+                    double activation = SwishActivation(sum + layers[i].biases[j]);
                     // Добавление шума к результату активации
                     layers[i].neurons[j] = activation + GenerateRandomNoise() * gen.HyperparameterChromosome[CellGen.GenHyperparameter.noiseIntensity];
                 }
@@ -564,7 +462,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 
-        public void Clone(DDQNCellBrain original)
+        public void Clone(DDQNwithGA original)
         {
             double key = random.NextDouble();
 
@@ -575,7 +473,7 @@ namespace CellEvolution.WorldResources.Cell.NN
                 RandomCloneNoise();
             }
         }
-        public void Clone(DDQNCellBrain mainParent, DDQNCellBrain secondParent)
+        public void Clone(DDQNwithGA mainParent, DDQNwithGA secondParent)
         {
             double key = random.NextDouble();
 
@@ -610,7 +508,7 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
         }
 
-        private void CopyNNLayers(DDQNCellBrain original)
+        private void CopyNNLayers(DDQNwithGA original)
         {
             for (int k = 0; k < onlineLayers.Length; k++)
             {
@@ -633,32 +531,34 @@ namespace CellEvolution.WorldResources.Cell.NN
             }
         }
 
-        public CellGen GetGen()
-        {
-            return gen;
-        }
-
-        public static double Sigmoid(double x)
-        {
-            return 1.0 / (1.0 + Math.Exp(-x));
-        }
-        public static double DSigmoid(double x)
-        {
-            double sigmoid = Sigmoid(x);
-            return sigmoid * (1 - sigmoid);
-        }
-
-        public double DSwish(double x)
+        private double DSwishActivation(double x)
         {
             double beta = gen.HyperparameterChromosome[CellGen.GenHyperparameter.beta];
             double sigmoid = 1.0 / (1.0 + Math.Exp(-beta * x));
             return sigmoid + beta * x * sigmoid * (1 - sigmoid);
         }
 
-        public double Swish(double x)
+        private double SwishActivation(double x)
         {
             double beta = gen.HyperparameterChromosome[CellGen.GenHyperparameter.beta];
             return x / (1.0 + Math.Exp(-beta * x));
+        }
+
+        private double NormalizeReward(double reward)
+        {
+            return Math.Tanh(reward);
+        }
+
+        public double MinMaxNormalize(double value, double minValue, double maxValue)
+        {
+            if (value >= maxValue) return 1;
+            if (value <= minValue) return 0;
+            else return (value - minValue) / (maxValue - minValue);
+        }
+
+        public double MinMaxDenormalize(double normalizedValue, double minValue, double maxValue)
+        {
+            return normalizedValue * (maxValue - minValue) + minValue;
         }
     }
 }

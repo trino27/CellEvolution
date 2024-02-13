@@ -1,4 +1,4 @@
-﻿using СellEvolution.Simulation;
+﻿using CellEvolution.Simulation;
 
 namespace CellEvolution
 {

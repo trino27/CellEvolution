@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace СellEvolution.WorldResources.Cell.NN
+namespace CellEvolution.NN
 {
     public struct DQNMemory : ICloneable
     {

@@ -5,11 +5,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using СellEvolution;
-using СellEvolution.WorldResources;
+using CellEvolution;
+using CellEvolution.WorldResources;
 using static CellEvolution.Cell.GenAlg.CellGen;
 
-namespace СellEvolution.Simulation
+namespace CellEvolution.Simulation
 {
     public class Simulation
     {
@@ -129,26 +129,10 @@ namespace СellEvolution.Simulation
         {
             if(world.CurrentTurn % (16) == 0 && world.CurrentTurn != 0)
             {
-                statDatabase.UpdateStat(world.TotalDays, DayErrorValue, CountActionsInCellGensProc());
+                statDatabase.UpdateStat(world.TotalDays, DayErrorValue);
                 DayErrorValue = 0;
             }
             DayErrorValue += CurrentErrorProc;
-        }
-        private double CountActionsInCellGensProc()
-        {
-            int TotallNum = 0;
-            foreach (var cell in world.Cells)
-            {
-                foreach (var gen in cell.GetGenomeCycle())
-                {
-                    if (gen == GenAction.All)
-                    {
-                        TotallNum++;
-                    }
-                }
-            }
-
-            return (double)TotallNum * 100.0 / (double)(world.Cells.Count * Constants.genCycleSize);
         }
     }
 }

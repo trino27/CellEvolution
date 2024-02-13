@@ -8,31 +8,6 @@ namespace CellEvolution
 {
     static class Constants
     {
-        public const double actionChromosomeMutationProbabilityStart = 0.2;
-        public const double actionChromosomeMutationDuringLiveProbabilityStart = 0.03;
-
-        public const double hyperparameterChromosomeMutationProbabilityStart = 0.9;
-        public const double hyperparameterChromosomeMutationDuringLiveProbabilityStart = 0.06;
-
-        public const double errorCostStart = 14;
-        public const double learningRateStart = 0.0005;
-        public const double noiseIntensityStart = 0.01;
-
-        public const double cloneNoiseProbabilityStart = 0.2;
-        public const double cloneNoiseWeightsRateStart = 1;
-
-        public const double discountFactorStart = 0.9;
-        public const double epsilonStart = 0.1;
-        public const double momentumCoefficientStart = 0.9;
-        public const double lambdaL2Start = 0.001;
-        public const double betaStart = 0.01;
-        public const double dropoutRateStart = 0.3;
-
-        public const double genDoneBonusStartA = 2;
-        public const double genDoneBonusStartB = 2;
-
-        public const double genHyperparametrChangePower = 0.03;
-
         public const int maxClone = 16;
         public const int maxLive = 128;
 
@@ -70,7 +45,6 @@ namespace CellEvolution
         public const int jumpDistance = 3;
 
         public const int maxMemoryCapacity = 16;
-        public const int genCycleSize = 32;
 
         public const int meteorBlockOrbNumMin = 100;
         public const int meteorBlockOrbNumMax = 1000;
@@ -90,8 +64,8 @@ namespace CellEvolution
         public const int energyAreaAbsorbDistance = 1;
         public const int startCellCreationDistance = 2;
 
-        public const int areaSizeX = 45; //118 //105
-        public const int areaSizeY = 45; //60 // 47
+        public const int areaSizeX = 47; //118 //105
+        public const int areaSizeY = 47; //60 // 47
 
         public const char nullChar = '\0';
         public const char emptyChar = ' ';

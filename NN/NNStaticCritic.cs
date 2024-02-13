@@ -3,16 +3,16 @@ using static CellEvolution.Cell.NN.CellModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using СellEvolution.WorldResources.NN;
+using CellEvolution.WorldResources.Cell;
 
-namespace СellEvolution.WorldResources.Cell.NN
+namespace CellEvolution.NN
 {
     public class NNStaticCritic
     {
-        public bool IsDecidedMoveError(CellAction decidedAction, double[] LastInput)
+        public bool IsDecidedMoveError(int decidedAction, double[] LastInput)
         {
             List<CellAction> AllErrorMoves = LookingForErrorMovesAtTurn(LastInput);
-            return AllErrorMoves.Contains(decidedAction);
+            return AllErrorMoves.Contains((CellAction)decidedAction);
         }
 
         private List<CellAction> LookingForErrorMovesAtTurn(double[] LastMovesInputs) //Input
@@ -21,30 +21,23 @@ namespace СellEvolution.WorldResources.Cell.NN
             if (LastMovesInputs != null)
             {
                 //Reproduction
-                if (LastMovesInputs[156] < Normalizer.EnergyNormalize((Constants.cloneEnergyCost + Constants.startCellEnergy)))      
-                    {
+                if (LastMovesInputs[108] < Normalizer.EnergyNormalize(Constants.cloneEnergyCost + Constants.startCellEnergy))
+                {
                     AllErrorMoves.Add(CellAction.Clone);
                     AllErrorMoves.Add(CellAction.Reproduction);
-
-                    if (LastMovesInputs[156] < Normalizer.EnergyNormalize((Constants.actionEnergyCost * 2)));
-                    {
-                        //Actions
-                        AllErrorMoves.Add(CellAction.Slip);
-                        AllErrorMoves.Add(CellAction.Hide);
-                    }
                 }
 
                 //Photo
-                if (LastMovesInputs[153] != 1)
+                if (LastMovesInputs[105] != 1)
                 {
                     AllErrorMoves.Add(CellAction.Photosynthesis);
                 }
 
                 //Absorb
                 double energyVal = 0;
-                for (int i = 144; i < 153; i++)
+                for (int i = 96; i < 104; i++)
                 {
-                    energyVal += Normalizer.EnergyNormalize(LastMovesInputs[i]);
+                    energyVal += Normalizer.EnergyDenormalize(LastMovesInputs[i]);
                 }
                 if (energyVal <= 0)
                 {
@@ -120,19 +113,19 @@ namespace СellEvolution.WorldResources.Cell.NN
                 }
 
                 //Jump
-                if (LastMovesInputs[21] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[156] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
+                if (LastMovesInputs[21] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[108] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
                 {
                     AllErrorMoves.Add(CellAction.JumpUp);
                 }
-                if (LastMovesInputs[44] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[156] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
+                if (LastMovesInputs[44] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[108] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
                 {
                     AllErrorMoves.Add(CellAction.JumpRight);
                 }
-                if (LastMovesInputs[26] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[156] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
+                if (LastMovesInputs[26] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[108] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
                 {
                     AllErrorMoves.Add(CellAction.JumpDown);
                 }
-                if (LastMovesInputs[3] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[156] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
+                if (LastMovesInputs[3] != Normalizer.CharNormalize(Constants.Kempty) || LastMovesInputs[108] < Normalizer.EnergyNormalize(Constants.jumpEnergyCost))
                 {
                     AllErrorMoves.Add(CellAction.JumpLeft);
                 }

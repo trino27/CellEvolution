@@ -1,8 +1,8 @@
 ﻿using CellEvolution;
 using CellEvolution.Cell.NN;
-using СellEvolution.WorldResources.Meteor;
+using CellEvolution.WorldResources.Meteor;
 
-namespace СellEvolution.WorldResources
+namespace CellEvolution.WorldResources
 {
     public class WorldArea
     {
@@ -262,111 +262,7 @@ namespace СellEvolution.WorldResources
                 return area;
             }
         }
-        public List<int> GetInfoFromAreaToCellBrainInput(int positionX, int positionY)
-        {
-
-            List<int> area = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
-            List<int> cellsGen = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
-            List<int> cellsEnergy = new List<int>((Constants.visionDistance * 2 + 1) * (Constants.visionDistance * 2 + 1) - 1); //48
-            List<int> energyAreaInfo = new List<int>((Constants.energyAreaVisionDistance * 2 + 1) * (Constants.energyAreaVisionDistance * 2 + 1)); //9
-
-            bool IsPoisonedArea = false;
-
-            lock (lockObject)
-            {
-                for (int x = positionX - Constants.visionDistance; x <= positionX + Constants.visionDistance; x++)
-                {
-                    for (int y = positionY - Constants.visionDistance; y <= positionY + Constants.visionDistance; y++)
-                    {
-                        if (y >= 0 && y < Constants.areaSizeY && x >= 0 && x < Constants.areaSizeX)
-                        {
-                            if (y >= positionY - Constants.energyAreaVisionDistance && y <= positionY + Constants.energyAreaVisionDistance &&
-                            x >= positionX - Constants.energyAreaVisionDistance && x <= positionX + Constants.energyAreaVisionDistance)
-                            {
-                                energyAreaInfo.Add(AreaEnergy[x, y]);
-                                if (AreaEnergy[x, y] > Constants.energyAreaPoisonedCorner)
-                                {
-                                    IsPoisonedArea = true;
-                                }
-                            }
-
-                            bool IsCell = false;
-                            if (!(x == positionX && y == positionY))
-                            {
-                                int k = 0;
-
-                                switch (AreaChar[x, y])
-                                {
-                                    case Constants.borderChar: k = Constants.Kborder; break;
-                                    case Constants.emptyChar: k = Constants.Kempty; break;
-                                    case Constants.poisonChar: k = Constants.Kpoison; break;
-                                    case Constants.meteorChar: k = Constants.Kmeteor; break;
-                                    case Constants.cellChar:
-                                        {
-                                            switch (AreaColor[x, y])
-                                            {
-                                                case Constants.newCellColor: k = Constants.KnewCell; break;
-                                                case Constants.biteCellColor: k = Constants.KbiteCell; break;
-                                                case Constants.photoCellColor: k = Constants.KphotoCell; break;
-                                                case Constants.absorbCellColor: k = Constants.KabsorbCell; break;
-                                                case Constants.slipCellColor: k = Constants.KslipCell; break;
-                                                case Constants.mineCellColor: k = Constants.KmineCell; break;
-                                                case Constants.hideCellColor: k = Constants.KhideCell; break;
-                                                case Constants.errorCellColor: k = Constants.KerrorCell; break;
-                                                case Constants.deadCellColor: k = Constants.KdeadCell; break;
-                                            }
-                                            CellModel otherCell = world.GetCell(x, y);
-
-                                            cellsGen.Add(world.cellActionHandler.CellGenomeSimilarity(otherCell, world.GetCell(positionX, positionY)) + 1);
-
-                                            cellsEnergy.Add(world.cellActionHandler.GetCellEnergy(otherCell));
-                                            IsCell = true;
-                                        }
-                                        break;
-                                }
-                                if (!IsCell)
-                                {
-                                    cellsGen.Add(0);
-                                    cellsEnergy.Add(0);
-                                }
-                                area.Add(k);
-                            }
-                        }
-                        else
-                        {
-                            area.Add(Constants.Kborder);
-                            cellsGen.Add(0);
-                            cellsEnergy.Add(0);
-                        }
-                    }
-                }
-
-                area.AddRange(cellsGen);
-                area.AddRange(cellsEnergy);
-                area.AddRange(energyAreaInfo);
-
-                if (world.CurrentDayTime == World.DayTime.Day)
-                {
-                    area.Add(1);
-                }
-                else
-                {
-                    area.Add(0);
-                }
-
-                area.Add((int)CulcPhotosyntesisEnergy(positionX, positionY));
-
-                if (IsPoisonedArea)
-                {
-                    area.Add(1);
-                }
-                else
-                {
-                    area.Add(0);
-                }
-                return area;
-            }
-        }
+       
 
         public double CulcPhotosyntesisEnergy(int PositionX, int PositionY)
         {

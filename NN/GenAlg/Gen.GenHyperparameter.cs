@@ -4,9 +4,6 @@
     {
         public enum GenHyperparameter : byte
         {
-            actionChromosomeMutationProbability,
-            actionChromosomeMutationDuringLiveProbability,
-
             hyperparameterChromosomeMutationProbability,
             hyperparameterChromosomeMutationDuringLiveProbability,
 

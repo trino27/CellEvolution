@@ -3,7 +3,7 @@ using CellEvolution.Cell.NN;
 using System;
 using System.Collections.Generic;
 
-namespace СellEvolution.WorldResources
+namespace CellEvolution.WorldResources
 {
     public class Renderer
     {

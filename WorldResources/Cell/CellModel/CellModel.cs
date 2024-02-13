@@ -1,6 +1,6 @@
-﻿using CellEvolution.WorldResources.Cell.NN;
-using СellEvolution.WorldResources;
-using static CellEvolution.Cell.GenAlg.CellGen;
+﻿using CellEvolution.NN;
+using CellEvolution.WorldResources;
+using CellEvolution.WorldResources.Cell;
 
 namespace CellEvolution.Cell.NN
 {
@@ -8,12 +8,14 @@ namespace CellEvolution.Cell.NN
     {
         private Random random = new Random();
 
-        private readonly DDQNCellBrain brain;
+        private readonly DDQNwithGA brain;
         private readonly World world;
 
         private readonly Guid id;
         private readonly int generationNum = 0;
         private int[] specie = new int[1];
+
+        private readonly int[] layersSizes = { 125, 256, 256, 128, 30 };
 
         private Dictionary<CellAction, Action> actionDictionary;
 
@@ -45,7 +47,7 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new DDQNCellBrain(this);
+            brain = new DDQNwithGA(layersSizes);
 
             ActionDictionaryInit();
             CellInit(positionX, positionY);
@@ -60,7 +62,7 @@ namespace CellEvolution.Cell.NN
 
             generationNum = original.generationNum + 1;
 
-            brain = new DDQNCellBrain(this, original.brain);
+            brain = new DDQNwithGA(original.brain);
 
             ActionDictionaryInit();
             CellInit(positionX, positionY);
@@ -80,7 +82,7 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new DDQNCellBrain(this, mother.brain, father.brain);
+            brain = new DDQNwithGA(mother.brain, father.brain);
 
             SpecieFromParentsInit(mother, father);
             ActionDictionaryInit();
@@ -165,7 +167,7 @@ namespace CellEvolution.Cell.NN
         {
             if (IsMadeAction)
             {
-                brain.RegisterLastActionResult(AlreadyUseClone);
+                brain.RegisterLastActionResult(CreateBrainInput(), AlreadyUseClone, Energy, Constants.actionEnergyCost);
                 IsMadeAction = false;
             }
 
@@ -177,7 +179,7 @@ namespace CellEvolution.Cell.NN
 
             IsHide = false;
 
-            PerformAction(brain.ChooseAction());
+            PerformAction((CellAction)brain.ChooseAction(CreateBrainInput(), Energy));
             IsMadeAction = true;
 
             if (brain.IsErrorMove)
@@ -192,8 +194,6 @@ namespace CellEvolution.Cell.NN
                 Energy -= Constants.poisonedDecEnergy;
             }
 
-
-
             if (IsNoEnergy()) IsDead = true;
 
             if (CurrentAge > Constants.maxLive) IsDead = true;
@@ -205,14 +205,44 @@ namespace CellEvolution.Cell.NN
             }
         }
 
-        public List<int> GetWorldAroundInfo()
+        private double[] CreateBrainInput()
         {
-            return world.WorldArea.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
-        }
+            double[] inputsBrain = new double[layersSizes[0]];
+            List<int> areaInfo = world.cellActionHandler.GetInfoFromAreaToCellBrainInput(PositionX, PositionY);
+            double[] inputsMemory = brain.CreateMemoryInput();
+            int j = 0;
+            for (int i = 0; i < areaInfo.Count; i++) //0-47(-48)(areaChar) 48-95(-48)(cellsEnergy) 96-104(-9)(energyArea) 105(-1)(DayTime) 106(-1)(Photosynthesis) 107(-1)(IsPoison)     
+            {
+                if (i < 48)
+                {
+                    inputsBrain[j] = Normalizer.CharNormalize(areaInfo[i]);
+                }
+                else if (i >= 48 && i < 105)
+                {
+                    inputsBrain[j] = Normalizer.EnergyNormalize(areaInfo[i]);
+                }
+                else if (i == 106)
+                {
+                    inputsBrain[j] = Normalizer.PhotosyntesNormalize(areaInfo[i]);
+                }
+                else
+                {
+                    inputsBrain[j] = areaInfo[i];
+                }
+                j++;
+            }
 
-        public GenAction[] GetGenomeCycle()
-        {
-            return brain.GetGen().ActionsChromosome;
+            inputsBrain[j] = Normalizer.EnergyNormalize(Energy); //108
+            j++;
+
+            for (int i = 0; i < Constants.maxMemoryCapacity; i++) //109-124
+            {
+                inputsBrain[j] = Normalizer.ActionNormalize(inputsMemory[i]);
+                j++;
+            }
+
+
+            return inputsBrain.ToArray();
         }
 
         private void PerformAction(CellAction decidedAction)
@@ -411,6 +441,7 @@ namespace CellEvolution.Cell.NN
             CellColor = Constants.absorbCellColor;
             world.cellActionHandler.CellAbsorb(this);
         }
+
         private void MineTop()
         {
             CellColor = Constants.mineCellColor;

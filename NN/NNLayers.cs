@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace СellEvolution.WorldResources.Cell.NN
+namespace CellEvolution.NN
 {
     public struct NNLayers
     {
@@ -9,7 +9,6 @@ namespace СellEvolution.WorldResources.Cell.NN
         public double[] neurons { get; set; }
         public double[] biases { get; set; }
         public double[,] weights { get; set; }
-        public double[] errors { get; set; }
 
         public NNLayers(int size, int nextSize)
         {
@@ -18,7 +17,7 @@ namespace СellEvolution.WorldResources.Cell.NN
             neurons = new double[size];
             biases = new double[size];
             weights = new double[size, nextSize];
-            errors = new double[size];
+
 
             InitializeWeightsHe();
         }
