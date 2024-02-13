@@ -1,4 +1,4 @@
-﻿namespace CellEvolution.Cell.NN
+﻿namespace CellEvolution.Cell.CellModel
 {
     public partial class CellModel
     {

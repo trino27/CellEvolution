@@ -1,16 +1,15 @@
-﻿using CellEvolution;
-using CellEvolution.Cell.NN;
-using System;
-using System.Collections.Generic;
+﻿
+using CellEvolution;
+using CellEvolution.WorldResources;
 
-namespace CellEvolution.WorldResources
+namespace СellEvolution
 {
     public class Renderer
     {
         private object lockObject = new object();
         private bool worldCreated = false;
-        private World world;
-        public Renderer(World world)
+        private WorldModel world;
+        public Renderer(WorldModel world)
         {
             this.world = world;
         }

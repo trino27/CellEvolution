@@ -10,7 +10,7 @@ namespace CellEvolution
 
             do
             {
-                Simulation simulation = new Simulation();
+                SimulationHandler simulation = new SimulationHandler();
 
                 simulation.StartSimulation();
             } while (true);

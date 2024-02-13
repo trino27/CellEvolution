@@ -1,15 +1,15 @@
-﻿using CellEvolution.NN;
-using CellEvolution.WorldResources;
-using CellEvolution.WorldResources.Cell;
+﻿using CellEvolution.WorldResources;
+using EvolutionNetwork.DDQNwithGA;
+using СellEvolution;
 
-namespace CellEvolution.Cell.NN
+namespace CellEvolution.Cell.CellModel
 {
     public partial class CellModel
     {
         private Random random = new Random();
 
-        private readonly DDQNwithGA brain;
-        private readonly World world;
+        private readonly DDQNwithGAModel brain;
+        private readonly WorldModel world;
 
         private readonly Guid id;
         private readonly int generationNum = 0;
@@ -39,7 +39,7 @@ namespace CellEvolution.Cell.NN
         public bool IsCreatingChildren = false;
         public bool IsCreatingClone = false;
 
-        public CellModel(int positionX, int positionY, World world, int creationNum)
+        public CellModel(int positionX, int positionY, WorldModel world, int creationNum)
         {
             id = Guid.NewGuid();
 
@@ -47,12 +47,12 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new DDQNwithGA(layersSizes);
+            brain = new DDQNwithGAModel(layersSizes, (uint)Constants.maxMemoryCapacity);
 
             ActionDictionaryInit();
             CellInit(positionX, positionY);
         }
-        public CellModel(int positionX, int positionY, World world, CellModel original)
+        public CellModel(int positionX, int positionY, WorldModel world, CellModel original)
         {
             id = Guid.NewGuid();
 
@@ -62,12 +62,12 @@ namespace CellEvolution.Cell.NN
 
             generationNum = original.generationNum + 1;
 
-            brain = new DDQNwithGA(original.brain);
+            brain = new DDQNwithGAModel(original.brain);
 
             ActionDictionaryInit();
             CellInit(positionX, positionY);
         }
-        public CellModel(int positionX, int positionY, World world, CellModel mother, CellModel father)
+        public CellModel(int positionX, int positionY, WorldModel world, CellModel mother, CellModel father)
         {
             id = Guid.NewGuid();
 
@@ -82,7 +82,7 @@ namespace CellEvolution.Cell.NN
 
             this.world = world;
 
-            brain = new DDQNwithGA(mother.brain, father.brain);
+            brain = new DDQNwithGAModel(mother.brain, father.brain);
 
             SpecieFromParentsInit(mother, father);
             ActionDictionaryInit();
@@ -421,7 +421,7 @@ namespace CellEvolution.Cell.NN
         //Action
         private void Photosynthesis()
         {
-            if (world.CurrentDayTime == World.DayTime.Day)
+            if (world.CurrentDayTime == WorldModel.DayTime.Day)
             {
                
                 Energy += (int)world.WorldArea.CulcPhotosyntesisEnergy(PositionX, PositionY);

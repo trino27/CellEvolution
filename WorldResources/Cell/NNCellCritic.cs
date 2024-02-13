@@ -1,13 +1,9 @@
-﻿using CellEvolution;
-using static CellEvolution.Cell.NN.CellModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using CellEvolution.WorldResources.Cell;
+﻿using СellEvolution;
+using static CellEvolution.Cell.CellModel.CellModel;
 
-namespace CellEvolution.NN
+namespace CellEvolution.WorldResources.Cell
 {
-    public class NNStaticCritic
+    public class NNCellCritic
     {
         public bool IsDecidedMoveError(int decidedAction, double[] LastInput)
         {

@@ -1,11 +1,12 @@
-﻿using CellEvolution;
-using CellEvolution.Cell.NN;
+﻿using CellEvolution.Cell.CellModel;
 using CellEvolution.WorldResources.Cell;
 using CellEvolution.WorldResources.Meteor;
+using СellEvolution;
+using СellEvolution.WorldResources.World;
 
 namespace CellEvolution.WorldResources
 {
-    public partial class World
+    public partial class WorldModel
     {
         private Random random = new Random();
         private object lockObject = new object();
@@ -44,7 +45,7 @@ namespace CellEvolution.WorldResources
         public bool IsRenderAllow = false;
         public bool IsRenderExists = false;
 
-        public World()
+        public WorldModel()
         {
             cellActionHandler = new CellActionHandler(this);
             WorldArea = new WorldArea(this);

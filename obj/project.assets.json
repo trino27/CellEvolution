@@ -208,6 +208,16 @@
             "rid": "win"
           }
         }
+      },
+      "EvolutionNetwork/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v7.0",
+        "compile": {
+          "bin/placeholder/EvolutionNetwork.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/EvolutionNetwork.dll": {}
+        }
       }
     }
   },
@@ -633,10 +643,16 @@
         "useSharedDesignerContext.txt",
         "version.txt"
       ]
+    },
+    "EvolutionNetwork/1.0.0": {
+      "type": "project",
+      "path": "../DDQNwithGA/EvolutionNetwork.csproj",
+      "msbuildProject": "../DDQNwithGA/EvolutionNetwork.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net7.0": [
+      "EvolutionNetwork >= 1.0.0",
       "System.Data.SqlClient >= 4.8.6",
       "log4net >= 2.0.15"
     ]
@@ -673,7 +689,11 @@
       "frameworks": {
         "net7.0": {
           "targetAlias": "net7.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "E:\\Programming\\Fun_Project\\СellEvolution\\DDQNwithGA\\EvolutionNetwork.csproj": {
+              "projectPath": "E:\\Programming\\Fun_Project\\СellEvolution\\DDQNwithGA\\EvolutionNetwork.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

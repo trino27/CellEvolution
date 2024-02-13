@@ -1,19 +1,14 @@
-﻿using CellEvolution;
-using System;
-using System.Collections.Generic;
+﻿
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CellEvolution;
+
 using CellEvolution.WorldResources;
-using static CellEvolution.Cell.GenAlg.CellGen;
+using СellEvolution;
 
 namespace CellEvolution.Simulation
 {
-    public class Simulation
+    public class SimulationHandler
     {
-        private World world = new World();
+        private WorldModel world = new WorldModel();
         private StatDatabase statDatabase = new StatDatabase();
 
         public int PhotoCells = 0;

@@ -1,17 +1,15 @@
-﻿using CellEvolution;
-using CellEvolution.Cell.NN;
-using CellEvolution.WorldResources;
-
+﻿
+using CellEvolution.Cell.CellModel;
 namespace CellEvolution.WorldResources.Cell
 {
     public class CellActionHandler
     {
         Random random = new Random();
 
-        private readonly World world;
+        private readonly WorldModel world;
         private object lockObject = new object();
 
-        public CellActionHandler(World world)
+        public CellActionHandler(WorldModel world)
         {
             this.world = world;
         }
@@ -118,7 +116,7 @@ namespace CellEvolution.WorldResources.Cell
                 area.AddRange(cellsEnergy);
                 area.AddRange(energyAreaInfo);
 
-                if (world.CurrentDayTime == World.DayTime.Day)
+                if (world.CurrentDayTime == WorldModel.DayTime.Day)
                 {
                     area.Add(1);
                 }

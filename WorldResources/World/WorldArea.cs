@@ -1,12 +1,13 @@
 ﻿using CellEvolution;
-using CellEvolution.Cell.NN;
+using CellEvolution.Cell.CellModel;
+using CellEvolution.WorldResources;
 using CellEvolution.WorldResources.Meteor;
 
-namespace CellEvolution.WorldResources
+namespace СellEvolution.WorldResources.World
 {
     public class WorldArea
     {
-        private readonly World world;
+        private readonly WorldModel world;
 
         private object lockObject = new object();
 
@@ -16,7 +17,7 @@ namespace CellEvolution.WorldResources
 
         public List<MeteorBlock> MeteorBlocks = new List<MeteorBlock>();
 
-        public WorldArea(World world)
+        public WorldArea(WorldModel world)
         {
             this.world = world;
 
@@ -262,11 +263,11 @@ namespace CellEvolution.WorldResources
                 return area;
             }
         }
-       
+
 
         public double CulcPhotosyntesisEnergy(int PositionX, int PositionY)
         {
-            double proc = (double)world.Cells.Count * 100 / (double)((Constants.areaSizeX - 2) * (Constants.areaSizeY - 2));
+            double proc = (double)world.Cells.Count * 100 / ((Constants.areaSizeX - 2) * (Constants.areaSizeY - 2));
             double addEnergy = Constants.minPhotosynthesis + Constants.maxPhotosynthesis / 100.0 * (100 - proc);
 
             int numOfCellsAround = world.WorldArea.GetNumOfLiveCellsAround(PositionX, PositionY);

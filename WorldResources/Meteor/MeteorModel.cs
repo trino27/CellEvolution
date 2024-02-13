@@ -1,6 +1,4 @@
-﻿using CellEvolution;
-
-namespace CellEvolution.WorldResources.Meteor
+﻿namespace CellEvolution.WorldResources.Meteor
 {
     public class MeteorModel
     {

@@ -1,6 +1,6 @@
 ﻿namespace CellEvolution.WorldResources
 {
-    public partial class World
+    public partial class WorldModel
     {
         public enum DayTime
         {
