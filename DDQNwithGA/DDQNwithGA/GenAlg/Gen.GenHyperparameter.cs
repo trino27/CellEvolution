@@ -5,9 +5,11 @@
         public enum GenHyperparameter : byte
         {
             hyperparameterChromosomeMutationProbability,
-            hyperparameterChromosomeMutationDuringLiveProbability,
 
-            errorCost,
+            elitism,
+
+            errorFine,
+            correctBonus,
             genDoneBonusA,
             genDoneBonusB,
 
@@ -15,8 +17,6 @@
             learningRate,
 
             noiseIntensity,
-            cloneNoiseProbability,
-            cloneNoiseWeightsRate,
 
             discountFactor,
             epsilon,
