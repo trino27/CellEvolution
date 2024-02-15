@@ -176,7 +176,7 @@ namespace EvolutionNetwork.DDQNwithGA
             beforeActionState = currentState;
             totalActionsNum++;
 
-            int decidedAction;
+            int decidedAction = -1;
             //// Эпсилон-жадный выбор
 
             if (random.NextDouble() < Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.epsilon]) // Исследование: случайный выбор действия
@@ -187,8 +187,28 @@ namespace EvolutionNetwork.DDQNwithGA
             else
             {
                 double[] qValuesOutput = FeedForward(beforeActionState, onlineLayers);
-                decidedAction = FindMaxIndexForFindAction(qValuesOutput);
+                // Применяем софтмакс к Q-значениям
+                double[] actionProbabilities = Softmax(qValuesOutput, Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.temperature]);
 
+                // Выбираем действие на основе вероятностей
+                double randomValue = random.NextDouble();
+                double cumulativeProbability = 0.0;
+                for (int i = 0; i < actionProbabilities.Length; i++)
+                {
+                    cumulativeProbability += actionProbabilities[i];
+                    if (randomValue < cumulativeProbability)
+                    {
+                        decidedAction = i;
+                    }
+
+                }
+            }
+
+            //// Эпсилон-жадный выбор
+            if (decidedAction == -1)
+            {
+                int randomIndex = random.Next(layersSizes[^1]);
+                decidedAction = randomIndex;
             }
             action = decidedAction;
 
@@ -475,21 +495,23 @@ namespace EvolutionNetwork.DDQNwithGA
             }
         }
 
-        private int FindMaxIndexForFindAction(double[] array)
+        private double[] Softmax(double[] qValues, double temperature)
         {
-            int maxIndex = random.Next(0, layersSizes[^1]);
-            double maxWeight = array[maxIndex];
+            double[] probabilities = new double[qValues.Length];
+            double sumOfExponentials = 0.0;
 
-            for (int i = 0; i < array.Length; i++)
+            for (int i = 0; i < qValues.Length; i++)
             {
-                if (array[i] > maxWeight)
-                {
-                    maxWeight = array[i];
-                    maxIndex = i;
-                }
+                probabilities[i] = Math.Exp(qValues[i] / temperature);
+                sumOfExponentials += probabilities[i];
             }
 
-            return maxIndex;
+            for (int i = 0; i < probabilities.Length; i++)
+            {
+                probabilities[i] /= sumOfExponentials;
+            }
+
+            return probabilities;
         }
 
         private double CalculateReward(bool done, double episodeSuccessValue, double targetValue, double bonus)

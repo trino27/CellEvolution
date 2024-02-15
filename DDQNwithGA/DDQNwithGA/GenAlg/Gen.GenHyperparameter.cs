@@ -20,6 +20,7 @@
 
             discountFactor,
             epsilon,
+            temperature,
             momentumCoefficient,
             lambdaL2,
             beta,

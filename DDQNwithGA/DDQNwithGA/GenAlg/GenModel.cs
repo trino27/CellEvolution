@@ -15,7 +15,8 @@ namespace EvolutionNetwork.GenAlg
         public const double elitismStart = 0.3;
 
         public const double discountFactorStart = 0.9;
-        public const double epsilonStart = 0.25; //0.25
+        public const double epsilonStart = 0.1; //0.25
+        public const double temperatureStart = 1; 
         public const double momentumCoefficientStart = 0.9;
         public const double lambdaL2Start = 0.001;
         public const double betaStart = 0.01;
@@ -24,7 +25,7 @@ namespace EvolutionNetwork.GenAlg
         public const double genDoneBonusStartA = 2;
         public const double genDoneBonusStartB = 2;
 
-        public const double genHyperparametrChangePower = 0.08; //0.05;
+        public const double genHyperparametrChangePower = 0.1; //0.05;
 
         private Random random = new Random();
         public Dictionary<GenHyperparameter, double> HyperparameterChromosome = new Dictionary<GenHyperparameter, double>();
@@ -72,6 +73,7 @@ namespace EvolutionNetwork.GenAlg
 
             { GenHyperparameter.discountFactor, discountFactorStart },
             { GenHyperparameter.epsilon, epsilonStart },
+            { GenHyperparameter.temperature, temperatureStart },
             { GenHyperparameter.momentumCoefficient, momentumCoefficientStart },
             { GenHyperparameter.lambdaL2, lambdaL2Start },
             { GenHyperparameter.beta, betaStart },
