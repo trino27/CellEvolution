@@ -4,28 +4,24 @@ namespace EvolutionNetwork.GenAlg
 {
     public partial struct HyperparameterGen
     {
-        public const double hyperparameterChromosomeMutationProbabilityStart = 0.9;
-   
+        public const double hyperparameterChromosomeMutationProbabilityStart = 0.3;
+        public const double genHyperparameterChangePowerStart = 0.2; //0.05;
 
-        public const double errorFineStart = 14;
-        public const double correctBonusStart = 3;
+        public const double errorFineStart = 30;
+        public const double correctBonusStart = 2;
         public const double learningRateStart = 0.0005;
-        public const double noiseIntensityStart = 0.01;
-
-        public const double elitismStart = 0.3;
 
         public const double discountFactorStart = 0.9;
-        public const double epsilonStart = 0.1; //0.25
-        public const double temperatureStart = 1; 
+        public const double explorationStart = 0.35; //0.25
         public const double momentumCoefficientStart = 0.9;
         public const double lambdaL2Start = 0.001;
-        public const double betaStart = 0.01;
-        public const double dropoutRateStart = 0.25;
+        public const double betaStart = 1;
+
+        public const double noiseIntensityStart = 0.01;
+        public const double dropoutRateStart = 0.2;
 
         public const double genDoneBonusStartA = 2;
         public const double genDoneBonusStartB = 2;
-
-        public const double genHyperparametrChangePower = 0.1; //0.05;
 
         private Random random = new Random();
         public Dictionary<GenHyperparameter, double> HyperparameterChromosome = new Dictionary<GenHyperparameter, double>();
@@ -65,21 +61,91 @@ namespace EvolutionNetwork.GenAlg
             { GenHyperparameter.genDoneBonusA, genDoneBonusStartA },
             { GenHyperparameter.genDoneBonusB, genDoneBonusStartB },
 
-            { GenHyperparameter.genHyperparameterChangePower, genHyperparametrChangePower },
+            { GenHyperparameter.genHyperparameterChangePower, genHyperparameterChangePowerStart },
             { GenHyperparameter.learningRate, learningRateStart },
-            { GenHyperparameter.elitism, elitismStart },
 
             { GenHyperparameter.noiseIntensity, noiseIntensityStart },
 
             { GenHyperparameter.discountFactor, discountFactorStart },
-            { GenHyperparameter.epsilon, epsilonStart },
-            { GenHyperparameter.temperature, temperatureStart },
+            { GenHyperparameter.exploration, explorationStart },
             { GenHyperparameter.momentumCoefficient, momentumCoefficientStart },
             { GenHyperparameter.lambdaL2, lambdaL2Start },
             { GenHyperparameter.beta, betaStart },
-            { GenHyperparameter.dropoutRate, dropoutRateStart }
+            { GenHyperparameter.dropoutRate, dropoutRateStart },
+
             };
         }
+        public void StartHyperparameterScatter(double scatterProc)
+        {
+            // Убедитесь, что значение scatter не отрицательное
+            if (scatterProc < 0) scatterProc = 0;
+
+            for (int i = 0; i < HyperparameterChromosome.Count; i++)
+            {
+                int hyperInd = i;
+
+                if (!blockedHyperparameterGens.Contains((GenHyperparameter)hyperInd))
+                {
+                    double currentValue = HyperparameterChromosome[(GenHyperparameter)hyperInd];
+                    // Определяем, будет ли изменение положительным или отрицательным
+                    double direction = random.NextDouble() < 0.5 ? -1 : 1;
+                    // Генерация случайного изменения в пределах заданного процента от текущего значения
+                    double scatterValue = random.NextDouble() * scatterProc;
+                    double scatterPercentage = direction * scatterValue; // Генерация значения от -scatter до +scatter с равными шансами
+                    double change = currentValue * scatterPercentage / 100; // Рассчитываем фактическое изменение как процент от текущего значения
+                    double newValue = currentValue + change; // Вычисляем новое значение гиперпараметра
+
+                    // Если новое значение меньше 0, уменьшаем до 0, чтобы избежать отрицательных значений
+                    if (newValue < 0)
+                    {
+                        newValue = 0; // Устанавливаем значение в 0, если результат отрицательный
+                    }
+
+                    // Присваиваем новое значение гиперпараметру, если оно больше 0
+                    if (newValue > 0)
+                    {
+                        HyperparameterChromosome[(GenHyperparameter)hyperInd] = newValue;
+                    }
+                }
+            }
+        }
+        public void StartHyperparameterScatter(Dictionary<GenHyperparameter, double> scatterProcDict)
+        {
+            for (int i = 0; i < HyperparameterChromosome.Count; i++)
+            {
+                GenHyperparameter hyperInd = (GenHyperparameter)i;
+
+                // Пропускаем изменение для гиперпараметров, которые заблокированы или отсутствуют в словаре
+                if (blockedHyperparameterGens.Contains(hyperInd) || !scatterProcDict.TryGetValue(hyperInd, out double scatterProc))
+                {
+                    continue; // Пропускаем текущую итерацию, если условие не выполнено
+                }
+
+                // Убедитесь, что значение scatter не отрицательное
+                scatterProc = Math.Max(0, scatterProc);
+
+                double currentValue = HyperparameterChromosome[hyperInd];
+                // Определяем, будет ли изменение положительным или отрицательным
+                double direction = random.NextDouble() < 0.5 ? -1 : 1;
+                // Генерация случайного изменения в пределах заданного процента от текущего значения
+                double scatterValue = random.NextDouble() * scatterProc;
+                double scatterPercentage = direction * scatterValue; // Генерация значения от -scatter до +scatter с равными шансами
+                double change = currentValue * scatterPercentage / 100; // Рассчитываем фактическое изменение как процент от текущего значения
+                double newValue = currentValue + change; // Вычисляем новое значение гиперпараметра
+
+                // Если новое значение меньше 0, уменьшаем до 0, чтобы избежать отрицательных значений
+                if (newValue < 0)
+                {
+                    newValue = 0; // Устанавливаем значение в 0, если результат отрицательный
+                }
+
+                // Присваиваем новое значение гиперпараметру, если оно больше 0
+                HyperparameterChromosome[hyperInd] = newValue;
+            }
+        }
+
+
+
 
         public void BlockHyperparameterGenChanging(GenHyperparameter hyperparameter)
         {
@@ -120,29 +186,33 @@ namespace EvolutionNetwork.GenAlg
         }
         private void RandomMutation()
         {
-            if (random.NextDouble() < HyperparameterChromosome[GenHyperparameter.hyperparameterChromosomeMutationProbability])
+            for (int i = 0; i < HyperparameterChromosome.Count; i++)
             {
-                int hyperInd = random.Next(0, HyperparameterChromosome.Count);
-                if (!blockedHyperparameterGens.Contains((GenHyperparameter)hyperInd))
+                int hyperInd = i;
+                if (random.NextDouble() < HyperparameterChromosome[GenHyperparameter.hyperparameterChromosomeMutationProbability])
                 {
-                    double value = 0;
-                    if (random.Next(0, 2) == 0)
+                    if (!blockedHyperparameterGens.Contains((GenHyperparameter)hyperInd))
                     {
-                        value +=
-                            HyperparameterChromosome[(GenHyperparameter)hyperInd] *
-                            HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
-                    }
-                    else
-                    {
-                        value -=
-                            HyperparameterChromosome[(GenHyperparameter)hyperInd] *
-                            HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
-                    }
+                        double currentValue = HyperparameterChromosome[(GenHyperparameter)hyperInd];
+                        // Определяем, будет ли изменение положительным или отрицательным
+                        double direction = random.NextDouble() < 0.5 ? -1 : 1;
+                        // Генерация случайного изменения в пределах заданного процента от текущего значения
+                        double scatterValue = random.NextDouble() * HyperparameterChromosome[GenHyperparameter.genHyperparameterChangePower];
+                        double scatterPercentage = direction * scatterValue; // Генерация значения от -scatter до +scatter с равными шансами
+                        double change = currentValue * scatterPercentage / 100; // Рассчитываем фактическое изменение как процент от текущего значения
+                        double newValue = currentValue + change; // Вычисляем новое значение гиперпараметра
 
+                        // Если новое значение меньше 0, уменьшаем до 0, чтобы избежать отрицательных значений
+                        if (newValue < 0)
+                        {
+                            newValue = 0; // Устанавливаем значение в 0, если результат отрицательный
+                        }
 
-                    if (HyperparameterChromosome[(GenHyperparameter)hyperInd] + value > 0)
-                    {
-                        HyperparameterChromosome[(GenHyperparameter)hyperInd] += value;
+                        // Присваиваем новое значение гиперпараметру, если оно больше 0
+                        if (newValue > 0)
+                        {
+                            HyperparameterChromosome[(GenHyperparameter)hyperInd] = newValue;
+                        }
                     }
                 }
             }

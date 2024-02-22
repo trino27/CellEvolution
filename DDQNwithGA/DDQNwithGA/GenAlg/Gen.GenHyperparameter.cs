@@ -6,8 +6,6 @@
         {
             hyperparameterChromosomeMutationProbability,
 
-            elitism,
-
             errorFine,
             correctBonus,
             genDoneBonusA,
@@ -19,12 +17,11 @@
             noiseIntensity,
 
             discountFactor,
-            epsilon,
-            temperature,
+            exploration,
             momentumCoefficient,
             lambdaL2,
             beta,
-            dropoutRate
+            dropoutRate,
         }
     }
 }

@@ -6,30 +6,30 @@ using System.Threading.Tasks;
 
 namespace EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN
 {
-    public struct DQNMemory : ICloneable
+    public class DQNMemory : ICloneable
     {
-        public double[] BeforeMoveState;
+        public double[] BeforeActionState;
         public int DecidedAction;
         public double Reward;
-        public double[] AfterMoveState;
+        public double[] AfterActionState;
         public bool Done;
 
-        public DQNMemory(double[] beforeMoveState, int decidedAction, double reward, double[] afterMoveState, bool done)
+        public DQNMemory(double[] beforeActionState, int decidedAction, double reward, double[] afterActionState, bool done)
         {
-            BeforeMoveState = beforeMoveState;
+            BeforeActionState = beforeActionState;
             DecidedAction = decidedAction;
             Reward = reward;
-            AfterMoveState = afterMoveState;
+            AfterActionState = afterActionState;
             Done = done;
         }
 
         public object Clone()
         {
-            double[] beforeMoveStateCopy = new double[BeforeMoveState.Length];
-            Array.Copy(BeforeMoveState, beforeMoveStateCopy, BeforeMoveState.Length);
+            double[] beforeMoveStateCopy = new double[BeforeActionState.Length];
+            Array.Copy(BeforeActionState, beforeMoveStateCopy, BeforeActionState.Length);
 
-            double[] afterMoveStateCopy = new double[AfterMoveState.Length];
-            Array.Copy(AfterMoveState, afterMoveStateCopy, AfterMoveState.Length);
+            double[] afterMoveStateCopy = new double[AfterActionState.Length];
+            Array.Copy(AfterActionState, afterMoveStateCopy, AfterActionState.Length);
 
             return new DQNMemory(beforeMoveStateCopy, DecidedAction, Reward, afterMoveStateCopy, Done);
         }

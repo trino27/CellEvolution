@@ -1,8 +1,7 @@
 ﻿using EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN;
 using EvolutionNetwork.DDQNwithGA.Interfaces;
 using EvolutionNetwork.GenAlg;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using static EvolutionNetwork.GenAlg.HyperparameterGen;
 
 namespace EvolutionNetwork.DDQNwithGA
 {
@@ -12,26 +11,16 @@ namespace EvolutionNetwork.DDQNwithGA
 
         private IDDQNwithGACritic critic;
         private IDDQNwithGACustomRewardCalculator rewardCalculator;
+        private IDDQNwithGACustomRemindExperiencesDefinder remindExperiencesDefinder;
         public HyperparameterGen Gen;
 
         // DQN
         private List<DQNMemory> memory = new List<DQNMemory>();
-        public uint maxMemoryCapacity;
+        private uint maxMemoryCapacity;
+        private uint minMemoryToStartMemoryReplayLearning;
+        private bool IsMemoryEnough = false;
+        private uint batchMemorySize;
 
-        //NeuroEvolution
-        private List<double[][][]> gradientsHistory = new List<double[][][]>();
-        public uint GradientHistoryUpdatePeriod { get; private set; } = 0;
-
-        private int currentGradientHistoryUpdatePhase = 0;
-        private uint maxGradientsHistoryCapacity;
-
-        private bool IsGradientHistoryWritingAllow = false;
-
-        private double successWeightsCornerProc = 95;
-
-        public List<(int layer, int neuron, int gradientIndex)> SuccessWeights { get; private set; } = new List<(int layer, int neuron, int gradientIndex)>();
-
-        public bool IsSuccessWeightsContainsActualInfo { get; private set; } = false;
         // NN
         private NNLayers[] onlineLayers;
         private NNLayers[] targetLayers;
@@ -52,122 +41,119 @@ namespace EvolutionNetwork.DDQNwithGA
         //Critic
         public bool IsActionError = false;
 
-        public DDQNwithGAModel(int[] layerSizes, uint maxMemoryCapacity)
+        public DDQNwithGAModel(int[] layerSizes, Dictionary<GenHyperparameter, double> startHyperparameterScatterDict, uint maxMemoryCapacity, uint batchMemorySize, uint minMemoryToStartMemoryReplayLearning = 0)
         {
-            layersSizes = new int[layerSizes.Length];
-            Array.Copy(layerSizes, layersSizes, layersSizes.Length);
-            if (layersSizes.Length < 2)
-            {
-                throw new ArgumentException("You should have at least input and output layers");
-            }
+            InitializeModel(layerSizes, maxMemoryCapacity, batchMemorySize, minMemoryToStartMemoryReplayLearning);
             Gen = new HyperparameterGen();
+            Gen.StartHyperparameterScatter(startHyperparameterScatterDict);
+            
+        }
 
-            InitNetworkLayers();
-            InitVelocities();
-            this.maxMemoryCapacity = maxMemoryCapacity;
-            maxGradientsHistoryCapacity = maxMemoryCapacity;
-            currentGradientHistoryUpdatePhase = (int)GradientHistoryUpdatePeriod + 1;
+        public DDQNwithGAModel(int[] layerSizes, uint maxMemoryCapacity, uint batchMemorySize, uint minMemoryToStartMemoryReplayLearning = 0, double startHyperparameterScatter = 0)
+        {
+            InitializeModel(layerSizes, maxMemoryCapacity, batchMemorySize, minMemoryToStartMemoryReplayLearning);
+            Gen = new HyperparameterGen();
+            Gen.StartHyperparameterScatter(startHyperparameterScatter);
         }
 
         public DDQNwithGAModel(DDQNwithGAModel original)
         {
-            Gen = new HyperparameterGen(original.Gen);
-
-            layersSizes = new int[original.layersSizes.Length];
-            Array.Copy(original.layersSizes, layersSizes, layersSizes.Length);
-            InitNetworkLayers();
-
-            maxMemoryCapacity = original.maxMemoryCapacity;
-            maxGradientsHistoryCapacity = original.maxGradientsHistoryCapacity;
-            GradientHistoryUpdatePeriod = original.GradientHistoryUpdatePeriod;
-
-            InheritMemory(original);
-            InheritVelocities(original);
-            InheritWeights(original);
-
-            if (original.critic != null)
-            {
-                critic = original.critic;
-            }
-            if (original.rewardCalculator != null)
-            {
-                rewardCalculator = original.rewardCalculator;
-            }
-            currentGradientHistoryUpdatePhase = (int)GradientHistoryUpdatePeriod + 1;
+            CopyFrom(original);
         }
 
         public DDQNwithGAModel(DDQNwithGAModel mother, DDQNwithGAModel father)
         {
-            if (random.Next(0, 2) == 0)
+            // Выбор родителя, от которого будет взята основа конфигурации
+            DDQNwithGAModel baseParent = random.Next(0, 2) == 0 ? mother : father;
+            DDQNwithGAModel otherParent = baseParent == mother ? father : mother;
+
+            MergeFrom(baseParent, otherParent);
+        }
+
+        // Вспомогательный метод для инициализации модели
+        private void InitializeModel(int[] layerSizes, uint maxMemoryCapacity, uint batchMemorySize, uint minMemoryToStartMemoryReplayLearning)
+        {
+            ValidateLayerSizes(layerSizes);
+            this.layersSizes = new int[layerSizes.Length];
+            Array.Copy(layerSizes, this.layersSizes, layerSizes.Length);
+            InitNetworkLayers();
+            InitVelocities();
+            this.maxMemoryCapacity = maxMemoryCapacity;
+            this.batchMemorySize = batchMemorySize;
+            this.minMemoryToStartMemoryReplayLearning = minMemoryToStartMemoryReplayLearning;
+        }
+
+        private void ValidateLayerSizes(int[] layerSizes)
+        {
+            if (layerSizes.Length < 2)
             {
-                Gen = new HyperparameterGen(mother.Gen, father.Gen);
-
-                layersSizes = new int[mother.layersSizes.Length];
-                Array.Copy(mother.layersSizes, layersSizes, layersSizes.Length);
-                InitNetworkLayers();
-
-                maxMemoryCapacity = mother.maxMemoryCapacity;
-                maxGradientsHistoryCapacity = mother.maxGradientsHistoryCapacity;
-                GradientHistoryUpdatePeriod = mother.GradientHistoryUpdatePeriod;
-
-                
-
-                InheritMemory(mother);
-
-                if (random.NextDouble() > Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.elitism])
-                {
-                    InheritVelocities(mother, father);
-                    InheritWeights(mother, father);
-                }
-                else
-                {
-                    InheritVelocities(mother);
-                    InheritWeights(mother);
-                }
-
-                if (mother.critic != null)
-                {
-                    critic = mother.critic;
-                }
-                if (mother.rewardCalculator != null)
-                {
-                    rewardCalculator = mother.rewardCalculator;
-                }
+                throw new ArgumentException("You should have at least input and output layers");
             }
-            else
+        }
+
+        // Вспомогательный метод для копирования
+        private void CopyFrom(DDQNwithGAModel original)
+        {
+            Gen = new HyperparameterGen(original.Gen);
+            layersSizes = (int[])original.layersSizes.Clone();
+
+            batchMemorySize = original.batchMemorySize;
+            maxMemoryCapacity = original.maxMemoryCapacity;
+            minMemoryToStartMemoryReplayLearning = original.minMemoryToStartMemoryReplayLearning;
+
+            // Переиспользование существующих методов для копирования состояний
+            InheritMemory(original);
+            InheritVelocities(original);
+            InheritNetworkLayers(original);
+
+            // Копирование ссылок на внешние зависимости
+            critic = original.critic;
+            rewardCalculator = original.rewardCalculator;
+            remindExperiencesDefinder = original.remindExperiencesDefinder;
+
+            IsMemoryEnough = original.IsMemoryEnough;
+
+            // Обновление и обучение, если достаточно памяти
+            UpdateAndTrainIfNeeded();
+        }
+
+        // Вспомогательный метод для слияния
+        private void MergeFrom(DDQNwithGAModel baseParent, DDQNwithGAModel otherParent)
+        {
+            // Слияние генетических параметров
+            Gen = new HyperparameterGen(baseParent.Gen, otherParent.Gen);
+            layersSizes = (int[])baseParent.layersSizes.Clone();
+
+            batchMemorySize = baseParent.batchMemorySize;
+            maxMemoryCapacity = baseParent.maxMemoryCapacity;
+            minMemoryToStartMemoryReplayLearning = baseParent.minMemoryToStartMemoryReplayLearning;
+
+            // Наследование сети и скоростей
+            InheritVelocities(baseParent);
+            InheritNetworkLayers(baseParent);
+
+            // Выбор зависимостей из основного родителя
+            critic = baseParent.critic;
+            rewardCalculator = baseParent.rewardCalculator;
+            remindExperiencesDefinder = baseParent.remindExperiencesDefinder;
+
+            IsMemoryEnough = baseParent.IsMemoryEnough;
+
+            // Слияние памяти от обоих родителей
+            InheritMemory(baseParent, otherParent);
+
+            // Обновление и обучение, если достаточно памяти
+            UpdateAndTrainIfNeeded();
+        }
+
+        // Вспомогательный метод для обновления сети и обучения
+        private void UpdateAndTrainIfNeeded()
+        {
+            UpdateTargetNetwork();
+            if (IsMemoryEnough)
             {
-                Gen = new HyperparameterGen(father.Gen, mother.Gen);
-
-                layersSizes = new int[father.layersSizes.Length];
-                Array.Copy(father.layersSizes, layersSizes, layersSizes.Length);
-                InitNetworkLayers();
-
-                maxMemoryCapacity = father.maxMemoryCapacity;
-                maxGradientsHistoryCapacity = father.maxGradientsHistoryCapacity;
-                GradientHistoryUpdatePeriod = father.GradientHistoryUpdatePeriod;
-
-                InheritMemory(father);
-                if (random.NextDouble() > Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.elitism])
-                {
-                    InheritVelocities(father, mother);
-                    InheritWeights(father, mother);
-                }
-                else
-                {
-                    InheritVelocities(father);
-                    InheritWeights(father);
-                }
-
-                if (father.critic != null)
-                {
-                    critic = father.critic;
-                }
-                if (father.rewardCalculator != null)
-                {
-                    rewardCalculator = father.rewardCalculator;
-                }
+                TrainFromMemoryReplay();
             }
-            currentGradientHistoryUpdatePhase = (int)GradientHistoryUpdatePeriod + 1;
         }
 
         public int ChooseAction(double[] currentState, double targetValue)
@@ -176,41 +162,32 @@ namespace EvolutionNetwork.DDQNwithGA
             beforeActionState = currentState;
             totalActionsNum++;
 
+            const double remindProbability = 0.2;
+            if (IsMemoryEnough && random.NextDouble() < remindProbability)
+            {
+                RemindSimilarExperiences(currentState);
+            }
+
+
             int decidedAction = -1;
             //// Эпсилон-жадный выбор
 
-            if (random.NextDouble() < Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.epsilon]) // Исследование: случайный выбор действия
+            if (random.NextDouble() < Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.exploration]) // Исследование
             {
-                int randomIndex = random.Next(layersSizes[^1]);
-                decidedAction = randomIndex;
+                double[] qValuesOutput = FeedForward(beforeActionState, onlineLayers);
+                //// Эпсилон-жадный выбор
+                if (decidedAction == -1)
+                {
+                    int randomIndex = random.Next(layersSizes[^1]);
+                    decidedAction = randomIndex;
+                }
+                action = decidedAction;
             }
             else
             {
                 double[] qValuesOutput = FeedForward(beforeActionState, onlineLayers);
-                // Применяем софтмакс к Q-значениям
-                double[] actionProbabilities = Softmax(qValuesOutput, Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.temperature]);
-
-                // Выбираем действие на основе вероятностей
-                double randomValue = random.NextDouble();
-                double cumulativeProbability = 0.0;
-                for (int i = 0; i < actionProbabilities.Length; i++)
-                {
-                    cumulativeProbability += actionProbabilities[i];
-                    if (randomValue < cumulativeProbability)
-                    {
-                        decidedAction = i;
-                    }
-
-                }
+                decidedAction = FindMaxIndexForFindAction(qValuesOutput);
             }
-
-            //// Эпсилон-жадный выбор
-            if (decidedAction == -1)
-            {
-                int randomIndex = random.Next(layersSizes[^1]);
-                decidedAction = randomIndex;
-            }
-            action = decidedAction;
 
             if (critic != null)
             {
@@ -220,33 +197,24 @@ namespace EvolutionNetwork.DDQNwithGA
             return decidedAction;
         }
 
-        public double[] CreateMemoryInput(int memoryInputLength)
+        private int FindMaxIndexForFindAction(double[] array)
         {
-            double[] res = new double[memoryInputLength];
+            int maxIndex = random.Next(0, layersSizes[^1]);
+            double maxWeight = array[maxIndex];
 
-            if (memory.Count >= memoryInputLength)
+            for (int i = 0; i < array.Length; i++)
             {
-                for (int i = 0; i < memoryInputLength; i++)
+                if (array[i] > maxWeight)
                 {
-                    res[i] = memory[i].DecidedAction + 1;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < memoryInputLength; i++)
-                {
-                    res[i] = 0;
-                }
-                for (int i = 0; i < memory.Count; i++)
-                {
-                    res[i] = memory[i].DecidedAction + 1;
+                    maxWeight = array[i];
+                    maxIndex = i;
                 }
             }
 
-            return res;
+            return maxIndex;
         }
 
-        public void RegisterLastActionResult(double[] afterActionState, double episodeRewardTarget, double rewardTarget, double bonusReward = 0)
+        public void ActionResultHandler(double[] afterActionState, double episodeRewardTarget, double rewardTarget, double bonusReward = 0)
         {
             this.afterActionState = afterActionState;
 
@@ -268,15 +236,374 @@ namespace EvolutionNetwork.DDQNwithGA
             }
             reward = Normalizer.TanhNormalize(reward);
 
+
+            if (memory.Count > minMemoryToStartMemoryReplayLearning)
+            {
+                IsMemoryEnough = true;
+            }
+
+            TrainOnline(reward, done);
+
             if (done)
             {
-                ActionHandler(reward, done);
-                UpdateTargetNetwork();
 
+                if (!IsMemoryEnough)
+                {
+                    UpdateTargetNetwork();
+                }
+            }
+
+            RegisterActionResult(reward, done);
+
+        }
+        private void RegisterActionResult(double reward, bool done)
+        {
+            UpdateMemory(beforeActionState, action, reward, afterActionState, done);
+        }
+        private void TrainFromMemoryReplay()
+        {
+            var random = new Random();
+            var sampledExperiences = new List<DQNMemory>();
+
+            for (int i = 0; i < batchMemorySize; i++)
+            {
+                int index = random.Next(memory.Count);
+                sampledExperiences.Add(memory[index]);
+            }
+
+            foreach (var experience in sampledExperiences)
+            {
+                double[] state = experience.BeforeActionState;
+
+                double[] targetQValues = TDLearningDDQN(experience.BeforeActionState, experience.Done, experience.Reward, experience.DecidedAction, experience.AfterActionState);
+
+                TeachDDQNModel(state, targetQValues);
+            }
+        }
+        private void TrainOnline(double reward, bool done)
+        {
+            double[] targetQValues = TDLearningDDQN(beforeActionState, done, reward, action, afterActionState);
+            TeachDDQNModel(beforeActionState, targetQValues);
+        }
+
+        private double[] TDLearningDDQN(double[] state, bool done, double reward, int decidedAction, double[] nextState)
+        {
+            //TD Learning + DDQN
+            double tdTarget;
+            if (!done)
+            {
+                // Получаем Q-значения для следующего состояния с использованием онлайн-сети для выбора действия
+                double[] nextQValuesOnline = FeedForward(nextState, onlineLayers);
+                int nextAction = Array.IndexOf(nextQValuesOnline, nextQValuesOnline.Max()); // Выбор действия
+
+                double[] nextQValuesTarget = FeedForward(nextState, targetLayers);
+                tdTarget = reward + Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.discountFactor] * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
             }
             else
             {
-                ActionHandler(reward, done);
+                tdTarget = reward; // Если эпизод завершен, цель равна полученной награде
+            }
+
+            // Получаем текущие Q-значения для начального состояния с использованием онлайн-сети
+            double[] currentQValuesOnline = FeedForwardWithNoise(state, onlineLayers);
+            // Подготовка массива целевых Q-значений для обучения
+            double[] targetQValues = new double[currentQValuesOnline.Length];
+            Array.Copy(currentQValuesOnline, targetQValues, currentQValuesOnline.Length);
+            targetQValues[decidedAction] = tdTarget; // Обновляем Q-значение для выбранного действия
+            return targetQValues;
+        }
+
+        private void UpdateMemory(double[] beforeMoveState, int action, double reward, double[] afterMoveState, bool done)
+        {
+            memory.Add(new DQNMemory(beforeMoveState, action, reward, afterMoveState, done));
+            if (memory.Count > maxMemoryCapacity)
+            {
+                memory.RemoveAt(0); // Удаляем самый старый опыт, чтобы не превышать максимальную емкость
+            }
+        }
+        private void UpdateTargetNetwork()
+        {
+            for (int i = 0; i < onlineLayers.Length; i++)
+            {
+                Array.Copy(onlineLayers[i].weights, targetLayers[i].weights, onlineLayers[i].weights.Length);
+                Array.Copy(onlineLayers[i].biases, targetLayers[i].biases, onlineLayers[i].biases.Length);
+            }
+        }
+
+        private void TeachDDQNModel(double[] stateInput, double[] targetQValues)
+        {
+            double[] predictedQValues = FeedForward(stateInput, onlineLayers);
+            BackPropagationSGDM(predictedQValues, targetQValues);
+        }
+        private void BackPropagationSGDM(double[] predicted, double[] targets)
+        {
+            double learningRate = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.learningRate];
+            double lambdaL2 = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.lambdaL2]; // Коэффициент L2 регуляризации
+            double momentum = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.momentumCoefficient]; // Коэффициент момента
+
+            double[] errors = new double[predicted.Length];
+            for (int i = 0; i < predicted.Length; i++)
+            {
+                errors[i] = targets[i] - predicted[i];
+            }
+
+            for (int layerIndex = onlineLayers.Length - 2; layerIndex >= 0; layerIndex--)
+            {
+                NNLayers currentLayer = onlineLayers[layerIndex];
+                NNLayers nextLayer = onlineLayers[layerIndex + 1];
+                double[] errorsNext = new double[currentLayer.size];
+
+                for (int i = 0; i < nextLayer.size; i++)
+                {
+                    double gradient = errors[i] * DSwishActivation(nextLayer.neurons[i]);
+
+                    for (int j = 0; j < currentLayer.size; j++)
+                    {
+                        // Вычисление "чистого" градиента (без учета L2 регуляризации)
+                        double pureGradient = gradient * currentLayer.neurons[j];
+
+                        // Применение L2 регуляризации к градиенту
+                        double weightGradientWithL2 = pureGradient - lambdaL2 * currentLayer.weights[j, i];
+
+                        // Обновление скорости и веса с учетом L2 регуляризации
+                        velocitiesWeights[layerIndex][j][i] = momentum * velocitiesWeights[layerIndex][j][i] + learningRate * weightGradientWithL2;
+                        currentLayer.weights[j, i] += velocitiesWeights[layerIndex][j][i];
+
+                    }
+                    // Обновление смещения с учетом момента
+                    velocitiesBiases[layerIndex + 1][i] = momentum * velocitiesBiases[layerIndex + 1][i] + learningRate * gradient;
+                    nextLayer.biases[i] += velocitiesBiases[layerIndex + 1][i];
+                }
+
+                for (int i = 0; i < currentLayer.size; i++)
+                {
+                    errorsNext[i] = 0;
+                    for (int j = 0; j < nextLayer.size; j++)
+                    {
+                        errorsNext[i] += currentLayer.weights[i, j] * errors[j];
+                    }
+                }
+                errors = errorsNext;
+            }
+        }
+
+        private double[] FeedForward(double[] input, NNLayers[] layers)
+        {
+            layers[0].neurons = input; // Инициализация входного слоя
+
+            for (int i = 1; i < layers.Length; i++)
+            {
+                for (int j = 0; j < layers[i].size; j++)
+                {
+                    double sum = 0.0;
+                    for (int k = 0; k < layers[i - 1].size; k++)
+                    {
+                        sum += layers[i - 1].neurons[k] * layers[i - 1].weights[k, j];
+                    }
+                    layers[i].neurons[j] = SwishActivation(sum + layers[i].biases[j]);
+                }
+            }
+
+            return layers[layers.Length - 1].neurons;
+        }
+        private double[] FeedForwardWithNoise(double[] input, NNLayers[] layers)
+        {
+            layers[0].neurons = input; // Инициализация входного слоя
+
+            for (int i = 1; i < layers.Length; i++)
+            {
+                for (int j = 0; j < layers[i].size; j++)
+                {
+                    double sum = 0.0;
+                    for (int k = 0; k < layers[i - 1].size; k++)
+                    {
+                        sum += layers[i - 1].neurons[k] * layers[i - 1].weights[k, j];
+                    }
+                    double activation = SwishActivation(sum + layers[i].biases[j]);
+                    // Добавление шума к результату активации
+                    layers[i].neurons[j] = activation + GenerateRandomNoise() * Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.noiseIntensity];
+                }
+
+                layers[i].neurons = ApplyDropout(layers[i].neurons, i);
+            }
+
+            return layers[layers.Length - 1].neurons;
+        }
+
+        private double[] ApplyDropout(double[] activations, int layerIndex)
+        {
+            // Применяем дропаут только к скрытым слоям
+            if (layerIndex > 0 && layerIndex < layersSizes.Length - 1)
+            {
+                for (int i = 0; i < activations.Length; i++)
+                {
+                    if (random.NextDouble() < Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.dropoutRate])
+                    {
+                        activations[i] = 0;
+                    }
+                }
+            }
+            return activations;
+        }
+
+        private double GenerateRandomNoise()
+        {
+            double u1 = 1.0 - random.NextDouble();
+            double u2 = 1.0 - random.NextDouble();
+            return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+        }
+
+        private double DSwishActivation(double x)
+        {
+            double beta = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.beta];
+            double sigmoid = 1.0 / (1.0 + Math.Exp(-beta * x));
+            return sigmoid + beta * x * sigmoid * (1 - sigmoid);
+        }
+
+        private double SwishActivation(double x)
+        {
+            double beta = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.beta];
+            return x / (1.0 + Math.Exp(-beta * x));
+        }
+
+        private double CalculateReward(bool done, double episodeSuccessValue, double targetValue, double bonus)
+        {
+            double reward = 0;
+            if (done)
+            {
+                reward = totalReward / totalActionsNum;
+                if (reward > 0)
+                {
+                    double episodeReward = 0;
+                    for (int i = 0; i < episodeSuccessValue; i++)
+                    {
+                        episodeReward += reward * Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.genDoneBonusA] / Math.Pow(Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.genDoneBonusB], i);
+                    }
+                    reward = episodeReward;
+                }
+                else
+                {
+                    reward = 0;
+                }
+                reward += bonus;
+                totalReward = 0;
+                totalActionsNum = 0;
+            }
+            else
+            {
+                reward = targetValue - targetValueBeforeAction;
+
+                if (IsActionError)
+                {
+
+                    reward -= Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.errorFine];
+                }
+                else
+                {
+                    reward += Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.correctBonus];
+                }
+
+                reward += bonus;
+
+                totalReward += reward;
+            }
+            return reward;
+        }
+
+        // Метод для расчёта Евклидова расстояния между текущим и предыдущим состояниями
+        private double CalculateEuclideanDistance(double[] currentState, double[] previousState)
+        {
+            double sum = 0.0;
+            for (int i = 0; i < currentState.Length; i++)
+            {
+                sum += Math.Pow(currentState[i] - previousState[i], 2);
+            }
+            return Math.Sqrt(sum);
+        }
+
+        // Метод для расчёта Евклидова расстояния между текущим и предыдущим состояниями
+
+        public void RemindSimilarExperiences(double[] currentState) // const
+        {
+            const double percentageOfSimilarExperiences = 0.02;
+
+            int experiencesToConsider = (int)(memory.Count * percentageOfSimilarExperiences);
+
+            if (experiencesToConsider > 0)
+            {
+                List<DQNMemory> mostSimilarExperiences = new List<DQNMemory>();
+                if (remindExperiencesDefinder != null)
+                {
+                    mostSimilarExperiences = remindExperiencesDefinder.CustomRemindExperiencesDefinder(memory, currentState)
+                        .OrderBy(experience => remindExperiencesDefinder.CustomCalculateSimilarityState(currentState, experience.BeforeActionState))
+                        .Take(experiencesToConsider)
+                        .ToList();
+                }
+                else
+                {
+                    mostSimilarExperiences = memory
+                        .OrderBy(experience => CalculateEuclideanDistance(currentState, experience.BeforeActionState))
+                        .Take(experiencesToConsider)
+                        .ToList();
+                }
+
+                if (mostSimilarExperiences.Count > 0)
+                {
+                    int i = random.Next(0, mostSimilarExperiences.Count);
+                    // Вычисляем и применяем обучение на основе целевых Q-значений, полученных из выбранных воспоминаний
+                    double[] targetQValues = TDLearningDDQN(mostSimilarExperiences[i].BeforeActionState, mostSimilarExperiences[i].Done, mostSimilarExperiences[i].Reward, mostSimilarExperiences[i].DecidedAction, mostSimilarExperiences[i].AfterActionState);
+                    // Обучаем модель, используя состояние до действия из воспоминания и вычисленные целевые Q-значения
+                    TeachDDQNModel(mostSimilarExperiences[i].BeforeActionState, targetQValues);
+                }
+            }
+        }
+
+        public double[] CreateMemoryInput(int memoryInputLength)
+        {
+            double[] res = new double[memoryInputLength];
+
+            if (memory.Count >= memoryInputLength)
+            {
+                for (int i = memoryInputLength - 1; i >= 0; i--)
+                {
+                    res[i] = memory[i].DecidedAction + 1;
+                }
+            }
+            else
+            {
+                for (int i = memoryInputLength - 1; i >= 0; i--)
+                {
+                    res[i] = 0;
+                }
+                for (int i = memory.Count - 1; i >= 0; i--)
+                {
+                    res[i] = memory[i].DecidedAction + 1;
+                }
+            }
+
+            return res;
+        }
+
+        private void CopyNNLayers(DDQNwithGAModel original)
+        {
+            for (int k = 0; k < onlineLayers.Length; k++)
+            {
+                Array.Copy(original.onlineLayers[k].weights, onlineLayers[k].weights, original.onlineLayers[k].weights.Length);
+                Array.Copy(original.onlineLayers[k].neurons, onlineLayers[k].neurons, original.onlineLayers[k].neurons.Length);
+                Array.Copy(original.onlineLayers[k].biases, onlineLayers[k].biases, original.onlineLayers[k].biases.Length);
+
+                onlineLayers[k].size = original.onlineLayers[k].size;
+                onlineLayers[k].nextSize = original.onlineLayers[k].nextSize;
+            }
+
+            for (int k = 0; k < targetLayers.Length; k++)
+            {
+                Array.Copy(original.targetLayers[k].weights, targetLayers[k].weights, original.targetLayers[k].weights.Length);
+                Array.Copy(original.targetLayers[k].neurons, targetLayers[k].neurons, original.targetLayers[k].neurons.Length);
+                Array.Copy(original.targetLayers[k].biases, targetLayers[k].biases, original.targetLayers[k].biases.Length);
+
+                targetLayers[k].size = original.targetLayers[k].size;
+                targetLayers[k].nextSize = original.targetLayers[k].nextSize;
             }
         }
 
@@ -284,116 +611,65 @@ namespace EvolutionNetwork.DDQNwithGA
         {
             this.critic = critic ?? throw new ArgumentNullException(nameof(critic));
         }
-        public void InitCritic(IDDQNwithGACustomRewardCalculator rewardCalculator)
+        public void InitRewardCalculator(IDDQNwithGACustomRewardCalculator rewardCalculator)
         {
             this.rewardCalculator = rewardCalculator ?? throw new ArgumentNullException(nameof(rewardCalculator));
         }
-
-        private void InheritWeights(DDQNwithGAModel original)
+        public void InitRemindExperiencesDefinder(IDDQNwithGACustomRemindExperiencesDefinder remindExperiencesDefinder)
         {
+            this.remindExperiencesDefinder = remindExperiencesDefinder ?? throw new ArgumentNullException(nameof(remindExperiencesDefinder));
+        }
+
+        private void InheritNetworkLayers(DDQNwithGAModel original)
+        {
+            InitNetworkLayers();
             CopyNNLayers(original);
         }
-        private void InheritWeights(DDQNwithGAModel mainParent, DDQNwithGAModel secondParent)
-        {
-            CopyNNLayers(mainParent); // Предполагается, что это метод глубокого копирования весов из mainParent
 
-            List<(int layer, int neuron, int gradientIndex)> successfulWeightsMainParent;
-            List<(int layer, int neuron, int gradientIndex)> successfulWeightsSecondParent;
-
-            // Получаем индексы успешных весов от обоих родителей на основе процентиля изменений градиентов
-            if (mainParent.IsSuccessWeightsContainsActualInfo)
-            {
-                successfulWeightsMainParent = mainParent.SuccessWeights;
-            }
-            else
-            {
-                successfulWeightsMainParent = mainParent.GetSuccessfulWeightsIndicesParallel(mainParent.successWeightsCornerProc);
-            }
-
-            if(secondParent.IsSuccessWeightsContainsActualInfo)
-            {
-                successfulWeightsSecondParent = secondParent.SuccessWeights;
-            }
-            else
-            {
-                successfulWeightsSecondParent = secondParent.GetSuccessfulWeightsIndicesParallel(secondParent.successWeightsCornerProc);
-            }
-            // Применяем успешные веса от обоих родителей к потомку
-            foreach (var (layer, i, j) in successfulWeightsSecondParent)
-            {
-                // Проверяем, относится ли успешный вес к второму родителю
-                if (successfulWeightsSecondParent.Contains((layer, i, j)) && !successfulWeightsMainParent.Contains((layer, i, j)))
-                {
-                    onlineLayers[layer].weights[j, i] = secondParent.onlineLayers[layer].weights[j, i];
-                }
-                // В противном случае вес уже скопирован от mainParent
-            }
-        }
-
-        public void CreateSuccessfulWeights()
-        {
-            SuccessWeights = GetSuccessfulWeightsIndicesParallel(successWeightsCornerProc);
-            IsSuccessWeightsContainsActualInfo = true;
-        }
-        public void ClearSuccessfulWeights()
-        {
-            SuccessWeights = new List<(int layer, int neuron, int gradientIndex)>();
-            IsSuccessWeightsContainsActualInfo = false;
-        }
-        private List<(int layer, int neuron, int gradientIndex)> GetSuccessfulWeightsIndicesParallel(double percentile)
-        {
-            var gradientMagnitudes = new ConcurrentBag<(double magnitude, int layer, int neuron, int gradientIndex)>();
-
-            Parallel.For(0, gradientsHistory.Count, epochIndex =>
-            {
-                Parallel.For(0, gradientsHistory[epochIndex].Length, layerIndex =>
-                {
-                    Parallel.For(0, gradientsHistory[epochIndex][layerIndex].Length, neuronIndex =>
-                    {
-                        for (int gradientIndex = 0; gradientIndex < gradientsHistory[epochIndex][layerIndex][neuronIndex].Length; gradientIndex++)
-                        {
-                            double gradient = gradientsHistory[epochIndex][layerIndex][neuronIndex][gradientIndex];
-                            gradientMagnitudes.Add((Math.Abs(gradient), layerIndex, neuronIndex, gradientIndex));
-                        }
-                    });
-                });
-            });
-
-
-            // Определяем порог успешности
-            double threshold = CalculatePercentileThreshold(gradientMagnitudes.Select(x => x.magnitude).ToList(), percentile);
-
-            // Фильтруем индексы весов, которые превышают порог успешности
-            List<(int layer, int neuron, int gradientIndex)> successfulIndices = gradientMagnitudes
-                .Where(x => x.magnitude > threshold)
-                .Select(x => (x.layer, x.neuron, x.gradientIndex))
-                .ToList();
-
-            return successfulIndices;
-        }
-
-
-        private double CalculatePercentileThreshold(List<double> gradients, double percentile)
-        {
-            gradients.Sort();
-            int N = gradients.Count;
-            double n = (N - 1) * percentile / 100.0 + 1;
-            // Если n целое число, возвращаем значение по этому индексу
-            if (Math.Floor(n) == n)
-            {
-                return gradients[(int)n - 1];
-            }
-            // Иначе интерполируем между ближайшими значениями
-            else
-            {
-                int k = (int)n;
-                double d = n - k;
-                return gradients[k - 1] + d * (gradients[k] - gradients[k - 1]);
-            }
-        }
         private void InheritMemory(DDQNwithGAModel original)
         {
             memory = original.memory.Select(m => (DQNMemory)m.Clone()).ToList();
+        }
+        private void InheritMemory(DDQNwithGAModel mother, DDQNwithGAModel father)
+        {
+            if (mother.memory.Count > father.memory.Count)
+            {
+                memory = mother.memory.Select(m => (DQNMemory)m.Clone()).ToList();
+                for (int i = 0; i < father.memory.Count; i++)
+                {
+                    if (random.Next(0, 2) == 0)
+                    {
+                        if (memory.Count < i)
+                        {
+                            memory[i] = (DQNMemory)father.memory[i].Clone();
+                        }
+                        else
+                        {
+                            DQNMemory tamp = (DQNMemory)father.memory[i].Clone();
+                            UpdateMemory(tamp.BeforeActionState, tamp.DecidedAction, tamp.Reward, tamp.AfterActionState, tamp.Done);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                memory = father.memory.Select(m => (DQNMemory)m.Clone()).ToList();
+                for (int i = 0; i < mother.memory.Count; i++)
+                {
+                    if (random.Next(0, 2) == 0)
+                    {
+                        if (memory.Count < i)
+                        {
+                            memory[i] = (DQNMemory)mother.memory[i].Clone();
+                        }
+                        else
+                        {
+                            DQNMemory tamp = (DQNMemory)mother.memory[i].Clone();
+                            UpdateMemory(tamp.BeforeActionState, tamp.DecidedAction, tamp.Reward, tamp.AfterActionState, tamp.Done);
+                        }
+                    }
+                }
+            }
         }
         private void InitNetworkLayers()
         {
@@ -458,392 +734,6 @@ namespace EvolutionNetwork.DDQNwithGA
                 velocitiesBiases[layer] = new double[original.velocitiesBiases[layer].Length];
                 Array.Copy(original.velocitiesBiases[layer], velocitiesBiases[layer], original.velocitiesBiases[layer].Length);
             }
-        }
-        private void InheritVelocities(DDQNwithGAModel mainParent, DDQNwithGAModel secondParent)
-        {
-            velocitiesWeights = new double[mainParent.velocitiesWeights.Length][][];
-            for (int layer = 0; layer < mainParent.velocitiesWeights.Length; layer++)
-            {
-                velocitiesWeights[layer] = new double[mainParent.velocitiesWeights[layer].Length][];
-                for (int neuron = 0; neuron < mainParent.velocitiesWeights[layer].Length; neuron++)
-                {
-                    velocitiesWeights[layer][neuron] = new double[mainParent.velocitiesWeights[layer][neuron].Length];
-                    for (int i = 0; i < mainParent.velocitiesWeights[layer][neuron].Length; i++)
-                    {
-                        velocitiesWeights[layer][neuron][i] = Math.Max(Math.Abs(mainParent.velocitiesWeights[layer][neuron][i]), Math.Abs(secondParent.velocitiesWeights[layer][neuron][i]));
-                    }
-                }
-            }
-
-            velocitiesBiases = new double[mainParent.velocitiesBiases.Length][];
-            for (int layer = 0; layer < mainParent.velocitiesBiases.Length; layer++)
-            {
-                for (int neuron = 0; neuron < mainParent.velocitiesBiases[layer].Length; neuron++)
-                {
-                    velocitiesBiases[layer] = new double[mainParent.velocitiesBiases[layer].Length];
-                    velocitiesBiases[layer][neuron] = Math.Max(Math.Abs(mainParent.velocitiesBiases[layer][neuron]), Math.Abs(secondParent.velocitiesBiases[layer][neuron]));
-                }
-            }
-        }
-
-        private void UpdateTargetNetwork()
-        {
-            for (int i = 0; i < onlineLayers.Length; i++)
-            {
-                Array.Copy(onlineLayers[i].weights, targetLayers[i].weights, onlineLayers[i].weights.Length);
-                Array.Copy(onlineLayers[i].biases, targetLayers[i].biases, onlineLayers[i].biases.Length);
-            }
-        }
-
-        private double[] Softmax(double[] qValues, double temperature)
-        {
-            double[] probabilities = new double[qValues.Length];
-            double sumOfExponentials = 0.0;
-
-            for (int i = 0; i < qValues.Length; i++)
-            {
-                probabilities[i] = Math.Exp(qValues[i] / temperature);
-                sumOfExponentials += probabilities[i];
-            }
-
-            for (int i = 0; i < probabilities.Length; i++)
-            {
-                probabilities[i] /= sumOfExponentials;
-            }
-
-            return probabilities;
-        }
-
-        private double CalculateReward(bool done, double episodeSuccessValue, double targetValue, double bonus)
-        {
-            double reward = 0;
-            if (done)
-            {
-                reward = totalReward / totalActionsNum;
-                if (reward > 0)
-                {
-                    double episodeReward = 0;
-                    for (int i = 0; i < episodeSuccessValue; i++)
-                    {
-                        episodeReward += reward * Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.genDoneBonusA] / Math.Pow(Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.genDoneBonusB], i);
-                    }
-                    reward = episodeReward;
-                }
-                else
-                {
-                    reward = 0;
-                }
-                reward += bonus;
-                totalReward = 0;
-                totalActionsNum = 0;
-            }
-            else
-            {
-                reward = targetValue - targetValueBeforeAction;
-
-                if (IsActionError)
-                {
-
-                    reward -= Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.errorFine];
-                }
-                else
-                {
-                    reward += Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.correctBonus];
-                }
-
-                reward += bonus;
-
-                totalReward += reward;
-            }
-            return reward;
-        }
-        private void ActionHandler(double reward, bool done)
-        {
-            // Используем текущее значение action, установленное в ChooseAction
-
-            // Получаем текущие Q-значения для начального состояния с использованием онлайн-сети
-            double[] currentQValuesOnline = FeedForwardWithNoise(beforeActionState, onlineLayers);
-
-            double tdTarget;
-            if (!done)
-            {
-                // Получаем Q-значения для следующего состояния с использованием онлайн-сети для выбора действия
-                double[] nextQValuesOnline = FeedForward(afterActionState, onlineLayers);
-                int nextAction = Array.IndexOf(nextQValuesOnline, nextQValuesOnline.Max()); // Выбор действия
-
-                double[] nextQValuesTarget = FeedForward(afterActionState, targetLayers);
-                tdTarget = reward + Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.discountFactor] * nextQValuesTarget[nextAction]; // Используем уже выбранное действие
-            }
-            else
-            {
-                tdTarget = reward; // Если эпизод завершен, цель равна полученной награде
-            }
-
-            // Подготовка массива целевых Q-значений для обучения
-            double[] targetQValues = new double[currentQValuesOnline.Length];
-            Array.Copy(currentQValuesOnline, targetQValues, currentQValuesOnline.Length);
-            targetQValues[action] = tdTarget; // Обновляем Q-значение для выбранного действия
-
-            // Обучаем онлайн-сеть с обновленными Q-значениями
-            TeachDQNModel(beforeActionState, targetQValues);
-
-            // Обновляем память, добавляя новый опыт
-            UpdateMemory(beforeActionState, action, reward, afterActionState, done);
-        }
-
-        // Обновление памяти новым опытом и обеспечение ее ограниченного размера
-        private void UpdateMemory(double[] beforeMoveState, int action, double reward, double[] afterMoveState, bool done)
-        {
-            memory.Add(new DQNMemory(beforeMoveState, action, reward, afterMoveState, done));
-            if (memory.Count > maxMemoryCapacity)
-            {
-                memory.RemoveAt(0); // Удаляем самый старый опыт, чтобы не превышать максимальную емкость
-            }
-        }
-        private void UpdateGradientHistory(double[][][] epochGradientsForHistory)
-        {
-            gradientsHistory.Add(epochGradientsForHistory);
-            if (gradientsHistory.Count > maxGradientsHistoryCapacity)
-            {
-                gradientsHistory.RemoveAt(0); // Удаляем самый старый опыт, чтобы не превышать максимальную емкость
-            }
-        }
-
-
-        public void SetSuccessWeightsCornerProc(double proc)
-        {
-            if(proc > 100)
-            {
-                proc = 100;
-            }
-            if(proc < 0)
-            {
-                proc = 0;
-            }
-
-            successWeightsCornerProc = proc;
-        }
-        public void InitMaxGradientHistoryCapacity(uint maxCapacity)
-        {
-            maxGradientsHistoryCapacity = maxCapacity;
-        }
-        public void SetGradientsHistoryUpdatePeriod(uint period)
-        {
-            GradientHistoryUpdatePeriod = period;
-            currentGradientHistoryUpdatePhase = (int)GradientHistoryUpdatePeriod + 1;
-        }
-
-        public void GradientHistoryWritingHandler()
-        {
-            if (GradientHistoryUpdatePeriod <= currentGradientHistoryUpdatePhase)
-            {
-                IsGradientHistoryWritingAllow = true;
-                currentGradientHistoryUpdatePhase = 0;
-            }
-            else
-            {
-                IsGradientHistoryWritingAllow = false;
-                currentGradientHistoryUpdatePhase++;
-            }
-        }
-
-        private void TeachDQNModel(double[] stateInput, double[] targetQValues)
-        {
-            double[] predictedQValues = FeedForward(stateInput, onlineLayers);
-            GradientHistoryWritingHandler();
-            BackPropagationSGDM(predictedQValues, targetQValues);
-        }
-
-        private void BackPropagationSGDM(double[] predicted, double[] targets)
-        {
-            double learningRate = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.learningRate];
-            double lambdaL2 = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.lambdaL2]; // Коэффициент L2 регуляризации
-            double momentum = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.momentumCoefficient]; // Коэффициент момента
-
-            double[] errors = new double[predicted.Length];
-            for (int i = 0; i < predicted.Length; i++)
-            {
-                errors[i] = targets[i] - predicted[i];
-            }
-
-            // Array to store gradients for current epoch
-            double[][][] epochGradientsForHistory = null;
-            if (IsGradientHistoryWritingAllow)
-            {
-                epochGradientsForHistory = new double[onlineLayers.Length - 1][][];
-                
-            }
-
-            for (int layerIndex = onlineLayers.Length - 2; layerIndex >= 0; layerIndex--)
-            {
-                NNLayers currentLayer = onlineLayers[layerIndex];
-                NNLayers nextLayer = onlineLayers[layerIndex + 1];
-                double[] errorsNext = new double[currentLayer.size];
-
-                // Array to store gradients for current layer
-                double[][] layerGradientsForHistory = null;
-                if (IsGradientHistoryWritingAllow)
-                {
-                    layerGradientsForHistory = new double[nextLayer.size][];
-                }
-                for (int i = 0; i < nextLayer.size; i++)
-                {
-                    double gradient = errors[i] * DSwishActivation(nextLayer.neurons[i]);
-
-                    // Array to store gradients for current neuron
-                    double[] neuronGradientsForHistory = null;
-                    if (IsGradientHistoryWritingAllow)
-                    {
-                        neuronGradientsForHistory = new double[currentLayer.size];
-                    }
-
-                    for (int j = 0; j < currentLayer.size; j++)
-                    {
-                        // Вычисление "чистого" градиента (без учета L2 регуляризации)
-                        double pureGradient = gradient * currentLayer.neurons[j];
-                        if (IsGradientHistoryWritingAllow)
-                        {
-                            neuronGradientsForHistory[j] = pureGradient;
-                        }
-
-                        // Применение L2 регуляризации к градиенту
-                        double weightGradientWithL2 = pureGradient - lambdaL2 * currentLayer.weights[j, i];
-
-                        // Обновление скорости и веса с учетом L2 регуляризации
-                        velocitiesWeights[layerIndex][j][i] = momentum * velocitiesWeights[layerIndex][j][i] + learningRate * weightGradientWithL2;
-                        currentLayer.weights[j, i] += velocitiesWeights[layerIndex][j][i];
-
-                    }
-                    // Обновление смещения с учетом момента
-                    velocitiesBiases[layerIndex + 1][i] = momentum * velocitiesBiases[layerIndex + 1][i] + learningRate * gradient;
-                    nextLayer.biases[i] += velocitiesBiases[layerIndex + 1][i];
-                    if (IsGradientHistoryWritingAllow)
-                    {
-                        layerGradientsForHistory[i] = neuronGradientsForHistory;
-                    }
-                }
-
-                for (int i = 0; i < currentLayer.size; i++)
-                {
-                    errorsNext[i] = 0;
-                    for (int j = 0; j < nextLayer.size; j++)
-                    {
-                        errorsNext[i] += currentLayer.weights[i, j] * errors[j];
-                    }
-                }
-                errors = errorsNext;
-                if (IsGradientHistoryWritingAllow)
-                {
-                    epochGradientsForHistory[layerIndex] = layerGradientsForHistory;
-                }
-            }
-            if (IsGradientHistoryWritingAllow)
-            {
-                UpdateGradientHistory(epochGradientsForHistory);
-                IsSuccessWeightsContainsActualInfo = false;
-            }
-        }
-
-        private double[] FeedForward(double[] input, NNLayers[] layers)
-        {
-            layers[0].neurons = input; // Инициализация входного слоя
-
-            for (int i = 1; i < layers.Length; i++)
-            {
-                for (int j = 0; j < layers[i].size; j++)
-                {
-                    double sum = 0.0;
-                    for (int k = 0; k < layers[i - 1].size; k++)
-                    {
-                        sum += layers[i - 1].neurons[k] * layers[i - 1].weights[k, j];
-                    }
-                    layers[i].neurons[j] = SwishActivation(sum + layers[i].biases[j]);
-                }
-            }
-
-            return layers[layers.Length - 1].neurons;
-        }
-
-        private double[] FeedForwardWithNoise(double[] input, NNLayers[] layers)
-        {
-            layers[0].neurons = input; // Инициализация входного слоя
-
-            for (int i = 1; i < layers.Length; i++)
-            {
-                for (int j = 0; j < layers[i].size; j++)
-                {
-                    double sum = 0.0;
-                    for (int k = 0; k < layers[i - 1].size; k++)
-                    {
-                        sum += layers[i - 1].neurons[k] * layers[i - 1].weights[k, j];
-                    }
-                    double activation = SwishActivation(sum + layers[i].biases[j]);
-                    // Добавление шума к результату активации
-                    layers[i].neurons[j] = activation + GenerateRandomNoise() * Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.noiseIntensity];
-                }
-
-                layers[i].neurons = ApplyDropout(layers[i].neurons, i);
-            }
-
-            return layers[layers.Length - 1].neurons;
-        }
-
-        private double[] ApplyDropout(double[] activations, int layerIndex)
-        {
-            // Применяем дропаут только к скрытым слоям
-            if (layerIndex > 0 && layerIndex < layersSizes.Length - 1)
-            {
-                for (int i = 0; i < activations.Length; i++)
-                {
-                    if (random.NextDouble() < Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.dropoutRate])
-                    {
-                        activations[i] = 0;
-                    }
-                }
-            }
-            return activations;
-        }
-        private double GenerateRandomNoise()
-        {
-            double u1 = 1.0 - random.NextDouble();
-            double u2 = 1.0 - random.NextDouble();
-            return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
-        }
-
-        private void CopyNNLayers(DDQNwithGAModel original)
-        {
-            for (int k = 0; k < onlineLayers.Length; k++)
-            {
-                Array.Copy(original.onlineLayers[k].weights, onlineLayers[k].weights, original.onlineLayers[k].weights.Length);
-                Array.Copy(original.onlineLayers[k].neurons, onlineLayers[k].neurons, original.onlineLayers[k].neurons.Length);
-                Array.Copy(original.onlineLayers[k].biases, onlineLayers[k].biases, original.onlineLayers[k].biases.Length);
-
-                onlineLayers[k].size = original.onlineLayers[k].size;
-                onlineLayers[k].nextSize = original.onlineLayers[k].nextSize;
-            }
-
-            for (int k = 0; k < targetLayers.Length; k++)
-            {
-                Array.Copy(original.targetLayers[k].weights, targetLayers[k].weights, original.targetLayers[k].weights.Length);
-                Array.Copy(original.targetLayers[k].neurons, targetLayers[k].neurons, original.targetLayers[k].neurons.Length);
-                Array.Copy(original.targetLayers[k].biases, targetLayers[k].biases, original.targetLayers[k].biases.Length);
-
-                targetLayers[k].size = original.targetLayers[k].size;
-                targetLayers[k].nextSize = original.targetLayers[k].nextSize;
-            }
-        }
-
-        private double DSwishActivation(double x)
-        {
-            double beta = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.beta];
-            double sigmoid = 1.0 / (1.0 + Math.Exp(-beta * x));
-            return sigmoid + beta * x * sigmoid * (1 - sigmoid);
-        }
-
-        private double SwishActivation(double x)
-        {
-            double beta = Gen.HyperparameterChromosome[HyperparameterGen.GenHyperparameter.beta];
-            return x / (1.0 + Math.Exp(-beta * x));
         }
     }
 }
