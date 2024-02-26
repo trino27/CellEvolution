@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN
+namespace EvolutionNetwork.DDQNwithGA.DDQN
 {
-    public class DQNMemory : ICloneable
+    public class DDQNMemory : ICloneable
     {
         public double[] BeforeActionState;
         public int DecidedAction;
@@ -14,7 +14,7 @@ namespace EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN
         public double[] AfterActionState;
         public bool Done;
 
-        public DQNMemory(double[] beforeActionState, int decidedAction, double reward, double[] afterActionState, bool done)
+        public DDQNMemory(double[] beforeActionState, int decidedAction, double reward, double[] afterActionState, bool done)
         {
             BeforeActionState = beforeActionState;
             DecidedAction = decidedAction;
@@ -31,7 +31,7 @@ namespace EvolutionNetwork.DDQNwithGA.DDQNwithGA.DDQN
             double[] afterMoveStateCopy = new double[AfterActionState.Length];
             Array.Copy(AfterActionState, afterMoveStateCopy, AfterActionState.Length);
 
-            return new DQNMemory(beforeMoveStateCopy, DecidedAction, Reward, afterMoveStateCopy, Done);
+            return new DDQNMemory(beforeMoveStateCopy, DecidedAction, Reward, afterMoveStateCopy, Done);
         }
     }
 }

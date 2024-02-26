@@ -11,7 +11,7 @@
             genDoneBonusA,
             genDoneBonusB,
 
-            genHyperparameterChangePower,
+            genHyperparameterPercentageChange,
             learningRate,
 
             noiseIntensity,
@@ -22,6 +22,9 @@
             lambdaL2,
             beta,
             dropoutRate,
+
+            percentageOfSimilarExperiences,
+            remindProbability
         }
     }
 }

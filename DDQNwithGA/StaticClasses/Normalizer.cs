@@ -1,4 +1,4 @@
-﻿namespace EvolutionNetwork
+﻿namespace EvolutionNetwork.StaticClasses
 {
     public static class Normalizer
     {
